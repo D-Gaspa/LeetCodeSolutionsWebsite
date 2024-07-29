@@ -143,7 +143,11 @@
     <div v-if="showContentEditor" class="modal" @click.self="closeContentEditor">
       <div class="modal-content large">
         <h2>Edit Problem Content</h2>
-        <markdown-editor v-model="problemForm.content" @update:modelValue="updateContent"></markdown-editor>
+        <markdown-editor
+            v-model="problemForm.content"
+            @update:modelValue="updateContent"
+            @save-images="handleImageSave"
+        ></markdown-editor>
         <div class="form-actions">
           <button @click="closeContentEditor">Close</button>
         </div>
@@ -226,6 +230,39 @@ export default {
       if (confirm('Are you sure you want to delete the content?')) {
         problemForm.content = {text: ''}
       }
+    }
+
+    const handleImageSave = async (images) => {
+      const uploadedImages = []
+      for (const image of images) {
+        if (image.file) {  // Only upload new images
+          const {data, error} = await supabase.storage
+              .from('problem-images')
+              .upload(`${Date.now()}_${image.name}`, image.file)
+
+          if (error) {
+            console.error('Error uploading image:', error)
+            continue
+          }
+
+          const {publicURL, error: urlError} = supabase.storage
+              .from('problem-images')
+              .getPublicUrl(data.path)
+
+          if (urlError) {
+            console.error('Error getting public URL:', urlError)
+            continue
+          }
+
+          uploadedImages.push({
+            name: image.name,
+            url: publicURL
+          })
+        } else {
+          uploadedImages.push(image)  // Keep existing images
+        }
+      }
+      return uploadedImages
     }
 
     const validateAndSaveProblem = async () => {
@@ -312,29 +349,29 @@ export default {
     }
 
     const saveProblem = async () => {
-      const formData = {...problemForm}
+      // Save images and update content
+      const savedImages = await handleImageSave(problemForm.content.images)
+      problemForm.content.images = savedImages
 
-      if (formData.problem_type === 'daily') {
-        formData.problem_year = new Date(formData.problem_date).getFullYear()
-        formData.problem_week = null
-      } else {
-        formData.problem_date = null
-      }
+      // Update image URLs in the content
+      savedImages.forEach(image => {
+        const oldUrl = new URL(image.url).pathname
+        const newUrl = image.url
+        problemForm.content.text = problemForm.content.text.replace(oldUrl, newUrl)
+      })
 
-      // Combine problem number and name into title
-      formData.title = `${formData.id}. ${formData.name}`
-      delete formData.name  // Remove the separate name field
-
+      // Save problem
       const {error} = editingProblem.value
           ? await supabase
               .from('problems')
-              .update(formData)
+              .update(problemForm)
               .eq('id', editingProblem.value.id)
           : await supabase
               .from('problems')
-              .insert([formData])
+              .insert([problemForm])
 
       if (error) {
+        console.error('Error saving problem:', error)
         formError.value = 'An error occurred while saving the problem. Please try again.'
       } else {
         await fetchProblems()
@@ -429,6 +466,7 @@ export default {
       updateContent,
       deleteContent,
       validateAndSaveProblem,
+      handleImageSave,
       editProblem,
       closeProblemForm,
       openSolutionForm,

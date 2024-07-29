@@ -20,6 +20,15 @@
       </div>
       <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
     </div>
+    <div class="image-gallery">
+      <div v-for="(image, index) in tempImages" :key="index" class="image-item">
+        <img :alt="image.name" :src="image.url" class="thumbnail">
+        <div class="image-actions">
+          <button @click="insertImageToEditor(image)">Insert</button>
+          <button @click="removeImage(index)">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -34,7 +43,6 @@ import MarkdownItKatex from '@vscode/markdown-it-katex'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'katex/dist/katex.min.css'
-import {supabase} from '../services/supabase'
 
 export default {
   name: 'MarkdownEditor',
@@ -46,12 +54,13 @@ export default {
       type: Object
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'save-images'],
   setup(props, {emit}) {
     const localContent = ref(props.modelValue.text || '')
     const showPreview = ref(true)
     const fileInput = ref(null)
     const editorView = ref(null)
+    const tempImages = ref([])
 
     const md = new MarkdownIt({
       html: true,
@@ -80,7 +89,7 @@ export default {
 
     const updateContent = (value) => {
       localContent.value = value
-      emit('update:modelValue', {text: value})
+      emit('update:modelValue', {text: value, images: tempImages.value})
     }
 
     const togglePreview = () => {
@@ -92,8 +101,7 @@ export default {
       {label: 'Italic', action: () => insertText('*', '*')},
       {label: 'Code', action: () => insertText('`', '`')},
       {label: 'Link', action: () => insertText('[', '](url)')},
-      {label: 'Inline Equation', action: () => insertText('$', '$')},
-      {label: 'Block Equation', action: () => insertText('$$\n', '\n$$')},
+      {label: 'LaTeX', action: () => insertText('$', '$')},
       {label: 'Toggle Preview', action: togglePreview},
     ]
 
@@ -103,42 +111,37 @@ export default {
 
     const handleImageUpload = async (event) => {
       const file = event.target.files[0]
-      await uploadImage(file)
+      await addTempImage(file)
     }
 
     const handleDrop = async (event) => {
       const file = event.dataTransfer.files[0]
       if (file && file.type.startsWith('image/')) {
-        await uploadImage(file)
+        await addTempImage(file)
       }
     }
 
-    const uploadImage = async (file) => {
+    const addTempImage = async (file) => {
       if (!file) return
 
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-
-      const {error} = await supabase.storage
-          .from('problem-images')
-          .upload(fileName, file)
-
-      if (error) {
-        console.error('Error uploading image:', error)
-        return
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        tempImages.value.push({
+          file: file,
+          name: file.name,
+          url: e.target.result
+        })
       }
+      reader.readAsDataURL(file)
+    }
 
-      const {publicURL, error: urlError} = supabase.storage
-          .from('problem-images')
-          .getPublicUrl(fileName)
-
-      if (urlError) {
-        console.error('Error getting public URL:', urlError)
-        return
-      }
-
-      const imageMarkdown = `![${file.name}](${publicURL})`
+    const insertImageToEditor = (image) => {
+      const imageMarkdown = `![${image.name}](${image.url})`
       insertText(imageMarkdown, '')
+    }
+
+    const removeImage = (index) => {
+      tempImages.value.splice(index, 1)
     }
 
     const insertText = (before, after) => {
@@ -159,6 +162,10 @@ export default {
       editorView.value.focus()
     }
 
+    const saveImages = () => {
+      emit('save-images', tempImages.value)
+    }
+
     watch(() => props.modelValue.text, (newValue) => {
       if (newValue !== localContent.value) {
         localContent.value = newValue
@@ -168,6 +175,9 @@ export default {
     onMounted(() => {
       if (props.modelValue && props.modelValue.text) {
         localContent.value = props.modelValue.text
+      }
+      if (props.modelValue && props.modelValue.images) {
+        tempImages.value = props.modelValue.images
       }
     })
 
@@ -182,7 +192,11 @@ export default {
       fileInput,
       toolbarActions,
       extensions,
-      handleReady
+      handleReady,
+      tempImages,
+      insertImageToEditor,
+      removeImage,
+      saveImages
     }
   }
 }
@@ -225,6 +239,31 @@ export default {
   padding-right: 10px;
   border-left: 1px solid #ccc;
   overflow-y: auto;
+}
+
+.image-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.image-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.thumbnail {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+}
+
+.image-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
 }
 
 </style>
