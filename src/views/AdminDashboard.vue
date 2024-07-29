@@ -144,7 +144,7 @@ export default {
     }
 
     const saveProblem = async () => {
-      const {data, error} = editingProblem.value
+      const {error} = editingProblem.value
           ? await supabase
               .from('problems')
               .update(problemForm)
@@ -155,14 +155,14 @@ export default {
 
       if (error) console.error('Error saving problem:', error)
       else {
-        fetchProblems()
+        await fetchProblems()
         showProblemForm.value = false
         editingProblem.value = null
       }
     }
 
     const saveSolution = async () => {
-      const {data, error} = editingSolution.value
+      const {error} = editingSolution.value
           ? await supabase
               .from('solutions')
               .update(solutionForm)

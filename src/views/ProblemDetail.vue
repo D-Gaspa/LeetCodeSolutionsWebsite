@@ -33,7 +33,7 @@ import {computed, onMounted, ref} from 'vue'
 import {useRoute} from 'vue-router'
 import {supabase} from '../services/supabase'
 import DOMPurify from 'dompurify'
-import marked from 'marked'
+import {marked} from 'marked'
 
 export default {
   name: 'ProblemDetail',

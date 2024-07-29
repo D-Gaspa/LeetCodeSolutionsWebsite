@@ -5,17 +5,49 @@
       |
       <router-link to="/problems">Problems</router-link>
       |
-      <router-link to="/admin">Admin</router-link>
-      |
-      <router-link to="/login">Login</router-link>
+      <template v-if="user">
+        <router-link to="/admin">Admin</router-link>
+        |
+        <a href="#" @click.prevent="handleLogout">Logout</a>
+      </template>
+      <template v-else>
+        <router-link to="/login">Login</router-link>
+      </template>
     </nav>
     <router-view/>
   </div>
 </template>
 
 <script>
+import {onMounted, ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {supabase} from './services/supabase'
+
 export default {
-  name: 'App'
+  name: 'App',
+  setup() {
+    const router = useRouter()
+    const user = ref(null)
+
+    onMounted(() => {
+      user.value = supabase.auth.getUserIdentities()?.[0]?.user ?? null
+
+      supabase.auth.onAuthStateChange((_, session) => {
+        user.value = session?.user ?? null
+      })
+    })
+
+    const handleLogout = async () => {
+      await supabase.auth.signOut()
+      user.value = null
+      await router.push('/login')
+    }
+
+    return {
+      user,
+      handleLogout
+    }
+  }
 }
 </script>
 
@@ -37,7 +69,4 @@ nav a {
   color: #2c3e50;
 }
 
-nav a.router-link-exact-active {
-  color: #42b983;
-}
 </style>

@@ -1,4 +1,5 @@
 import {createRouter, createWebHistory} from 'vue-router'
+import {supabase} from '../services/supabase'
 import Home from '../views/Home.vue'
 import ProblemList from '../views/ProblemList.vue'
 import ProblemDetail from '../views/ProblemDetail.vue'
@@ -24,7 +25,8 @@ const routes = [
     {
         path: '/admin',
         name: 'AdminDashboard',
-        component: AdminDashboard
+        component: AdminDashboard,
+        meta: {requiresAuth: true}
     },
     {
         path: '/login',
@@ -36,6 +38,15 @@ const routes = [
 const router = createRouter({
     history: createWebHistory(),
     routes
+})
+
+router.beforeEach((to, from, next) => {
+    const user = supabase.auth.getUserIdentities()
+    if (to.matched.some(record => record.meta.requiresAuth) && !user) {
+        next('/login')
+    } else {
+        next()
+    }
 })
 
 export default router

@@ -1,21 +1,94 @@
 <template>
-  <div>
-    <h1>{{ login }}</h1>
-    <p>This is a placeholder for the {{ login }} component.</p>
+  <div class="login-container">
+    <h2>Login</h2>
+    <form @submit.prevent="handleLogin">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" v-model="email" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" v-model="password" required>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
 
 <script>
+import {ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {supabase} from '../services/supabase'
+
 export default {
   name: 'Login',
-  data() {
+  setup() {
+    const router = useRouter()
+    const email = ref('')
+    const password = ref('')
+    const error = ref('')
+
+    const handleLogin = async () => {
+      try {
+        const {error: signInError} = await supabase.auth.signInWithPassword({
+          email: email.value,
+          password: password.value,
+        })
+
+        if (signInError) {
+          error.value = signInError.message
+          return
+        }
+
+        await router.push('/admin')
+      } catch (e) {
+        error.value = e.message
+      }
+    }
+
     return {
-      login: 'Login'
+      email,
+      password,
+      error,
+      handleLogin
     }
   }
 }
 </script>
 
 <style scoped>
-/* Add any component-specific styles here */
+.login-container {
+  max-width: 300px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+form div {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #42b983;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.error {
+  color: red;
+}
 </style>
