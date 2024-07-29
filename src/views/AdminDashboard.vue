@@ -48,15 +48,14 @@
     </div>
 
     <!-- Problem Form Modal -->
-    <div v-if="showProblemForm" class="modal" @click.self="showProblemForm = false">
+    <div v-if="showProblemForm" class="modal" @click.self="closeProblemForm">
       <div class="modal-content">
         <h2>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h2>
-        <form @submit.prevent="saveProblem">
+        <form @submit.prevent="validateAndSaveProblem">
           <label>
             Problem Number:
-            <input v-model.number="problemForm.id" type="number" required min="1" @blur="checkProblemIdExists">
+            <input v-model.number="problemForm.id" type="number" required min="1" step="1">
           </label>
-          <p v-if="idError" class="error-message">{{ idError }}</p>
           <label>
             Problem Name:
             <input v-model="problemForm.name" required>
@@ -92,8 +91,9 @@
           </label>
           <label>
             Content:
-            <rich-text-editor v-model="problemForm.content"></rich-text-editor>
+            <rich-text-editor v-model="problemForm.content" required></rich-text-editor>
           </label>
+          <p v-if="formError" class="error-message">{{ formError }}</p>
           <div class="form-actions">
             <button type="submit">Save Problem</button>
             <button type="button" @click="showProblemForm = false">Cancel</button>
@@ -128,8 +128,8 @@
             <input v-model="solutionForm.space_complexity">
           </label>
           <div class="form-actions">
-            <button type="submit">Save Solution</button>
-            <button type="button" @click="showSolutionForm = false">Cancel</button>
+            <button type="submit">Save Problem</button>
+            <button type="button" @click="closeProblemForm">Cancel</button>
           </div>
         </form>
       </div>
@@ -191,31 +191,37 @@ export default {
       space_complexity: ''
     })
 
-    const idError = ref('')
+    const formError = ref('')
 
-    const checkProblemIdExists = async () => {
-      if (!problemForm.id) return
+    const validateAndSaveProblem = async () => {
+      formError.value = ''
 
-      const {data, error} = await supabase
+      // Validate problem number
+      if (!Number.isInteger(problemForm.id) || problemForm.id < 1) {
+        formError.value = 'Problem number must be a positive integer.'
+        return
+      }
+
+      // Validate content
+      if (!problemForm.content || Object.keys(problemForm.content).length === 0) {
+        formError.value = 'Problem content cannot be empty.'
+        return
+      }
+
+      // Check if problem ID exists (for both new and edited problems)
+      const {data} = await supabase
           .from('problems')
           .select('id')
           .eq('id', problemForm.id)
           .single()
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking problem ID:', error)
+      if (data && (!editingProblem.value || data.id !== editingProblem.value.id)) {
+        formError.value = 'This problem number already exists. Please choose a different one.'
         return
       }
 
-      if (data) {
-        if (!editingProblem.value || (editingProblem.value && editingProblem.value.id !== problemForm.id)) {
-          idError.value = 'This problem number already exists. Please choose a different one.'
-        } else {
-          idError.value = ''
-        }
-      } else {
-        idError.value = ''
-      }
+      // If all validations pass, proceed with saving
+      await saveProblem()
     }
 
     const fetchProblems = async () => {
@@ -246,18 +252,23 @@ export default {
       return filteredProblems.value.slice(start, end)
     })
 
+    const closeProblemForm = () => {
+      showProblemForm.value = false
+      editingProblem.value = null
+      clearProblemForm()
+      formError.value = ''
+    }
+
     const editProblem = (problem) => {
       editingProblem.value = problem
       const [id, ...nameParts] = problem.title.split('.')
 
-      problemForm.id = parseInt(id)
-      problemForm.name = nameParts.join('.').trim()
       Object.assign(problemForm, {
         ...problem,
+        id: parseInt(id),
         name: nameParts.join('.').trim(),
       })
       showProblemForm.value = true
-      idError.value = ''
     }
 
     const openSolutionForm = (problem) => {
@@ -266,12 +277,6 @@ export default {
     }
 
     const saveProblem = async () => {
-      await checkProblemIdExists()
-      if (idError.value) {
-        // Don't proceed if there's an ID error
-        return
-      }
-
       const formData = {...problemForm}
 
       if (formData.problem_type === 'daily') {
@@ -295,13 +300,10 @@ export default {
               .insert([formData])
 
       if (error) {
-        console.error('Error saving problem:', error)
-        // Handle the error, maybe show a message to the user
+        formError.value = 'An error occurred while saving the problem. Please try again.'
       } else {
         await fetchProblems()
-        showProblemForm.value = false
-        editingProblem.value = null
-        idError.value = ''
+        closeProblemForm()
       }
     }
 
@@ -319,7 +321,28 @@ export default {
       else {
         showSolutionForm.value = false
         editingSolution.value = null
+        clearSolutionForm()
       }
+    }
+
+    const clearProblemForm = () => {
+      problemForm.id = null
+      problemForm.name = ''
+      problemForm.difficulty = 'Easy'
+      problemForm.problem_type = 'daily'
+      problemForm.problem_date = ''
+      problemForm.problem_week = 1
+      problemForm.problem_year = new Date().getFullYear()
+      problemForm.content = {}
+    }
+
+    const clearSolutionForm = () => {
+      solutionForm.problem_id = null
+      solutionForm.approach_name = ''
+      solutionForm.code = ''
+      solutionForm.explanation = {}
+      solutionForm.time_complexity = ''
+      solutionForm.space_complexity = ''
     }
 
     const confirmDeleteProblem = (problem) => {
@@ -364,9 +387,10 @@ export default {
       currentPage,
       totalPages,
       paginatedProblems,
-      idError,
-      checkProblemIdExists,
+      formError,
+      validateAndSaveProblem,
       editProblem,
+      closeProblemForm,
       openSolutionForm,
       saveProblem,
       saveSolution,
