@@ -89,14 +89,18 @@
             Year:
             <input type="number" v-model="problemForm.problem_year" required>
           </label>
-          <label>
-            Content:
-            <rich-text-editor v-model="problemForm.content" required></rich-text-editor>
-          </label>
+          <div>
+            <button type="button" @click="openContentEditor">
+              {{ problemForm.content && problemForm.content.text ? 'Edit' : 'Add' }} Content
+            </button>
+            <button v-if="problemForm.content && problemForm.content.text" type="button" @click="deleteContent">
+              Delete Content
+            </button>
+          </div>
           <p v-if="formError" class="error-message">{{ formError }}</p>
           <div class="form-actions">
             <button type="submit">Save Problem</button>
-            <button type="button" @click="showProblemForm = false">Cancel</button>
+            <button type="button" @click="closeProblemForm">Cancel</button>
           </div>
         </form>
       </div>
@@ -117,7 +121,7 @@
           </label>
           <label>
             Explanation:
-            <rich-text-editor v-model="solutionForm.explanation"></rich-text-editor>
+            <markdown-editor v-model="solutionForm.explanation"></markdown-editor>
           </label>
           <label>
             Time Complexity:
@@ -128,10 +132,21 @@
             <input v-model="solutionForm.space_complexity">
           </label>
           <div class="form-actions">
-            <button type="submit">Save Problem</button>
-            <button type="button" @click="closeProblemForm">Cancel</button>
+            <button type="submit">Save Solution</button>
+            <button type="button" @click="showSolutionForm = false">Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Content Editor Modal -->
+    <div v-if="showContentEditor" class="modal" @click.self="closeContentEditor">
+      <div class="modal-content large">
+        <h2>Edit Problem Content</h2>
+        <markdown-editor v-model="problemForm.content" @update:modelValue="updateContent"></markdown-editor>
+        <div class="form-actions">
+          <button @click="closeContentEditor">Close</button>
+        </div>
       </div>
     </div>
 
@@ -152,12 +167,12 @@
 <script>
 import {computed, onMounted, reactive, ref} from 'vue'
 import {supabase} from '../services/supabase'
-import RichTextEditor from '../components/RichTextEditor.vue'
+import MarkdownEditor from '../components/MarkdownEditor.vue'
 
 export default {
   name: 'AdminDashboard',
   components: {
-    RichTextEditor
+    MarkdownEditor
   },
   setup() {
     const problems = ref([])
@@ -193,6 +208,26 @@ export default {
 
     const formError = ref('')
 
+    const showContentEditor = ref(false)
+
+    const openContentEditor = () => {
+      showContentEditor.value = true
+    }
+
+    const closeContentEditor = () => {
+      showContentEditor.value = false
+    }
+
+    const updateContent = (newContent) => {
+      problemForm.content = newContent
+    }
+
+    const deleteContent = () => {
+      if (confirm('Are you sure you want to delete the content?')) {
+        problemForm.content = {text: ''}
+      }
+    }
+
     const validateAndSaveProblem = async () => {
       formError.value = ''
 
@@ -203,7 +238,7 @@ export default {
       }
 
       // Validate content
-      if (!problemForm.content || Object.keys(problemForm.content).length === 0) {
+      if (!problemForm.content || !problemForm.content.text || problemForm.content.text.trim() === '') {
         formError.value = 'Problem content cannot be empty.'
         return
       }
@@ -388,6 +423,11 @@ export default {
       totalPages,
       paginatedProblems,
       formError,
+      showContentEditor,
+      openContentEditor,
+      closeContentEditor,
+      updateContent,
+      deleteContent,
       validateAndSaveProblem,
       editProblem,
       closeProblemForm,
@@ -460,6 +500,12 @@ th {
   width: 100%;
 }
 
+.modal-content.large {
+  max-width: 90%;
+  width: 90%;
+  height: 90%;
+}
+
 form {
   display: flex;
   flex-direction: column;
@@ -470,6 +516,7 @@ label {
 }
 
 input, select, textarea {
+  resize: none;
   box-sizing: border-box;
   width: 100%;
   padding: 5px;
