@@ -37,6 +37,8 @@ export default {
 
 <style scoped>
 textarea {
+  box-sizing: border-box;
+  resize: none;
   width: 100%;
   height: 200px;
 }

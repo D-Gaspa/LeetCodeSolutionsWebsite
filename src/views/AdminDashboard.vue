@@ -1,93 +1,149 @@
 <template>
-  <div>
+  <div class="admin-dashboard">
     <h1>Admin Dashboard</h1>
-    <button @click="showProblemForm = true">Add New Problem</button>
-    <h2>Problems</h2>
-    <ul>
-      <li v-for="problem in problems" :key="problem.id">
-        {{ problem.title }}
-        <button @click="editProblem(problem)">Edit</button>
-        <button @click="openSolutionForm(problem)">Add Solution</button>
-      </li>
-    </ul>
+
+    <!-- Search and Add Problem -->
+    <div class="actions">
+      <input v-model="searchQuery" @input="searchProblems" placeholder="Search problems...">
+      <button @click="showProblemForm = true">Add New Problem</button>
+    </div>
+
+    <!-- Problem List -->
+    <table>
+      <thead>
+      <tr>
+        <th>Title</th>
+        <th>Difficulty</th>
+        <th>Type</th>
+        <th>Date/Week</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr v-for="problem in paginatedProblems" :key="problem.id">
+        <td>{{ problem.title }}</td>
+        <td>{{ problem.difficulty }}</td>
+        <td>{{ problem.problem_type }}</td>
+        <td>
+          {{
+            problem.problem_type === 'daily'
+                ? formatDate(problem.problem_date)
+                : `Week ${problem.problem_week}, ${problem.problem_year}`
+          }}
+        </td>
+        <td>
+          <button @click="editProblem(problem)">Edit</button>
+          <button @click="confirmDeleteProblem(problem)">Delete</button>
+          <button @click="openSolutionForm(problem)">Add Solution</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button :disabled="currentPage === 1" @click="currentPage--">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
+    </div>
 
     <!-- Problem Form Modal -->
-    <div v-if="showProblemForm" class="modal">
-      <h2>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h2>
-      <form @submit.prevent="saveProblem">
-        <label>
-          Title:
-          <input v-model="problemForm.title" required>
-        </label>
-        <label>
-          Difficulty:
-          <select v-model="problemForm.difficulty" required>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </select>
-        </label>
-        <label>
-          Type:
-          <select v-model="problemForm.problem_type" required>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-          </select>
-        </label>
-        <label v-if="problemForm.problem_type === 'daily'">
-          Date:
-          <input type="date" v-model="problemForm.problem_date" required>
-        </label>
-        <label v-else>
-          Week:
-          <input type="number" v-model="problemForm.problem_week" required>
-        </label>
-        <label>
-          Year:
-          <input type="number" v-model="problemForm.problem_year" required>
-        </label>
-        <label>
-          Content:
-          <rich-text-editor v-model="problemForm.content"></rich-text-editor>
-        </label>
-        <button type="submit">Save Problem</button>
-        <button @click="showProblemForm = false">Cancel</button>
-      </form>
+    <div v-if="showProblemForm" class="modal" @click.self="showProblemForm = false">
+      <div class="modal-content">
+        <h2>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h2>
+        <form @submit.prevent="saveProblem">
+          <label>
+            Title:
+            <input v-model="problemForm.title" required>
+          </label>
+          <label>
+            Difficulty:
+            <select v-model="problemForm.difficulty" required>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </label>
+          <label>
+            Type:
+            <select v-model="problemForm.problem_type" required>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </label>
+          <label v-if="problemForm.problem_type === 'daily'">
+            Date:
+            <input type="date" v-model="problemForm.problem_date" required>
+          </label>
+          <label v-else>
+            Week:
+            <input type="number" v-model="problemForm.problem_week" required>
+          </label>
+          <label>
+            Year:
+            <input type="number" v-model="problemForm.problem_year" required>
+          </label>
+          <label>
+            Content:
+            <rich-text-editor v-model="problemForm.content"></rich-text-editor>
+          </label>
+          <div class="form-actions">
+            <button type="submit">Save Problem</button>
+            <button type="button" @click="showProblemForm = false">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Solution Form Modal -->
-    <div v-if="showSolutionForm" class="modal">
-      <h2>{{ editingSolution ? 'Edit' : 'Add' }} Solution</h2>
-      <form @submit.prevent="saveSolution">
-        <label>
-          Approach Name:
-          <input v-model="solutionForm.approach_name" required>
-        </label>
-        <label>
-          Code:
-          <textarea v-model="solutionForm.code" required></textarea>
-        </label>
-        <label>
-          Explanation:
-          <rich-text-editor v-model="solutionForm.explanation"></rich-text-editor>
-        </label>
-        <label>
-          Time Complexity:
-          <input v-model="solutionForm.time_complexity">
-        </label>
-        <label>
-          Space Complexity:
-          <input v-model="solutionForm.space_complexity">
-        </label>
-        <button type="submit">Save Solution</button>
-        <button @click="showSolutionForm = false">Cancel</button>
-      </form>
+    <div v-if="showSolutionForm" class="modal" @click.self="showSolutionForm = false">
+      <div class="modal-content">
+        <h2>{{ editingSolution ? 'Edit' : 'Add' }} Solution</h2>
+        <form @submit.prevent="saveSolution">
+          <label>
+            Approach Name:
+            <input v-model="solutionForm.approach_name" required>
+          </label>
+          <label>
+            Code:
+            <textarea v-model="solutionForm.code" required></textarea>
+          </label>
+          <label>
+            Explanation:
+            <rich-text-editor v-model="solutionForm.explanation"></rich-text-editor>
+          </label>
+          <label>
+            Time Complexity:
+            <input v-model="solutionForm.time_complexity">
+          </label>
+          <label>
+            Space Complexity:
+            <input v-model="solutionForm.space_complexity">
+          </label>
+          <div class="form-actions">
+            <button type="submit">Save Solution</button>
+            <button type="button" @click="showSolutionForm = false">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div v-if="showConfirmDialog" class="modal">
+      <div class="modal-content">
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete this problem?</p>
+        <div class="form-actions">
+          <button @click="deleteProblem">Yes, Delete</button>
+          <button @click="showConfirmDialog = false">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import {onMounted, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref} from 'vue'
 import {supabase} from '../services/supabase'
 import RichTextEditor from '../components/RichTextEditor.vue'
 
@@ -100,8 +156,13 @@ export default {
     const problems = ref([])
     const showProblemForm = ref(false)
     const showSolutionForm = ref(false)
+    const showConfirmDialog = ref(false)
     const editingProblem = ref(null)
     const editingSolution = ref(null)
+    const problemToDelete = ref(null)
+    const searchQuery = ref('')
+    const currentPage = ref(1)
+    const itemsPerPage = 10
 
     const problemForm = reactive({
       title: '',
@@ -131,6 +192,24 @@ export default {
       if (error) console.error('Error fetching problems:', error)
       else problems.value = data
     }
+
+    const searchProblems = () => {
+      currentPage.value = 1 // Reset to first page when searching
+    }
+
+    const filteredProblems = computed(() => {
+      return problems.value.filter(problem =>
+          problem.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    })
+
+    const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+
+    const paginatedProblems = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage
+      const end = start + itemsPerPage
+      return filteredProblems.value.slice(start, end)
+    })
 
     const editProblem = (problem) => {
       editingProblem.value = problem
@@ -178,25 +257,140 @@ export default {
       }
     }
 
+    const confirmDeleteProblem = (problem) => {
+      problemToDelete.value = problem
+      showConfirmDialog.value = true
+    }
+
+    const deleteProblem = async () => {
+      if (!problemToDelete.value) return
+
+      const {error} = await supabase
+          .from('problems')
+          .delete()
+          .eq('id', problemToDelete.value.id)
+
+      if (error) console.error('Error deleting problem:', error)
+      else {
+        await fetchProblems()
+        showConfirmDialog.value = false
+        problemToDelete.value = null
+      }
+    }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
+    }
+
     onMounted(fetchProblems)
 
     return {
       problems,
       showProblemForm,
       showSolutionForm,
+      showConfirmDialog,
       problemForm,
       solutionForm,
       editingProblem,
       editingSolution,
+      searchQuery,
+      currentPage,
+      totalPages,
+      paginatedProblems,
       editProblem,
-      openSolutionForm,  // Changed from showSolutionForm to openSolutionForm
+      openSolutionForm,
       saveProblem,
-      saveSolution
+      saveSolution,
+      confirmDeleteProblem,
+      deleteProblem,
+      formatDate,
+      searchProblems
     }
   }
 }
 </script>
 
 <style scoped>
-/* ... (styles remain the same) ... */
+.admin-dashboard {
+  padding: 20px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination button {
+  margin: 0 10px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  max-width: 500px;
+  width: 100%;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  margin-bottom: 10px;
+}
+
+input, select, textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.form-actions button {
+  margin-left: 10px;
+}
 </style>
