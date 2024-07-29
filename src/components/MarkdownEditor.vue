@@ -12,13 +12,11 @@
            @drop.prevent="handleDrop"
            @dragover.prevent="() => {}"
            @dragenter.prevent="() => {}">
-        <textarea
-            ref="editor"
+        <Codemirror
             v-model="localContent"
-            placeholder="Write your markdown here..."
-            @input="updateContent"
-            @select="handleSelection"
-        ></textarea>
+            :extensions="extensions"
+            @ready="handleReady"
+        />
       </div>
       <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
     </div>
@@ -27,14 +25,22 @@
 
 <script>
 import {computed, onMounted, ref, watch} from 'vue'
-import {marked} from 'marked'
-import DOMPurify from 'dompurify'
+import {Codemirror} from 'vue-codemirror'
+import {markdown} from '@codemirror/lang-markdown'
+import {oneDark} from '@codemirror/theme-one-dark'
+import {EditorView} from '@codemirror/view'
+import MarkdownIt from 'markdown-it'
+import MarkdownItKatex from '@vscode/markdown-it-katex'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
+import 'katex/dist/katex.min.css'
 import {supabase} from '../services/supabase'
 
 export default {
   name: 'MarkdownEditor',
+  components: {
+    Codemirror
+  },
   props: {
     modelValue: {
       type: Object
@@ -45,10 +51,36 @@ export default {
     const localContent = ref(props.modelValue.text || '')
     const showPreview = ref(true)
     const fileInput = ref(null)
-    const editor = ref(null)
+    const editorView = ref(null)
 
-    const updateContent = () => {
-      emit('update:modelValue', {text: localContent.value})
+    const md = new MarkdownIt({
+      html: true,
+      linkify: true,
+      typographer: true,
+      highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(str, {language: lang}).value
+          } catch (__) {
+          }
+        }
+        return '' // use external default escaping
+      }
+    }).use(MarkdownItKatex)
+
+    const extensions = [
+      markdown(),
+      oneDark,
+      EditorView.lineWrapping,
+    ]
+
+    const handleReady = (payload) => {
+      editorView.value = payload.view
+    }
+
+    const updateContent = (value) => {
+      localContent.value = value
+      emit('update:modelValue', {text: value})
     }
 
     const togglePreview = () => {
@@ -56,23 +88,17 @@ export default {
     }
 
     const toolbarActions = [
-      {label: 'Bold', action: () => wrapSelection('**', '**')},
-      {label: 'Italic', action: () => wrapSelection('*', '*')},
-      {label: 'Code', action: () => wrapSelection('`', '`')},
-      {label: 'Link', action: () => wrapSelection('[', '](url)')},
+      {label: 'Bold', action: () => insertText('**', '**')},
+      {label: 'Italic', action: () => insertText('*', '*')},
+      {label: 'Code', action: () => insertText('`', '`')},
+      {label: 'Link', action: () => insertText('[', '](url)')},
+      {label: 'Inline Equation', action: () => insertText('$', '$')},
+      {label: 'Block Equation', action: () => insertText('$$\n', '\n$$')},
       {label: 'Toggle Preview', action: togglePreview},
     ]
 
     const renderedContent = computed(() => {
-      const renderer = new marked.Renderer()
-      renderer.code = ({text, lang}) => {
-        const validLanguage = hljs.getLanguage(lang) ? lang : 'plaintext'
-        return `<pre><code class="hljs ${validLanguage}">${hljs.highlight(text, {language: validLanguage}).value}</code></pre>`
-      }
-
-      marked.setOptions({renderer})
-
-      return DOMPurify.sanitize(marked(localContent.value))
+      return md.render(localContent.value)
     })
 
     const handleImageUpload = async (event) => {
@@ -112,36 +138,25 @@ export default {
       }
 
       const imageMarkdown = `![${file.name}](${publicURL})`
-      insertAtCursor(imageMarkdown)
-      updateContent()
+      insertText(imageMarkdown, '')
     }
 
-    const insertAtCursor = (text) => {
-      const textarea = editor.value
-      const startPos = textarea.selectionStart
-      const endPos = textarea.selectionEnd
-      const before = localContent.value.substring(0, startPos)
-      const after = localContent.value.substring(endPos, textarea.value.length)
-      localContent.value = before + text + after
-      textarea.focus()
-      textarea.selectionStart = textarea.selectionEnd = startPos + text.length
-    }
+    const insertText = (before, after) => {
+      if (!editorView.value) return
 
-    const wrapSelection = (before, after) => {
-      const textarea = editor.value
-      const startPos = textarea.selectionStart
-      const endPos = textarea.selectionEnd
-      const selectedText = localContent.value.substring(startPos, endPos)
-      const replacement = before + selectedText + after
-      localContent.value = localContent.value.substring(0, startPos) + replacement + localContent.value.substring(endPos)
-      updateContent()
-      textarea.focus()
-      textarea.selectionStart = startPos + before.length
-      textarea.selectionEnd = startPos + replacement.length - after.length
-    }
+      const selection = editorView.value.state.selection.main
+      const insertedText = before + editorView.value.state.sliceDoc(selection.from, selection.to) + after
 
-    const handleSelection = () => {
-      // This function can be used to update toolbar states based on current selection
+      editorView.value.dispatch({
+        changes: {
+          from: selection.from,
+          to: selection.to,
+          insert: insertedText
+        },
+        selection: {anchor: selection.from + before.length}
+      })
+
+      editorView.value.focus()
     }
 
     watch(() => props.modelValue.text, (newValue) => {
@@ -165,15 +180,15 @@ export default {
       handleImageUpload,
       handleDrop,
       fileInput,
-      editor,
       toolbarActions,
-      handleSelection
+      extensions,
+      handleReady
     }
   }
 }
 </script>
 
-<style scoped>
+<style>
 .markdown-editor {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -194,18 +209,9 @@ export default {
 }
 
 .editor-wrapper {
+  text-align: left;
   flex: 1;
   position: relative;
-}
-
-.editor-wrapper textarea {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  resize: none;
-  border: none;
-  padding: 10px;
-  font-family: 'Courier New', Courier, monospace;
 }
 
 .editor-content.split-view .editor-wrapper {
@@ -213,17 +219,12 @@ export default {
 }
 
 .preview {
+  text-align: left;
   flex: 1;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
   border-left: 1px solid #ccc;
   overflow-y: auto;
 }
 
-/* Add styles for syntax highlighting
-:deep(.hljs) {
-  background: #f0f0f0;
-  padding: 10px;
-  border-radius: 4px;
-}
-*/
 </style>
