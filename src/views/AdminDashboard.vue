@@ -53,8 +53,13 @@
         <h2>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h2>
         <form @submit.prevent="saveProblem">
           <label>
-            Title:
-            <input v-model="problemForm.title" required>
+            Problem Number:
+            <input v-model.number="problemForm.id" type="number" required min="1" @blur="checkProblemIdExists">
+          </label>
+          <p v-if="idError" class="error-message">{{ idError }}</p>
+          <label>
+            Problem Name:
+            <input v-model="problemForm.name" required>
           </label>
           <label>
             Difficulty:
@@ -77,9 +82,11 @@
           </label>
           <label v-else>
             Week:
-            <input type="number" v-model="problemForm.problem_week" required>
+            <select v-model="problemForm.problem_week" required>
+              <option v-for="week in 5" :key="week" :value="week">Week {{ week }}</option>
+            </select>
           </label>
-          <label>
+          <label v-if="problemForm.problem_type === 'weekly'">
             Year:
             <input type="number" v-model="problemForm.problem_year" required>
           </label>
@@ -165,11 +172,12 @@ export default {
     const itemsPerPage = 10
 
     const problemForm = reactive({
-      title: '',
+      id: null,
+      name: '',
       difficulty: 'Easy',
       problem_type: 'daily',
       problem_date: '',
-      problem_week: null,
+      problem_week: 1,
       problem_year: new Date().getFullYear(),
       content: {}
     })
@@ -182,6 +190,33 @@ export default {
       time_complexity: '',
       space_complexity: ''
     })
+
+    const idError = ref('')
+
+    const checkProblemIdExists = async () => {
+      if (!problemForm.id) return
+
+      const {data, error} = await supabase
+          .from('problems')
+          .select('id')
+          .eq('id', problemForm.id)
+          .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking problem ID:', error)
+        return
+      }
+
+      if (data) {
+        if (!editingProblem.value || (editingProblem.value && editingProblem.value.id !== problemForm.id)) {
+          idError.value = 'This problem number already exists. Please choose a different one.'
+        } else {
+          idError.value = ''
+        }
+      } else {
+        idError.value = ''
+      }
+    }
 
     const fetchProblems = async () => {
       const {data, error} = await supabase
@@ -213,8 +248,16 @@ export default {
 
     const editProblem = (problem) => {
       editingProblem.value = problem
-      Object.assign(problemForm, problem)
+      const [id, ...nameParts] = problem.title.split('.')
+
+      problemForm.id = parseInt(id)
+      problemForm.name = nameParts.join('.').trim()
+      Object.assign(problemForm, {
+        ...problem,
+        name: nameParts.join('.').trim(),
+      })
       showProblemForm.value = true
+      idError.value = ''
     }
 
     const openSolutionForm = (problem) => {
@@ -223,20 +266,42 @@ export default {
     }
 
     const saveProblem = async () => {
+      await checkProblemIdExists()
+      if (idError.value) {
+        // Don't proceed if there's an ID error
+        return
+      }
+
+      const formData = {...problemForm}
+
+      if (formData.problem_type === 'daily') {
+        formData.problem_year = new Date(formData.problem_date).getFullYear()
+        formData.problem_week = null
+      } else {
+        formData.problem_date = null
+      }
+
+      // Combine problem number and name into title
+      formData.title = `${formData.id}. ${formData.name}`
+      delete formData.name  // Remove the separate name field
+
       const {error} = editingProblem.value
           ? await supabase
               .from('problems')
-              .update(problemForm)
+              .update(formData)
               .eq('id', editingProblem.value.id)
           : await supabase
               .from('problems')
-              .insert([problemForm])
+              .insert([formData])
 
-      if (error) console.error('Error saving problem:', error)
-      else {
+      if (error) {
+        console.error('Error saving problem:', error)
+        // Handle the error, maybe show a message to the user
+      } else {
         await fetchProblems()
         showProblemForm.value = false
         editingProblem.value = null
+        idError.value = ''
       }
     }
 
@@ -299,6 +364,8 @@ export default {
       currentPage,
       totalPages,
       paginatedProblems,
+      idError,
+      checkProblemIdExists,
       editProblem,
       openSolutionForm,
       saveProblem,
@@ -393,4 +460,11 @@ input, select, textarea {
 .form-actions button {
   margin-left: 10px;
 }
+
+.error-message {
+  color: red;
+  font-size: 0.9em;
+  margin-top: 5px;
+}
+
 </style>
