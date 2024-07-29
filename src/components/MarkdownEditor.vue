@@ -20,12 +20,18 @@
       </div>
       <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
     </div>
-    <div class="image-gallery">
-      <div v-for="(image, index) in tempImages" :key="index" class="image-item">
-        <img :alt="image.name" :src="image.url" class="thumbnail">
-        <div class="image-actions">
-          <button @click="insertImageToEditor(image)">Insert</button>
-          <button @click="removeImage(index)">Delete</button>
+    <div v-if="tempImages.length > 0" class="image-gallery">
+      <h3 class="gallery-title">Uploaded Images</h3>
+      <div class="gallery-content">
+        <div v-for="(image, index) in tempImages" :key="index" class="image-item">
+          <img :alt="image.name" :src="image.url" class="thumbnail">
+          <div class="image-info">
+            <span class="image-name">{{ image.name }}</span>
+            <div class="image-actions">
+              <button @click="insertImageToEditor(image)">Insert</button>
+              <button @click="removeImage(index)">Delete</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -219,13 +225,14 @@ export default {
 
 .editor-content {
   display: flex;
-  height: 400px;
+  height: 350px;
 }
 
 .editor-wrapper {
   text-align: left;
   flex: 1;
   position: relative;
+  overflow-y: auto;
 }
 
 .editor-content.split-view .editor-wrapper {
@@ -242,28 +249,61 @@ export default {
 }
 
 .image-gallery {
+  margin-top: 10px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #ccc;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.gallery-title {
+  text-align: left;
+  margin-bottom: 10px;
+  color: #333;
+  margin-top: 0;
+}
+
+.gallery-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 15px;
 }
 
 .image-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  width: 100px;
 }
 
 .thumbnail {
-  width: 100px;
+  width: 100%;
   height: 100px;
   object-fit: cover;
+  border-radius: 4px;
+}
+
+.image-info {
+  margin-top: 10px;
+}
+
+.image-name {
+  display: block;
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  word-break: break-all;
 }
 
 .image-actions {
   display: flex;
-  gap: 5px;
-  margin-top: 5px;
+  justify-content: space-between;
+}
+
+.image-actions button {
+  flex: 1;
+  padding: 5px;
+  font-size: 0.8em;
 }
 
 </style>
