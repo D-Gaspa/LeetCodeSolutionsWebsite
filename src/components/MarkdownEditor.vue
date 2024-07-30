@@ -107,6 +107,7 @@ export default {
     const showPreview = ref(true)
     const fileInput = ref(null)
     const editorView = ref(null)
+    const editorRef = ref(null)
     const tempImages = ref([])
     const imageMap = ref(new Map())
 
@@ -133,6 +134,9 @@ export default {
 
     const handleReady = (payload) => {
       editorView.value = payload.view
+      editorRef.value = payload.state.doc
+
+      payload.view.dom.addEventListener('paste', handlePaste)
     }
 
     const updateContent = (value) => {
@@ -181,6 +185,18 @@ export default {
       }
     }
 
+    const handlePaste = async (event) => {
+      const items = event.clipboardData.items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          event.preventDefault();
+          const blob = items[i].getAsFile();
+          await addTempImage(blob);
+          break;
+        }
+      }
+    }
+
     const addTempImage = async (file) => {
       if (!file) return
 
@@ -190,21 +206,21 @@ export default {
         const newImage = {
           id: imageId,
           file: file,
-          name: file.name,
+          name: file.name || `pasted-image-${Date.now()}.png`,
           url: e.target.result
         }
 
-        // Check if an image with the same name already exists
-        const existingIndex = tempImages.value.findIndex(img => img.name === file.name)
+        const existingIndex = tempImages.value.findIndex(img => img.name === newImage.name)
         if (existingIndex !== -1) {
-          // Replace the existing image
           tempImages.value.splice(existingIndex, 1, newImage)
         } else {
-          // Add the new image
           tempImages.value.push(newImage)
         }
 
         imageMap.value.set(imageId, newImage)
+
+        // Automatically insert the pasted image into the editor
+        insertImageToEditor(newImage)
       }
       reader.readAsDataURL(file)
     }
@@ -314,11 +330,14 @@ export default {
         tempImages.value = props.modelValue.images
       }
 
-      window.addEventListener('keydown', handleKeyboardShortcuts)
+      document.addEventListener('keydown', handleKeyboardShortcuts)
     })
 
     onUnmounted(() => {
       document.removeEventListener('keydown', handleKeyboardShortcuts)
+      if (editorView.value) {
+        editorView.value.dom.removeEventListener('paste', handlePaste)
+      }
     })
 
     return {
@@ -337,6 +356,7 @@ export default {
       clearContent,
       handleImageUpload,
       handleDrop,
+      handlePaste,
       handleReady,
       insertImageToEditor,
       removeImage,
@@ -441,14 +461,13 @@ export default {
 .image-gallery {
   background-color: #e9ecef;
   border-top: 1px solid #ccc;
-  transition: all 0.3s ease;
+  transition: max-height 0.3s ease;
   max-height: 35%;
   overflow-y: auto;
 }
 
 .image-gallery.collapsed {
   max-height: 50px;
-  transition: all 0.3s ease;
 }
 
 .gallery-header {
@@ -457,13 +476,16 @@ export default {
   align-items: center;
   padding: 10px 15px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
+}
+
+.gallery-header:hover {
+  background-color: #dee2e6;
 }
 
 .gallery-title {
   margin: 0;
   color: #495057;
-  transition: all 0.3s ease;
 }
 
 .collapse-button {
@@ -478,8 +500,14 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  padding: 0 15px 15px;
-  max-height: 30vh;
+  padding: 15px;
+  max-height: calc(35% - 50px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.collapsed .gallery-content {
+  opacity: 0;
+  transform: translateY(-20px);
 }
 
 .image-item {
@@ -487,9 +515,13 @@ export default {
   border: 1px solid #ced4da;
   border-radius: 4px;
   padding: 10px;
-  width: 100px;
+  width: auto;
+  height: fit-content;
+  max-width: 100px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .image-item:hover {
@@ -505,6 +537,9 @@ export default {
 
 .image-info {
   margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .image-name {
@@ -518,6 +553,7 @@ export default {
 .image-actions {
   display: flex;
   justify-content: space-between;
+  margin-top: auto;
 }
 
 .image-actions button {
