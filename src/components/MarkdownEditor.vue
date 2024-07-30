@@ -1,24 +1,35 @@
 <template>
   <div class="markdown-editor">
-    <div class="editor-toolbar">
-      <button v-for="action in toolbarActions" :key="action.label" @click="action.action">
-        {{ action.label }}
-      </button>
-      <input ref="fileInput" accept="image/*" style="display: none;" type="file" @change="handleImageUpload">
-      <button @click="$refs.fileInput.click()">Add Image</button>
-    </div>
-    <div :class="{ 'split-view': showPreview }" class="editor-content">
-      <div class="editor-wrapper"
-           @drop.prevent="handleDrop"
-           @dragover.prevent="() => {}"
-           @dragenter.prevent="() => {}">
-        <Codemirror
-            v-model="localContent"
-            :extensions="extensions"
-            @ready="handleReady"
-        />
+    <div class="editor-layout">
+      <div class="editor-toolbar">
+        <button v-for="action in toolbarActions" :key="action.label" :title="action.label" @click="action.action">
+          <component :is="action.icon"/>
+        </button>
+        <input ref="fileInput" accept="image/*" style="display: none;" type="file" @change="handleImageUpload">
+        <button title="Add Image" @click="$refs.fileInput.click()">
+          <ImageIcon/>
+        </button>
+        <button title="Clear Content" @click="clearContent">
+          <TrashIcon/>
+        </button>
+        <button title="Toggle Preview" @click="togglePreview">
+          <EyeIcon v-if="showPreview"/>
+          <EyeOffIcon v-else/>
+        </button>
       </div>
-      <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
+      <div :class="{ 'split-view': showPreview }" class="editor-content">
+        <div class="editor-wrapper"
+             @drop.prevent="handleDrop"
+             @dragover.prevent="() => {}"
+             @dragenter.prevent="() => {}">
+          <Codemirror
+              v-model="localContent"
+              :extensions="extensions"
+              @ready="handleReady"
+          />
+        </div>
+        <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
+      </div>
     </div>
     <div v-if="tempImages.length > 0" class="image-gallery">
       <h3 class="gallery-title">Uploaded Images</h3>
@@ -49,11 +60,26 @@ import MarkdownItKatex from '@vscode/markdown-it-katex'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'katex/dist/katex.min.css'
+import {
+  BoldIcon,
+  CodeIcon,
+  EyeIcon,
+  EyeOffIcon,
+  FunctionSquareIcon,
+  ImageIcon,
+  ItalicIcon,
+  LinkIcon,
+  TrashIcon,
+  TypeIcon
+} from 'lucide-vue-next'
 
 export default {
   name: 'MarkdownEditor',
   components: {
-    Codemirror
+    Codemirror,
+    BoldIcon, ItalicIcon, CodeIcon, LinkIcon,
+    ImageIcon, TrashIcon, EyeIcon, EyeOffIcon,
+    TypeIcon, FunctionSquareIcon
   },
   props: {
     modelValue: {
@@ -84,16 +110,6 @@ export default {
       }
     }).use(MarkdownItKatex)
 
-    // Add custom renderer for images
-    md.renderer.rules.image = function (tokens, idx) {
-      const token = tokens[idx]
-      const srcIndex = token.attrIndex('src')
-      const src = token.attrs[srcIndex][1]
-      const alt = token.content || ''
-
-      return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`;
-    }
-
     const extensions = [
       markdown(),
       oneDark,
@@ -113,14 +129,19 @@ export default {
       showPreview.value = !showPreview.value
     }
 
+    const clearContent = () => {
+      localContent.value = ''
+      tempImages.value = []
+      imageMap.value.clear()
+    }
+
     const toolbarActions = [
-      {label: 'Bold', action: () => insertText('**', '**')},
-      {label: 'Italic', action: () => insertText('*', '*')},
-      {label: 'Code', action: () => insertText('`', '`')},
-      {label: 'Link', action: () => insertText('[', '](url)')},
-      {label: 'Inline Equation', action: () => insertText('$', '$')},
-      {label: 'Block Equation', action: () => insertText('$$\n', '\n$$')},
-      {label: 'Toggle Preview', action: togglePreview},
+      {label: 'Bold', action: () => insertText('**', '**'), icon: BoldIcon},
+      {label: 'Italic', action: () => insertText('*', '*'), icon: ItalicIcon},
+      {label: 'Code', action: () => insertText('`', '`'), icon: CodeIcon},
+      {label: 'Link', action: () => insertText('[', '](url)'), icon: LinkIcon},
+      {label: 'Inline Equation', action: () => insertText('$', '$'), icon: TypeIcon},
+      {label: 'Block Equation', action: () => insertText('$$\n', '\n$$'), icon: FunctionSquareIcon},
     ]
 
     const renderedContent = computed(() => {
@@ -142,10 +163,6 @@ export default {
       const file = event.dataTransfer.files[0]
       if (file && file.type.startsWith('image/')) {
         await addTempImage(file)
-        // Reset the file input to allow re-uploading of the same file
-        if (fileInput.value) {
-          fileInput.value.value = ''
-        }
       }
     }
 
@@ -261,6 +278,7 @@ export default {
       renderedContent,
       updateContent,
       togglePreview,
+      clearContent,
       handleImageUpload,
       handleDrop,
       fileInput,
@@ -276,7 +294,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .markdown-editor {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -286,13 +304,33 @@ export default {
   max-height: 80vh;
 }
 
+.editor-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .editor-toolbar {
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ccc;
+  background-color: #f5f5f5;
 }
 
 .editor-toolbar button {
-  margin-right: 5px;
+  margin: 0;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.editor-toolbar button:hover {
+  background-color: #e0e0e0;
 }
 
 .editor-content {
