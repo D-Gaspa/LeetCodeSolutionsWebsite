@@ -23,7 +23,7 @@
     <div v-if="tempImages.length > 0" class="image-gallery">
       <h3 class="gallery-title">Uploaded Images</h3>
       <div class="gallery-content">
-        <div v-for="(image, index) in tempImages" :key="index" class="image-item">
+        <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
           <img :alt="image.name" :src="image.url" class="thumbnail">
           <div class="image-info">
             <span class="image-name">{{ image.name }}</span>
@@ -83,6 +83,16 @@ export default {
       }
     }).use(MarkdownItKatex)
 
+    // Add custom renderer for images
+    md.renderer.rules.image = function (tokens, idx) {
+      const token = tokens[idx]
+      const srcIndex = token.attrIndex('src')
+      const src = token.attrs[srcIndex][1]
+      const alt = token.content || ''
+
+      return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`;
+    }
+
     const extensions = [
       markdown(),
       oneDark,
@@ -107,7 +117,8 @@ export default {
       {label: 'Italic', action: () => insertText('*', '*')},
       {label: 'Code', action: () => insertText('`', '`')},
       {label: 'Link', action: () => insertText('[', '](url)')},
-      {label: 'LaTeX', action: () => insertText('$', '$')},
+      {label: 'Inline Equation', action: () => insertText('$', '$')},
+      {label: 'Block Equation', action: () => insertText('$$\n', '\n$$')},
       {label: 'Toggle Preview', action: togglePreview},
     ]
 
@@ -132,21 +143,48 @@ export default {
 
       const reader = new FileReader()
       reader.onload = (e) => {
-        tempImages.value.push({
+        const newImage = {
+          id: `${file.name}-${Date.now()}`, // Combine filename and timestamp for a unique identifier
           file: file,
           name: file.name,
           url: e.target.result
-        })
+        }
+        // Check if an image with the same name already exists
+        const existingIndex = tempImages.value.findIndex(img => img.name === file.name)
+        if (existingIndex !== -1) {
+          // Replace the existing image
+          tempImages.value.splice(existingIndex, 1, newImage)
+        } else {
+          // Add the new image
+          tempImages.value.push(newImage)
+        }
       }
       reader.readAsDataURL(file)
     }
 
     const insertImageToEditor = (image) => {
-      const imageMarkdown = `![${image.name}](${image.url})`
+      // Generate a unique identifier for the image in the Markdown
+      const imageId = `image-${Date.now()}`
+      const imageMarkdown = `![${image.name}](${imageId})`
       insertText(imageMarkdown, '')
+
+      // Update the markdown-it renderer to replace the unique identifier with the actual image URL
+      md.renderer.rules.image = function (tokens, idx) {
+        const token = tokens[idx]
+        const srcIndex = token.attrIndex('src')
+        let src = token.attrs[srcIndex][1]
+        const alt = token.content || ''
+
+        if (src === imageId) {
+          src = image.url
+        }
+
+        return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`;
+      }
     }
 
     const removeImage = (index) => {
+      // Remove the image from the array
       tempImages.value.splice(index, 1)
     }
 
@@ -212,6 +250,10 @@ export default {
 .markdown-editor {
   border: 1px solid #ccc;
   border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 80vh;
 }
 
 .editor-toolbar {
@@ -225,14 +267,16 @@ export default {
 
 .editor-content {
   display: flex;
-  height: 350px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .editor-wrapper {
   text-align: left;
   flex: 1;
   position: relative;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .editor-content.split-view .editor-wrapper {
@@ -254,6 +298,7 @@ export default {
   border-top: 1px solid #ccc;
   padding: 15px;
   overflow-y: auto;
+  max-height: 30%;
 }
 
 .gallery-title {
@@ -305,5 +350,4 @@ export default {
   padding: 5px;
   font-size: 0.8em;
 }
-
 </style>
