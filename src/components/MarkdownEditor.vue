@@ -67,6 +67,7 @@ export default {
     const fileInput = ref(null)
     const editorView = ref(null)
     const tempImages = ref([])
+    const imageMap = ref(new Map())
 
     const md = new MarkdownIt({
       html: true,
@@ -128,13 +129,23 @@ export default {
 
     const handleImageUpload = async (event) => {
       const file = event.target.files[0]
-      await addTempImage(file)
+      if (file) {
+        await addTempImage(file)
+        // Reset the file input to allow re-uploading of the same file
+        if (fileInput.value) {
+          fileInput.value.value = ''
+        }
+      }
     }
 
     const handleDrop = async (event) => {
       const file = event.dataTransfer.files[0]
       if (file && file.type.startsWith('image/')) {
         await addTempImage(file)
+        // Reset the file input to allow re-uploading of the same file
+        if (fileInput.value) {
+          fileInput.value.value = ''
+        }
       }
     }
 
@@ -143,12 +154,14 @@ export default {
 
       const reader = new FileReader()
       reader.onload = (e) => {
+        const imageId = `image-${Date.now()}-${file.name.replace(/\s+/g, '-')}`
         const newImage = {
-          id: `${file.name}-${Date.now()}`, // Combine filename and timestamp for a unique identifier
+          id: imageId,
           file: file,
           name: file.name,
           url: e.target.result
         }
+
         // Check if an image with the same name already exists
         const existingIndex = tempImages.value.findIndex(img => img.name === file.name)
         if (existingIndex !== -1) {
@@ -158,14 +171,14 @@ export default {
           // Add the new image
           tempImages.value.push(newImage)
         }
+
+        imageMap.value.set(imageId, newImage)
       }
       reader.readAsDataURL(file)
     }
 
     const insertImageToEditor = (image) => {
-      // Generate a unique identifier for the image in the Markdown
-      const imageId = `image-${Date.now()}`
-      const imageMarkdown = `![${image.name}](${imageId})`
+      const imageMarkdown = `![${image.name}](${image.id})`
       insertText(imageMarkdown, '')
 
       // Update the markdown-it renderer to replace the unique identifier with the actual image URL
@@ -175,8 +188,9 @@ export default {
         let src = token.attrs[srcIndex][1]
         const alt = token.content || ''
 
-        if (src === imageId) {
-          src = image.url
+        const matchingImage = imageMap.value.get(src)
+        if (matchingImage) {
+          src = matchingImage.url
         }
 
         return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`;
@@ -184,8 +198,24 @@ export default {
     }
 
     const removeImage = (index) => {
-      // Remove the image from the array
+      const image = tempImages.value[index]
+
+      // Remove the image from the tempImages array
       tempImages.value.splice(index, 1)
+
+      // Remove the image from the imageMap
+      imageMap.value.delete(image.id)
+
+      // If the image URL is an object URL, revoke it
+      if (image.url.startsWith('blob:')) {
+        URL.revokeObjectURL(image.url)
+      }
+
+      // Trigger reactivity
+      tempImages.value = [...tempImages.value]
+
+      // Re-render the preview to remove the deleted image
+      localContent.value = localContent.value.replace(`![${image.name}](${image.id})`, '')
     }
 
     const insertText = (before, after) => {
