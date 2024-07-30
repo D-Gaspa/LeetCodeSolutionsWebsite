@@ -1,34 +1,33 @@
 <template>
   <div class="admin-dashboard">
     <h1>Admin Dashboard</h1>
-    <!-- Enhanced Search and Filters -->
-    <div class="search-filters">
-      <input
-          v-model="searchQuery"
-          placeholder="Search problems..."
-          @input="debouncedSearch"
-      >
-      <select v-model="difficultyFilter">
-        <option value="">All Difficulties</option>
-        <option value="Easy">Easy</option>
-        <option value="Medium">Medium</option>
-        <option value="Hard">Hard</option>
-      </select>
-      <select v-model="typeFilter">
-        <option value="">All Types</option>
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-      </select>
-      <input
-          v-model="dateFilter"
-          placeholder="Filter by date"
-          type="date"
-      >
-    </div>
 
-    <!-- Add Problem Button -->
-    <div class="add-problem">
-      <button @click="showProblemForm = true">Add Problem</button>
+    <!-- Search, Filters, and Add Problem -->
+    <div class="dashboard-header">
+      <div class="search-filters">
+        <input
+            v-model="searchQuery"
+            placeholder="Search problems..."
+            @input="debouncedSearch"
+        >
+        <select v-model="difficultyFilter">
+          <option value="">All Difficulties</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+        <select v-model="typeFilter">
+          <option value="">All Types</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        <input
+            v-model="dateFilter"
+            placeholder="Filter by date"
+            type="date"
+        >
+      </div>
+      <button class="add-problem-btn" @click="showProblemForm = true">Add New Problem</button>
     </div>
 
     <!-- Problem List -->
@@ -167,11 +166,11 @@
       <div class="modal-content large">
         <h2>Edit Problem Content</h2>
         <markdown-editor
-            v-model="problemForm.content"
-            @update:modelValue="updateContent"
-            @save-images="handleImageSave"
+            ref="markdownEditor"
+            :modelValue="tempContent"
         ></markdown-editor>
         <div class="form-actions">
+          <button @click="saveContent">Save Content</button>
           <button @click="closeContentEditor">Close</button>
         </div>
       </div>
@@ -206,6 +205,7 @@ export default {
     const problems = ref([])
     const showProblemForm = ref(false)
     const showSolutionForm = ref(false)
+    const showContentEditor = ref(false)
     const showConfirmDialog = ref(false)
     const editingProblem = ref(null)
     const editingSolution = ref(null)
@@ -216,6 +216,9 @@ export default {
     const dateFilter = ref('')
     const currentPage = ref(1)
     const itemsPerPage = 10
+    const formError = ref('')
+    const tempContent = ref({text: '', images: []})
+    const markdownEditor = ref(null)
 
     const problemForm = reactive({
       id: null,
@@ -237,25 +240,38 @@ export default {
       space_complexity: ''
     })
 
-    const formError = ref('')
-
-    const showContentEditor = ref(false)
-
     const openContentEditor = () => {
+      tempContent.value = JSON.parse(JSON.stringify(problemForm.content))
       showContentEditor.value = true
     }
 
     const closeContentEditor = () => {
-      showContentEditor.value = false
+      if (confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
+        showContentEditor.value = false
+      }
+    }
+
+    const updateTempContent = (newContent) => {
+      tempContent.value = newContent
     }
 
     const updateContent = (newContent) => {
       problemForm.content = newContent
     }
 
+    const saveContent = () => {
+      if (markdownEditor.value) {
+        const newContent = markdownEditor.value.getContent()
+        problemForm.content = JSON.parse(JSON.stringify(newContent))
+        showContentEditor.value = false
+      } else {
+        console.error('Markdown editor reference not found')
+      }
+    }
+
     const deleteContent = () => {
       if (confirm('Are you sure you want to delete the content?')) {
-        problemForm.content = {text: ''}
+        problemForm.content = {text: '', images: []}
       }
     }
 
@@ -392,22 +408,13 @@ export default {
       showProblemForm.value = true
     }
 
-    const openSolutionForm = (problem) => {
-      solutionForm.problem_id = problem.id
-      showSolutionForm.value = true
-    }
-
     const saveProblem = async () => {
-      // Save images and update content
-      const savedImages = await handleImageSave(problemForm.content.images)
-      problemForm.content.images = savedImages
+      // Handle image uploads
+      const uploadedImages = await handleImageUploads(problemForm.content.images)
 
       // Update image URLs in the content
-      savedImages.forEach(image => {
-        const oldUrl = new URL(image.url).pathname
-        const newUrl = image.url
-        problemForm.content.text = problemForm.content.text.replace(oldUrl, newUrl)
-      })
+      problemForm.content.text = updateImageUrls(problemForm.content.text, uploadedImages)
+      problemForm.content.images = uploadedImages
 
       // Save problem
       const {error} = editingProblem.value
@@ -428,6 +435,49 @@ export default {
       }
     }
 
+    const handleImageUploads = async (images) => {
+      const uploadedImages = []
+      for (const image of images) {
+        if (image.file) {  // Only upload new images
+          const {data, error} = await supabase.storage
+              .from('problem-images')
+              .upload(`${Date.now()}_${image.name}`, image.file)
+
+          if (error) {
+            console.error('Error uploading image:', error)
+            continue
+          }
+
+          const {publicURL, error: urlError} = supabase.storage
+              .from('problem-images')
+              .getPublicUrl(data.path)
+
+          if (urlError) {
+            console.error('Error getting public URL:', urlError)
+            continue
+          }
+
+          uploadedImages.push({
+            id: image.id,
+            name: image.name,
+            url: publicURL
+          })
+        } else {
+          uploadedImages.push(image)  // Keep existing images
+        }
+      }
+      return uploadedImages
+    }
+
+    const updateImageUrls = (content, uploadedImages) => {
+      let updatedContent = content
+      uploadedImages.forEach(image => {
+        const regex = new RegExp(`\\]\\(${image.id}\\)`, 'g')
+        updatedContent = updatedContent.replace(regex, `](${image.url})`)
+      })
+      return updatedContent
+    }
+
     const saveSolution = async () => {
       const {error} = editingSolution.value
           ? await supabase
@@ -444,6 +494,11 @@ export default {
         editingSolution.value = null
         clearSolutionForm()
       }
+    }
+
+    const openSolutionForm = (problem) => {
+      solutionForm.problem_id = problem.id
+      showSolutionForm.value = true
     }
 
     const clearProblemForm = () => {
@@ -515,17 +570,21 @@ export default {
       totalPages,
       paginatedProblems,
       formError,
+      tempContent,
       showContentEditor,
+      markdownEditor,
       openContentEditor,
       closeContentEditor,
+      updateTempContent,
       updateContent,
+      saveContent,
       deleteContent,
       validateAndSaveProblem,
       handleImageSave,
       editProblem,
       closeProblemForm,
-      openSolutionForm,
       saveProblem,
+      openSolutionForm,
       saveSolution,
       confirmDeleteProblem,
       deleteProblem,
@@ -541,14 +600,34 @@ export default {
   padding: 20px;
 }
 
-.add-problem {
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
 .search-filters {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  flex: 1;
+}
+
+.add-problem-btn {
+  margin-left: 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-problem-btn:hover {
+  filter: brightness(0.9);
+  background-color: #3f9442;
 }
 
 .search-filters input,

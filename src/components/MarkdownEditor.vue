@@ -101,7 +101,7 @@ export default {
       type: Object
     }
   },
-  emits: ['update:modelValue', 'save-images'],
+  emits: ['update:modelValue'],
   setup(props, {emit}) {
     const localContent = ref(props.modelValue.text || '')
     const showPreview = ref(true)
@@ -139,13 +139,15 @@ export default {
       payload.view.dom.addEventListener('paste', handlePaste)
     }
 
-    const updateContent = (value) => {
-      localContent.value = value
-      emit('update:modelValue', {text: value, images: tempImages.value})
-    }
-
     const togglePreview = () => {
       showPreview.value = !showPreview.value
+    }
+
+    const getContent = () => {
+      return {
+        text: localContent.value,
+        images: tempImages.value
+      }
     }
 
     const clearContent = () => {
@@ -323,13 +325,6 @@ export default {
     })
 
     onMounted(() => {
-      if (props.modelValue && props.modelValue.text) {
-        localContent.value = props.modelValue.text
-      }
-      if (props.modelValue && props.modelValue.images) {
-        tempImages.value = props.modelValue.images
-      }
-
       document.addEventListener('keydown', handleKeyboardShortcuts)
     })
 
@@ -349,9 +344,9 @@ export default {
       extensions,
       tempImages,
       isGalleryCollapsed,
+      getContent,
       toggleGallery,
       handleKeyboardShortcuts,
-      updateContent,
       togglePreview,
       clearContent,
       handleImageUpload,
