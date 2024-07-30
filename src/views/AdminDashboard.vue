@@ -241,7 +241,10 @@ export default {
     })
 
     const openContentEditor = () => {
-      tempContent.value = JSON.parse(JSON.stringify(problemForm.content))
+      tempContent.value = {
+        text: problemForm.content.text,
+        images: problemForm.content.images
+      }
       showContentEditor.value = true
     }
 
@@ -262,7 +265,10 @@ export default {
     const saveContent = () => {
       if (markdownEditor.value) {
         const newContent = markdownEditor.value.getContent()
-        problemForm.content = JSON.parse(JSON.stringify(newContent))
+        problemForm.content = {
+          text: newContent.text,
+          images: newContent.images
+        }
         showContentEditor.value = false
       } else {
         console.error('Markdown editor reference not found')
@@ -273,39 +279,6 @@ export default {
       if (confirm('Are you sure you want to delete the content?')) {
         problemForm.content = {text: '', images: []}
       }
-    }
-
-    const handleImageSave = async (images) => {
-      const uploadedImages = []
-      for (const image of images) {
-        if (image.file) {  // Only upload new images
-          const {data, error} = await supabase.storage
-              .from('problem-images')
-              .upload(`${Date.now()}_${image.name}`, image.file)
-
-          if (error) {
-            console.error('Error uploading image:', error)
-            continue
-          }
-
-          const {publicURL, error: urlError} = supabase.storage
-              .from('problem-images')
-              .getPublicUrl(data.path)
-
-          if (urlError) {
-            console.error('Error getting public URL:', urlError)
-            continue
-          }
-
-          uploadedImages.push({
-            name: image.name,
-            url: publicURL
-          })
-        } else {
-          uploadedImages.push(image)  // Keep existing images
-        }
-      }
-      return uploadedImages
     }
 
     const validateAndSaveProblem = async () => {
@@ -409,39 +382,65 @@ export default {
     }
 
     const saveProblem = async () => {
-      // Handle image uploads
-      const uploadedImages = await handleImageUploads(problemForm.content.images)
+      try {
+        // Handle image uploads
+        const uploadedImages = await handleImageUploads(problemForm.content.images, problemForm.id)
 
-      // Update image URLs in the content
-      problemForm.content.text = updateImageUrls(problemForm.content.text, uploadedImages)
-      problemForm.content.images = uploadedImages
+        // Update image URLs in the content
+        problemForm.content.text = updateImageUrls(problemForm.content.text, uploadedImages)
+        problemForm.content.images = uploadedImages
 
-      // Save problem
-      const {error} = editingProblem.value
-          ? await supabase
-              .from('problems')
-              .update(problemForm)
-              .eq('id', editingProblem.value.id)
-          : await supabase
-              .from('problems')
-              .insert([problemForm])
+        const formData = {...problemForm}
 
-      if (error) {
-        console.error('Error saving problem:', error)
-        formError.value = 'An error occurred while saving the problem. Please try again.'
-      } else {
-        await fetchProblems()
-        closeProblemForm()
+        if (formData.problem_type === 'daily') {
+          formData.problem_year = new Date(formData.problem_date).getFullYear()
+          formData.problem_week = null
+        } else {
+          formData.problem_date = null
+        }
+
+        // Combine problem number and name into title
+        formData.title = `${formData.id}. ${formData.name}`
+        delete formData.name  // Remove the separate name field
+
+        // Save problem
+        const {error} = editingProblem.value
+            ? await supabase
+                .from('problems')
+                .update(formData)
+                .eq('id', editingProblem.value.id)
+            : await supabase
+                .from('problems')
+                .insert([formData])
+
+        if (error) {
+          console.error('Error saving problem:', error)
+          formError.value = 'An error occurred while saving the problem. Please try again.'
+        } else {
+          await fetchProblems()
+          closeProblemForm()
+        }
+      } catch (error) {
+        console.error('Error in saveProblem:', error)
+        formError.value = 'An unexpected error occurred. Please try again.'
       }
     }
 
-    const handleImageUploads = async (images) => {
+    const handleImageUploads = async (images, problemNumber) => {
       const uploadedImages = []
+      let imageCounter = 1
+
       for (const image of images) {
         if (image.file) {  // Only upload new images
-          const {data, error} = await supabase.storage
+          const fileExt = image.name.split('.').pop()
+          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExt}`
+
+          const {error} = await supabase.storage
               .from('problem-images')
-              .upload(`${Date.now()}_${image.name}`, image.file)
+              .upload(newFileName, image.file, {
+                cacheControl: '3600',
+                upsert: true
+              })
 
           if (error) {
             console.error('Error uploading image:', error)
@@ -450,7 +449,7 @@ export default {
 
           const {publicURL, error: urlError} = supabase.storage
               .from('problem-images')
-              .getPublicUrl(data.path)
+              .getPublicUrl(newFileName)
 
           if (urlError) {
             console.error('Error getting public URL:', urlError)
@@ -459,9 +458,11 @@ export default {
 
           uploadedImages.push({
             id: image.id,
-            name: image.name,
+            name: newFileName,
             url: publicURL
           })
+
+          imageCounter++
         } else {
           uploadedImages.push(image)  // Keep existing images
         }
@@ -580,7 +581,6 @@ export default {
       saveContent,
       deleteContent,
       validateAndSaveProblem,
-      handleImageSave,
       editProblem,
       closeProblemForm,
       saveProblem,

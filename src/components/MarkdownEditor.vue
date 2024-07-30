@@ -126,6 +126,35 @@ export default {
       }
     }).use(MarkdownItKatex)
 
+    const setupImageRenderer = () => {
+      md.renderer.rules.image = (tokens, idx) => {
+        const token = tokens[idx]
+        const srcIndex = token.attrIndex('src')
+        let src = token.attrs[srcIndex][1]
+        const alt = token.content || ''
+
+        const matchingImage = imageMap.value.get(src) || tempImages.value.find(img => img.id === src || img.url === src)
+        if (matchingImage) {
+          src = matchingImage.url
+        }
+
+        return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`
+      }
+    }
+
+    // Call setupImageRenderer initially
+    setupImageRenderer()
+
+    // Update imageMap when tempImages changes
+    watch(tempImages, (newImages) => {
+      imageMap.value.clear()
+      newImages.forEach(image => {
+        imageMap.value.set(image.id, image)
+        imageMap.value.set(image.url, image)
+      })
+      setupImageRenderer() // Re-setup the renderer with the new imageMap
+    }, {deep: true})
+
     const extensions = [
       markdown(),
       oneDark,
@@ -231,19 +260,9 @@ export default {
       const imageMarkdown = `![${image.name}](${image.id})`
       insertText(imageMarkdown, '')
 
-      // Update the markdown-it renderer to replace the unique identifier with the actual image URL
-      md.renderer.rules.image = function (tokens, idx) {
-        const token = tokens[idx]
-        const srcIndex = token.attrIndex('src')
-        let src = token.attrs[srcIndex][1]
-        const alt = token.content || ''
-
-        const matchingImage = imageMap.value.get(src)
-        if (matchingImage) {
-          src = matchingImage.url
-        }
-
-        return `<img src="${src}" alt="${alt}" style="max-width: 100%; width: 300px;">`;
+      // Add the image to tempImages if it's not already there
+      if (!tempImages.value.some(img => img.id === image.id)) {
+        tempImages.value.push(image)
       }
     }
 
@@ -325,6 +344,15 @@ export default {
     })
 
     onMounted(() => {
+      // Initialize imageMap with existing images (if any)
+      if (props.modelValue.images) {
+        props.modelValue.images.forEach(image => {
+          imageMap.value.set(image.id, image)
+          imageMap.value.set(image.url, image)
+        })
+        setupImageRenderer()
+      }
+
       document.addEventListener('keydown', handleKeyboardShortcuts)
     })
 
