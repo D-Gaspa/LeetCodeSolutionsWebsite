@@ -38,9 +38,15 @@
         </div>
       </div>
     </div>
-    <div v-if="tempImages.length > 0" class="image-gallery">
-      <h3 class="gallery-title">Uploaded Images</h3>
-      <div class="gallery-content">
+    <div v-if="tempImages.length > 0" :class="{ 'collapsed': isGalleryCollapsed }" class="image-gallery">
+      <div class="gallery-header" @click="toggleGallery">
+        <h3 class="gallery-title">Uploaded Images</h3>
+        <button class="collapse-button">
+          <ChevronDownIcon v-if="!isGalleryCollapsed"/>
+          <ChevronUpIcon v-else/>
+        </button>
+      </div>
+      <div v-show="!isGalleryCollapsed" class="gallery-content">
         <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
           <img :alt="image.name" :src="image.url" class="thumbnail">
           <div class="image-info">
@@ -57,7 +63,7 @@
 </template>
 
 <script>
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import {Codemirror} from 'vue-codemirror'
 import {markdown} from '@codemirror/lang-markdown'
 import {oneDark} from '@codemirror/theme-one-dark'
@@ -69,6 +75,8 @@ import 'highlight.js/styles/github.css'
 import 'katex/dist/katex.min.css'
 import {
   BoldIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   CodeIcon,
   EyeIcon,
   EyeOffIcon,
@@ -86,7 +94,7 @@ export default {
     Codemirror,
     BoldIcon, ItalicIcon, CodeIcon, LinkIcon,
     ImageIcon, TrashIcon, EyeIcon, EyeOffIcon,
-    TypeIcon, FunctionSquareIcon
+    TypeIcon, FunctionSquareIcon, ChevronUpIcon, ChevronDownIcon
   },
   props: {
     modelValue: {
@@ -264,6 +272,34 @@ export default {
       emit('save-images', tempImages.value)
     }
 
+    const isGalleryCollapsed = ref(false)
+    const toggleGallery = () => {
+      isGalleryCollapsed.value = !isGalleryCollapsed.value
+    }
+
+    const handleKeyboardShortcuts = (event) => {
+      if (event.ctrlKey || event.metaKey) {
+        switch (event.key.toLowerCase()) {
+          case 'b':
+            event.preventDefault()
+            insertText('**', '**')
+            break
+          case 'i':
+            event.preventDefault()
+            insertText('*', '*')
+            break
+          case 'k':
+            event.preventDefault()
+            insertText('[', '](url)')
+            break
+          case '`':
+            event.preventDefault()
+            insertText('`', '`')
+            break
+        }
+      }
+    }
+
     watch(() => props.modelValue.text, (newValue) => {
       if (newValue !== localContent.value) {
         localContent.value = newValue
@@ -277,25 +313,34 @@ export default {
       if (props.modelValue && props.modelValue.images) {
         tempImages.value = props.modelValue.images
       }
+
+      window.addEventListener('keydown', handleKeyboardShortcuts)
+    })
+
+    onUnmounted(() => {
+      document.removeEventListener('keydown', handleKeyboardShortcuts)
     })
 
     return {
       localContent,
       showPreview,
       renderedContent,
+      fileInput,
+      toolbarActions,
+      extensions,
+      tempImages,
+      isGalleryCollapsed,
+      toggleGallery,
+      handleKeyboardShortcuts,
       updateContent,
       togglePreview,
       clearContent,
       handleImageUpload,
       handleDrop,
-      fileInput,
-      toolbarActions,
-      extensions,
       handleReady,
-      tempImages,
       insertImageToEditor,
       removeImage,
-      saveImages
+      saveImages,
     }
   }
 }
@@ -396,22 +441,45 @@ export default {
 .image-gallery {
   background-color: #e9ecef;
   border-top: 1px solid #ccc;
-  padding: 15px;
+  transition: all 0.3s ease;
+  max-height: 35%;
   overflow-y: auto;
-  max-height: 30%;
+}
+
+.image-gallery.collapsed {
+  max-height: 50px;
+  transition: all 0.3s ease;
+}
+
+.gallery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .gallery-title {
-  text-align: left;
-  margin-bottom: 10px;
+  margin: 0;
   color: #495057;
-  margin-top: 0;
+  transition: all 0.3s ease;
+}
+
+.collapse-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #495057;
 }
 
 .gallery-content {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
+  padding: 0 15px 15px;
+  max-height: 30vh;
 }
 
 .image-item {
@@ -421,6 +489,11 @@ export default {
   padding: 10px;
   width: 100px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.image-item:hover {
+  filter: brightness(0.85);
 }
 
 .thumbnail {
