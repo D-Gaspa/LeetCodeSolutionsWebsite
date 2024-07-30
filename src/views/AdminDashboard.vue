@@ -431,13 +431,18 @@ export default {
       let imageCounter = 1
 
       for (const image of images) {
-        if (image.file) {  // Only upload new images
-          const fileExt = image.name.split('.').pop()
-          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExt}`
+        if (image.file instanceof File) {
+          const fileExtension = image.file.name.split('.').pop()
+          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`
 
+          // Convert File to ArrayBuffer
+          const arrayBuffer = await image.file.arrayBuffer()
+
+          // Upload using ArrayBuffer
           const {error} = await supabase.storage
               .from('problem-images')
-              .upload(newFileName, image.file, {
+              .upload(newFileName, arrayBuffer, {
+                contentType: image.file.type,
                 cacheControl: '3600',
                 upsert: true
               })
@@ -447,24 +452,22 @@ export default {
             continue
           }
 
-          const {publicURL, error: urlError} = supabase.storage
+          const {data: urlData} = supabase.storage
               .from('problem-images')
               .getPublicUrl(newFileName)
-
-          if (urlError) {
-            console.error('Error getting public URL:', urlError)
-            continue
-          }
 
           uploadedImages.push({
             id: image.id,
             name: newFileName,
-            url: publicURL
+            url: urlData.publicUrl
           })
 
           imageCounter++
+        } else if (image.url) {
+          // This is an existing image, add it to the uploadedImages array
+          uploadedImages.push(image)
         } else {
-          uploadedImages.push(image)  // Keep existing images
+          console.error('Invalid image object:', image)
         }
       }
       return uploadedImages
