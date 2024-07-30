@@ -1,11 +1,34 @@
 <template>
   <div class="admin-dashboard">
     <h1>Admin Dashboard</h1>
+    <!-- Enhanced Search and Filters -->
+    <div class="search-filters">
+      <input
+          v-model="searchQuery"
+          placeholder="Search problems..."
+          @input="debouncedSearch"
+      >
+      <select v-model="difficultyFilter">
+        <option value="">All Difficulties</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+      <select v-model="typeFilter">
+        <option value="">All Types</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+      </select>
+      <input
+          v-model="dateFilter"
+          placeholder="Filter by date"
+          type="date"
+      >
+    </div>
 
-    <!-- Search and Add Problem -->
-    <div class="actions">
-      <input v-model="searchQuery" @input="searchProblems" placeholder="Search problems...">
-      <button @click="showProblemForm = true">Add New Problem</button>
+    <!-- Add Problem Button -->
+    <div class="add-problem">
+      <button @click="showProblemForm = true">Add Problem</button>
     </div>
 
     <!-- Problem List -->
@@ -54,7 +77,7 @@
         <form @submit.prevent="validateAndSaveProblem">
           <label>
             Problem Number:
-            <input v-model.number="problemForm.id" type="number" required min="1" step="1">
+            <input v-model.number="problemForm.id" min="1" required step="1" type="number">
           </label>
           <label>
             Problem Name:
@@ -77,7 +100,7 @@
           </label>
           <label v-if="problemForm.problem_type === 'daily'">
             Date:
-            <input type="date" v-model="problemForm.problem_date" required>
+            <input v-model="problemForm.problem_date" required type="date">
           </label>
           <label v-else>
             Week:
@@ -87,7 +110,7 @@
           </label>
           <label v-if="problemForm.problem_type === 'weekly'">
             Year:
-            <input type="number" v-model="problemForm.problem_year" required>
+            <input v-model="problemForm.problem_year" required type="number">
           </label>
           <div>
             <button type="button" @click="openContentEditor">
@@ -169,8 +192,9 @@
 </template>
 
 <script>
-import {computed, onMounted, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref, watch} from 'vue'
 import {supabase} from '../services/supabase'
+import debounce from 'lodash/debounce'
 import MarkdownEditor from '../components/MarkdownEditor.vue'
 
 export default {
@@ -187,6 +211,9 @@ export default {
     const editingSolution = ref(null)
     const problemToDelete = ref(null)
     const searchQuery = ref('')
+    const difficultyFilter = ref('')
+    const typeFilter = ref('')
+    const dateFilter = ref('')
     const currentPage = ref(1)
     const itemsPerPage = 10
 
@@ -296,11 +323,33 @@ export default {
       await saveProblem()
     }
 
+    const debouncedSearch = debounce(() => {
+      fetchProblems()
+    }, 300)
+
     const fetchProblems = async () => {
-      const {data, error} = await supabase
+      let query = supabase
           .from('problems')
           .select('*')
           .order('created_at', {ascending: false})
+
+      if (searchQuery.value) {
+        query = query.ilike('title', `%${searchQuery.value}%`)
+      }
+
+      if (difficultyFilter.value) {
+        query = query.eq('difficulty', difficultyFilter.value)
+      }
+
+      if (typeFilter.value) {
+        query = query.eq('problem_type', typeFilter.value)
+      }
+
+      if (dateFilter.value) {
+        query = query.eq('problem_date', dateFilter.value)
+      }
+
+      const {data, error} = await query
 
       if (error) console.error('Error fetching problems:', error)
       else problems.value = data
@@ -444,6 +493,8 @@ export default {
       return date.toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
     }
 
+    watch([difficultyFilter, typeFilter, dateFilter], fetchProblems)
+
     onMounted(fetchProblems)
 
     return {
@@ -455,7 +506,11 @@ export default {
       solutionForm,
       editingProblem,
       editingSolution,
+      debouncedSearch,
       searchQuery,
+      difficultyFilter,
+      typeFilter,
+      dateFilter,
       currentPage,
       totalPages,
       paginatedProblems,
@@ -486,10 +541,28 @@ export default {
   padding: 20px;
 }
 
-.actions {
-  display: flex;
-  justify-content: space-between;
+.add-problem {
   margin-bottom: 20px;
+}
+
+.search-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.search-filters input,
+.search-filters select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.search-filters input:hover,
+.search-filters select:hover {
+  border-color: #333;
+  filter: brightness(0.95);
 }
 
 table {
