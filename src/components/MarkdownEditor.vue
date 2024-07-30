@@ -2,6 +2,7 @@
   <div class="markdown-editor">
     <div class="editor-layout">
       <div class="editor-toolbar">
+        <h3 class="toolbar-title">Tools</h3>
         <button v-for="action in toolbarActions" :key="action.label" :title="action.label" @click="action.action">
           <component :is="action.icon"/>
         </button>
@@ -18,17 +19,23 @@
         </button>
       </div>
       <div :class="{ 'split-view': showPreview }" class="editor-content">
-        <div class="editor-wrapper"
-             @drop.prevent="handleDrop"
-             @dragover.prevent="() => {}"
-             @dragenter.prevent="() => {}">
-          <Codemirror
-              v-model="localContent"
-              :extensions="extensions"
-              @ready="handleReady"
-          />
+        <div class="editor-container">
+          <h3 class="editor-title">Markdown Editor</h3>
+          <div class="editor-wrapper"
+               @drop.prevent="handleDrop"
+               @dragover.prevent="() => {}"
+               @dragenter.prevent="() => {}">
+            <Codemirror
+                v-model="localContent"
+                :extensions="extensions"
+                @ready="handleReady"
+            />
+          </div>
         </div>
-        <div v-if="showPreview" class="preview" v-html="renderedContent"></div>
+        <div v-if="showPreview" class="preview-container">
+          <h3 class="preview-title">Preview</h3>
+          <div class="preview" v-html="renderedContent"></div>
+        </div>
       </div>
     </div>
     <div v-if="tempImages.length > 0" class="image-gallery">
@@ -297,11 +304,13 @@ export default {
 <style scoped>
 .markdown-editor {
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   height: 100%;
   max-height: 80vh;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .editor-layout {
@@ -314,7 +323,16 @@ export default {
   display: flex;
   flex-direction: column;
   border-right: 1px solid #ccc;
-  background-color: #f5f5f5;
+  background-color: #e9ecef;
+  min-width: 50px;
+  overflow-y: auto;
+}
+
+.toolbar-title {
+  font-size: 0.8em;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #495057;
 }
 
 .editor-toolbar button {
@@ -330,7 +348,7 @@ export default {
 }
 
 .editor-toolbar button:hover {
-  background-color: #e0e0e0;
+  background-color: #ced4da;
 }
 
 .editor-content {
@@ -340,14 +358,28 @@ export default {
   overflow: hidden;
 }
 
+.editor-container, .preview-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.editor-title, .preview-title {
+  font-size: 1em;
+  padding: 10px;
+  margin: 0;
+  background-color: #e9ecef;
+  border-bottom: 1px solid #ccc;
+  color: #495057;
+}
+
 .editor-wrapper {
   text-align: left;
   flex: 1;
-  position: relative;
   overflow: auto;
 }
 
-.editor-content.split-view .editor-wrapper {
+.editor-content.split-view .editor-container {
   width: 50%;
 }
 
@@ -358,11 +390,11 @@ export default {
   padding-right: 10px;
   border-left: 1px solid #ccc;
   overflow-y: auto;
+  background-color: #fff;
 }
 
 .image-gallery {
-  margin-top: 10px;
-  background-color: #f5f5f5;
+  background-color: #e9ecef;
   border-top: 1px solid #ccc;
   padding: 15px;
   overflow-y: auto;
@@ -372,7 +404,7 @@ export default {
 .gallery-title {
   text-align: left;
   margin-bottom: 10px;
-  color: #333;
+  color: #495057;
   margin-top: 0;
 }
 
@@ -384,10 +416,11 @@ export default {
 
 .image-item {
   background-color: white;
-  border: 1px solid #ddd;
+  border: 1px solid #ced4da;
   border-radius: 4px;
   padding: 10px;
   width: 100px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .thumbnail {
@@ -403,9 +436,10 @@ export default {
 
 .image-name {
   display: block;
-  font-size: 0.9em;
+  font-size: 0.8em;
   margin-bottom: 5px;
   word-break: break-all;
+  color: #495057;
 }
 
 .image-actions {
@@ -416,6 +450,15 @@ export default {
 .image-actions button {
   flex: 1;
   padding: 5px;
-  font-size: 0.8em;
+  font-size: 0.7em;
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-actions button:hover {
+  background-color: #ced4da;
 }
 </style>
