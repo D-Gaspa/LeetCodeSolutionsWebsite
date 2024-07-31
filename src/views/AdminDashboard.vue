@@ -27,7 +27,7 @@
             type="date"
         >
       </div>
-      <button class="add-problem-btn" @click="showProblemForm = true">Add New Problem</button>
+      <button class="add-problem-btn" @click="openProblemForm">Add Problem</button>
     </div>
 
     <!-- Problem List -->
@@ -167,7 +167,8 @@
         <h2>Edit Problem Content</h2>
         <markdown-editor
             ref="markdownEditor"
-            :modelValue="tempContent"
+            :initialContent="problemForm.content"
+            :modelValue="problemForm.content"
         ></markdown-editor>
         <div class="form-actions">
           <button @click="saveContent">Save Content</button>
@@ -217,8 +218,8 @@ export default {
     const currentPage = ref(1)
     const itemsPerPage = 10
     const formError = ref('')
-    const tempContent = ref({text: '', images: []})
     const markdownEditor = ref(null)
+    const originalImages = ref([])
 
     const problemForm = reactive({
       id: null,
@@ -240,22 +241,86 @@ export default {
       space_complexity: ''
     })
 
-    const openContentEditor = () => {
-      tempContent.value = {
-        text: problemForm.content.text,
-        images: problemForm.content.images
+    const fetchProblems = async () => {
+      let query = supabase
+          .from('problems')
+          .select('*')
+          .order('created_at', {ascending: false})
+
+      if (searchQuery.value) {
+        query = query.ilike('title', `%${searchQuery.value}%`)
       }
+
+      if (difficultyFilter.value) {
+        query = query.eq('difficulty', difficultyFilter.value)
+      }
+
+      if (typeFilter.value) {
+        query = query.eq('problem_type', typeFilter.value)
+      }
+
+      if (dateFilter.value) {
+        query = query.eq('problem_date', dateFilter.value)
+      }
+
+      const {data, error} = await query
+
+      if (error) console.error('Error fetching problems:', error)
+      else problems.value = data
+    }
+
+    const searchProblems = () => {
+      currentPage.value = 1 // Reset to first page when searching
+    }
+
+    const filteredProblems = computed(() => {
+      return problems.value.filter(problem =>
+          problem.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    })
+
+    const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+
+    const paginatedProblems = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage
+      const end = start + itemsPerPage
+      return filteredProblems.value.slice(start, end)
+    })
+
+    const openProblemForm = () => {
+      originalImages.value = problemForm.content.images
+
+      console.log('Original images:', originalImages.value.map(img => img.name))
+      console.log('Problem form content:', problemForm.content)
+
+      showProblemForm.value = true
+    }
+
+    const closeProblemForm = () => {
+      showProblemForm.value = false
+      editingProblem.value = null
+      clearProblemForm()
+      formError.value = ''
+      originalImages.value = []
+    }
+
+
+    const openContentEditor = () => {
       showContentEditor.value = true
     }
 
     const closeContentEditor = () => {
-      if (confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
-        showContentEditor.value = false
-      }
-    }
+      let unsavedChanges = false
 
-    const updateTempContent = (newContent) => {
-      tempContent.value = newContent
+      if (markdownEditor.value) {
+        const newContent = markdownEditor.value.getContent()
+        unsavedChanges = newContent.text !== problemForm.content.text
+            || newContent.images.length !== problemForm.content.images.length
+      }
+
+      if (!unsavedChanges || confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
+        showContentEditor.value = false;
+      }
     }
 
     const updateContent = (newContent) => {
@@ -263,8 +328,24 @@ export default {
     }
 
     const saveContent = () => {
+      let unsavedChanges = false
+
       if (markdownEditor.value) {
         const newContent = markdownEditor.value.getContent()
+
+        console.log('New content:', newContent)
+
+        unsavedChanges = newContent.text !== problemForm.content.text
+            || newContent.images.length !== problemForm.content.images.length
+
+        if (!unsavedChanges) {
+          console.log('No changes to save')
+          showContentEditor.value = false
+          return
+        }
+
+        console.log('Saving content changes')
+
         problemForm.content = {
           text: newContent.text,
           images: newContent.images
@@ -316,59 +397,6 @@ export default {
       fetchProblems()
     }, 300)
 
-    const fetchProblems = async () => {
-      let query = supabase
-          .from('problems')
-          .select('*')
-          .order('created_at', {ascending: false})
-
-      if (searchQuery.value) {
-        query = query.ilike('title', `%${searchQuery.value}%`)
-      }
-
-      if (difficultyFilter.value) {
-        query = query.eq('difficulty', difficultyFilter.value)
-      }
-
-      if (typeFilter.value) {
-        query = query.eq('problem_type', typeFilter.value)
-      }
-
-      if (dateFilter.value) {
-        query = query.eq('problem_date', dateFilter.value)
-      }
-
-      const {data, error} = await query
-
-      if (error) console.error('Error fetching problems:', error)
-      else problems.value = data
-    }
-
-    const searchProblems = () => {
-      currentPage.value = 1 // Reset to first page when searching
-    }
-
-    const filteredProblems = computed(() => {
-      return problems.value.filter(problem =>
-          problem.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-      )
-    })
-
-    const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
-
-    const paginatedProblems = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage
-      const end = start + itemsPerPage
-      return filteredProblems.value.slice(start, end)
-    })
-
-    const closeProblemForm = () => {
-      showProblemForm.value = false
-      editingProblem.value = null
-      clearProblemForm()
-      formError.value = ''
-    }
-
     const editProblem = (problem) => {
       editingProblem.value = problem
       const [id, ...nameParts] = problem.title.split('.')
@@ -378,108 +406,188 @@ export default {
         id: parseInt(id),
         name: nameParts.join('.').trim(),
       })
-      showProblemForm.value = true
+      openProblemForm()
     }
 
     const saveProblem = async () => {
       try {
-        // Handle image uploads
-        const uploadedImages = await handleImageUploads(problemForm.content.images, problemForm.id)
+        // Only proceed with image management if there are changes
+        const imagesChanged = areImagesChanged(problemForm.content.images, originalImages.value)
+        console.log('imagesChanged:', imagesChanged)
 
-        // Update image URLs in the content
-        problemForm.content.text = updateImageUrls(problemForm.content.text, uploadedImages)
-        problemForm.content.images = uploadedImages
+        if (imagesChanged) {
+          const managedImages = await handleImageManagement(problemForm.content.images, problemForm.id)
 
-        const formData = {...problemForm}
+          console.log('Managed images:', managedImages)
 
-        if (formData.problem_type === 'daily') {
-          formData.problem_year = new Date(formData.problem_date).getFullYear()
-          formData.problem_week = null
-        } else {
-          formData.problem_date = null
+          // Update image URLs in the content
+          problemForm.content.text = updateMarkdownText(problemForm.content.text, managedImages)
+          problemForm.content.images = managedImages
+
+          console.log('Updated problemForm:', problemForm)
         }
 
-        // Combine problem number and name into title
-        formData.title = `${formData.id}. ${formData.name}`
-        delete formData.name  // Remove the separate name field
-
-        // Save problem
-        const {error} = editingProblem.value
-            ? await supabase
-                .from('problems')
-                .update(formData)
-                .eq('id', editingProblem.value.id)
-            : await supabase
-                .from('problems')
-                .insert([formData])
-
-        if (error) {
-          console.error('Error saving problem:', error)
-          formError.value = 'An error occurred while saving the problem. Please try again.'
-        } else {
-          await fetchProblems()
-          closeProblemForm()
-        }
+        // const formData = {...problemForm}
+        //
+        // if (formData.problem_type === 'daily') {
+        //   formData.problem_year = new Date(formData.problem_date).getFullYear()
+        //   formData.problem_week = null
+        // } else {
+        //   formData.problem_date = null
+        // }
+        //
+        // // Combine problem number and name into title
+        // formData.title = `${formData.id}. ${formData.name}`
+        // delete formData.name  // Remove the separate name field
+        //
+        // // Save problem
+        // const {error} = editingProblem.value
+        //     ? await supabase
+        //         .from('problems')
+        //         .update(formData)
+        //         .eq('id', editingProblem.value.id)
+        //     : await supabase
+        //         .from('problems')
+        //         .insert([formData])
+        //
+        // if (error) {
+        //   console.error('Error saving problem:', error)
+        //   formError.value = 'An error occurred while saving the problem. Please try again.'
+        // } else {
+        //   await fetchProblems()
+        //   closeProblemForm()
+        // }
       } catch (error) {
-        console.error('Error in saveProblem:', error)
-        formError.value = 'An unexpected error occurred. Please try again.'
+        console.error('Error in saveProblem:', error);
+        formError.value = 'An unexpected error occurred. Please try again.';
       }
     }
 
-    const handleImageUploads = async (images, problemNumber) => {
-      const uploadedImages = []
-      let imageCounter = 1
+    const areImagesChanged = (newImages, originalImages) => {
+      if (newImages.length !== originalImages.length) return true
+      return newImages.some((newImg, index) => {
+        const origImg = originalImages[index]
+        return newImg.id !== origImg.id || newImg.name !== origImg.name || newImg.url !== origImg.url
+      })
+    }
 
-      for (const image of images) {
+    const handleImageManagement = async (currentImages, problemNumber) => {
+      const imagesToDelete = originalImages.value.filter(
+          orig => !currentImages.some(curr => curr.url === orig.url)
+      );
+
+      console.log('imagesToDelete:', imagesToDelete.map(img => img.name));
+
+      const imagesToKeep = currentImages.filter(
+          curr => originalImages.value.some(orig => orig.url === curr.url)
+      );
+
+      console.log('imagesToKeep:', imagesToKeep.map(img => img.name));
+
+      const newImages = currentImages.filter(
+          curr => !originalImages.value.some(orig => orig.url === curr.url)
+      );
+
+      console.log('newImages:', newImages.map(img => img.name));
+
+      // Delete removed images
+      for (const image of imagesToDelete) {
+        await deleteImageFromStorage(image.name);
+      }
+
+      // Only rename and upload new images
+      const renamedImages = await renameAndUploadImages(newImages, imagesToKeep, problemNumber);
+
+      console.log('renamedImages:', renamedImages.map(img => img.name));
+
+      // Combine kept images and new images, ensuring correct order
+      return currentImages.map(image => {
+        if (imagesToKeep.includes(image)) {
+          console.log('Keeping image:', image.name);
+          return image; // Keep existing image as is
+        } else {
+          console.log('Renamed image:', image.name);
+          return renamedImages.find(newImg => newImg.id === image.id); // Get renamed new image
+        }
+      });
+    }
+
+    const deleteImageFromStorage = async (imageName) => {
+      console.log('Deleting image:', imageName);
+
+      // const {error} = await supabase.storage
+      //     .from('problem-images')
+      //     .remove([imageName]);
+      //
+      // if (error) {
+      //   console.error('Error deleting image:', error);
+      // }
+    }
+
+    const renameAndUploadImages = async (newImages, existingImages, problemNumber) => {
+      const uploadedImages = [];
+      let imageCounter = existingImages.length + 1;
+
+      for (const image of newImages) {
         if (image.file instanceof File) {
-          const fileExtension = image.file.name.split('.').pop()
-          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`
+          const fileExtension = image.file.name.split('.').pop();
+          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`;
 
-          // Convert File to ArrayBuffer
-          const arrayBuffer = await image.file.arrayBuffer()
+          console.log('Uploading image:', newFileName);
 
-          // Upload using ArrayBuffer
-          const {error} = await supabase.storage
-              .from('problem-images')
-              .upload(newFileName, arrayBuffer, {
-                contentType: image.file.type,
-                cacheControl: '3600',
-                upsert: true
-              })
+          // const arrayBuffer = await image.file.arrayBuffer();
+          //
+          // const {error} = await supabase.storage
+          //     .from('problem-images')
+          //     .upload(newFileName, arrayBuffer, {
+          //       contentType: image.file.type,
+          //       cacheControl: '3600',
+          //       upsert: true
+          //     });
+          //
+          // if (error) {
+          //   console.error('Error uploading image:', error);
+          //   continue;
+          // }
+          //
+          // const {data: urlData} = supabase.storage
+          //     .from('problem-images')
+          //     .getPublicUrl(newFileName);
 
-          if (error) {
-            console.error('Error uploading image:', error)
-            continue
-          }
-
-          const {data: urlData} = supabase.storage
-              .from('problem-images')
-              .getPublicUrl(newFileName)
+          const urlData = {publicUrl: 'https://example.com/' + newFileName};
+          console.log('Uploaded image URL:', urlData.publicUrl);
 
           uploadedImages.push({
             id: image.id,
             name: newFileName,
             url: urlData.publicUrl
-          })
+          });
 
-          imageCounter++
-        } else if (image.url) {
-          // This is an existing image, add it to the uploadedImages array
-          uploadedImages.push(image)
+          console.log('uploadedImages:', uploadedImages.map(img => img.name));
+
+          imageCounter++;
         } else {
-          console.error('Invalid image object:', image)
+          console.error('Image file not found:', image.name);
         }
       }
-      return uploadedImages
+
+      return uploadedImages;
     }
 
-    const updateImageUrls = (content, uploadedImages) => {
-      let updatedContent = content
-      uploadedImages.forEach(image => {
-        const regex = new RegExp(`\\]\\(${image.id}\\)`, 'g')
-        updatedContent = updatedContent.replace(regex, `](${image.url})`)
-      })
-      return updatedContent
+    const updateMarkdownText = (content, images) => {
+      let updatedContent = content;
+      images.forEach(image => {
+        const oldLink = `![${image.id}](${image.id})`;
+        const newLink = `![${image.name}](${image.url})`;
+
+        // Escape special characters in the image name for the regular expression
+        const escapedOldLink = oldLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        updatedContent = updatedContent.replace(new RegExp(escapedOldLink, 'g'), newLink);
+
+        image.id = image.name; // Update image ID to new name
+      });
+      return updatedContent;
     }
 
     const saveSolution = async () => {
@@ -574,12 +682,10 @@ export default {
       totalPages,
       paginatedProblems,
       formError,
-      tempContent,
       showContentEditor,
       markdownEditor,
       openContentEditor,
       closeContentEditor,
-      updateTempContent,
       updateContent,
       saveContent,
       deleteContent,
@@ -587,6 +693,7 @@ export default {
       editProblem,
       closeProblemForm,
       saveProblem,
+      openProblemForm,
       openSolutionForm,
       saveSolution,
       confirmDeleteProblem,

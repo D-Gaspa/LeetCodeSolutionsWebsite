@@ -87,6 +87,7 @@ import {
   TrashIcon,
   TypeIcon
 } from 'lucide-vue-next'
+import {isEqual} from "lodash";
 
 export default {
   name: 'MarkdownEditor',
@@ -97,18 +98,21 @@ export default {
     TypeIcon, FunctionSquareIcon, ChevronUpIcon, ChevronDownIcon
   },
   props: {
+    initialContent: {
+      type: Object
+    },
     modelValue: {
       type: Object
     }
   },
   emits: ['update:modelValue'],
-  setup(props, {emit}) {
-    const localContent = ref(props.modelValue.text || '')
+  setup(props) {
+    const localContent = ref(props.initialContent.text || props.modelValue.text || '')
+    const tempImages = ref(props.initialContent.images || props.modelValue.images || [])
     const showPreview = ref(true)
     const fileInput = ref(null)
     const editorView = ref(null)
     const editorRef = ref(null)
-    const tempImages = ref([])
     const imageMap = ref(new Map())
 
     const md = new MarkdownIt({
@@ -142,17 +146,42 @@ export default {
       }
     }
 
-    // Call setupImageRenderer initially
-    setupImageRenderer()
+    const initializeContent = () => {
+      localContent.value = props.initialContent.text || props.modelValue.text || ''
+      tempImages.value = (props.initialContent.images || props.modelValue.images || []).map(img => ({
+        id: img.id || img.url,
+        name: img.name,
+        url: img.url,
+        file: img.file || null // Preserve the file object for new images, null for existing ones
+      }))
+      updateImageMap()
+    }
 
-    // Update imageMap when tempImages changes
-    watch(tempImages, (newImages) => {
+    const updateImageMap = () => {
       imageMap.value.clear()
-      newImages.forEach(image => {
+      tempImages.value.forEach(image => {
         imageMap.value.set(image.id, image)
         imageMap.value.set(image.url, image)
       })
-      setupImageRenderer() // Re-setup the renderer with the new imageMap
+      setupImageRenderer()
+    }
+
+    initializeContent() // Initialize the content when the component is first mounted
+
+    watch(() => props.initialContent, (newContent) => {
+      if (newContent && (newContent.text !== localContent.value || !isEqual(newContent.images, tempImages.value))) {
+        initializeContent()
+      }
+    }, {deep: true})
+
+    watch(() => props.modelValue, (newValue) => {
+      if (newValue.text !== localContent.value) {
+        localContent.value = newValue.text
+      }
+      if (!isEqual(newValue.images, tempImages.value)) {
+        tempImages.value = newValue.images
+        updateImageMap()
+      }
     }, {deep: true})
 
     const extensions = [
@@ -233,11 +262,11 @@ export default {
 
       const reader = new FileReader()
       reader.onload = (e) => {
-        const imageId = `image-${Date.now()}-${file.name.replace(/\s+/g, '-')}`
+        const imageId = `${file.name.replace(/\s+/g, '-')}`
         const newImage = {
           id: imageId,
           file: file,
-          name: file.name || `pasted-image-${Date.now()}.png`,
+          name: imageId,
           url: e.target.result
         }
 
@@ -254,6 +283,8 @@ export default {
         insertImageToEditor(newImage)
       }
       reader.readAsDataURL(file)
+
+      updateImageMap()
     }
 
     const insertImageToEditor = (image) => {
@@ -264,6 +295,8 @@ export default {
       if (!tempImages.value.some(img => img.id === image.id)) {
         tempImages.value.push(image)
       }
+
+      updateImageMap()
     }
 
     const removeImage = (index) => {
@@ -285,6 +318,8 @@ export default {
 
       // Re-render the preview to remove the deleted image
       localContent.value = localContent.value.replace(`![${image.name}](${image.id})`, '')
+
+      updateImageMap()
     }
 
     const insertText = (before, after) => {
@@ -344,15 +379,7 @@ export default {
     })
 
     onMounted(() => {
-      // Initialize imageMap with existing images (if any)
-      if (props.modelValue.images) {
-        props.modelValue.images.forEach(image => {
-          imageMap.value.set(image.id, image)
-          imageMap.value.set(image.url, image)
-        })
-        setupImageRenderer()
-      }
-
+      initializeContent()
       document.addEventListener('keydown', handleKeyboardShortcuts)
     })
 
