@@ -317,7 +317,8 @@ export default {
       tempImages.value = [...tempImages.value]
 
       // Re-render the preview to remove the deleted image
-      localContent.value = localContent.value.replace(`![${image.name}](${image.id})`, '')
+      localContent.value = localContent.value.replace(`![${image.name}](${image.id})`, '') // For newly added images
+      localContent.value = localContent.value.replace(`![${image.name}](${image.url})`, '') // For existing images
 
       updateImageMap()
     }

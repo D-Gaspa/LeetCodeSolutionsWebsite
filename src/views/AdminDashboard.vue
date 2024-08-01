@@ -416,11 +416,11 @@ export default {
         console.log('imagesChanged:', imagesChanged)
 
         if (imagesChanged) {
-          const managedImages = await handleImageManagement(problemForm.content.images, problemForm.id)
+          const managedImages = await handleImageManagement(problemForm.content.images, problemForm.id, problemForm.content.text);
 
           console.log('Managed images:', managedImages)
 
-          // Update image URLs in the content
+          // Update content text with new image links
           problemForm.content.text = updateMarkdownText(problemForm.content.text, managedImages)
           problemForm.content.images = managedImages
 
@@ -471,20 +471,23 @@ export default {
       })
     }
 
-    const handleImageManagement = async (currentImages, problemNumber) => {
+    const handleImageManagement = async (currentImages, problemNumber, content) => {
+      // Order the current images based on their appearance in the content
+      const orderedCurrentImages = getOrderedImages(content, currentImages);
+
       const imagesToDelete = originalImages.value.filter(
-          orig => !currentImages.some(curr => curr.url === orig.url)
+          orig => !orderedCurrentImages.some(curr => curr.url === orig.url)
       );
 
       console.log('imagesToDelete:', imagesToDelete.map(img => img.name));
 
-      const imagesToKeep = currentImages.filter(
+      const imagesToKeep = orderedCurrentImages.filter(
           curr => originalImages.value.some(orig => orig.url === curr.url)
       );
 
       console.log('imagesToKeep:', imagesToKeep.map(img => img.name));
 
-      const newImages = currentImages.filter(
+      const newImages = orderedCurrentImages.filter(
           curr => !originalImages.value.some(orig => orig.url === curr.url)
       );
 
@@ -495,22 +498,36 @@ export default {
         await deleteImageFromStorage(image.name);
       }
 
-      // Only rename and upload new images
-      const renamedImages = await renameAndUploadImages(newImages, imagesToKeep, problemNumber);
+      // Rename and upload all images (existing and new) based on their new order
+      const renamedImages = await renameAndUploadImages(orderedCurrentImages, problemNumber);
 
       console.log('renamedImages:', renamedImages.map(img => img.name));
 
-      // Combine kept images and new images, ensuring correct order
-      return currentImages.map(image => {
-        if (imagesToKeep.includes(image)) {
-          console.log('Keeping image:', image.name);
-          return image; // Keep existing image as is
-        } else {
-          console.log('Renamed image:', image.name);
-          return renamedImages.find(newImg => newImg.id === image.id); // Get renamed new image
+      return renamedImages;
+    };
+
+    const getOrderedImages = (content, images) => {
+      const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g;
+      const orderedImages = [];
+      let match;
+
+      while ((match = imageRegex.exec(content)) !== null) {
+        const [, , src] = match;
+        const image = images.find(img => img.id === src || img.url === src);
+        if (image && !orderedImages.includes(image)) {
+          orderedImages.push(image);
+        }
+      }
+
+      // Add any remaining images that weren't found in the content
+      images.forEach(image => {
+        if (!orderedImages.includes(image)) {
+          orderedImages.push(image);
         }
       });
-    }
+
+      return orderedImages;
+    };
 
     const deleteImageFromStorage = async (imageName) => {
       console.log('Deleting image:', imageName);
@@ -524,55 +541,67 @@ export default {
       // }
     }
 
-    const renameAndUploadImages = async (newImages, existingImages, problemNumber) => {
-      const uploadedImages = [];
-      let imageCounter = existingImages.length + 1;
+    const renameAndUploadImages = async (orderedImages, problemNumber) => {
+      const renamedImages = [];
+      let imageCounter = 1;
 
-      for (const image of newImages) {
-        if (image.file instanceof File) {
-          const fileExtension = image.file.name.split('.').pop();
-          const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`;
+      for (const image of orderedImages) {
+        const fileExtension = image.name.split('.').pop();
+        const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`;
 
-          console.log('Uploading image:', newFileName);
+        if (image.name !== newFileName) {
+          console.log(`Renaming ${image.name} to ${newFileName}`);
 
-          // const arrayBuffer = await image.file.arrayBuffer();
-          //
-          // const {error} = await supabase.storage
-          //     .from('problem-images')
-          //     .upload(newFileName, arrayBuffer, {
-          //       contentType: image.file.type,
-          //       cacheControl: '3600',
-          //       upsert: true
-          //     });
-          //
-          // if (error) {
-          //   console.error('Error uploading image:', error);
-          //   continue;
-          // }
-          //
-          // const {data: urlData} = supabase.storage
-          //     .from('problem-images')
-          //     .getPublicUrl(newFileName);
+          if (image.file instanceof File) {
+            // This is a new image, upload it
+            console.log('Uploading new image:', newFileName);
 
-          const urlData = {publicUrl: 'https://example.com/' + newFileName};
-          console.log('Uploaded image URL:', urlData.publicUrl);
+            // // Uncomment and adjust these lines when ready to actually upload
+            // const arrayBuffer = await image.file.arrayBuffer();
+            // const { error } = await supabase.storage
+            //   .from('problem-images')
+            //   .upload(newFileName, arrayBuffer, {
+            //     contentType: image.file.type,
+            //     cacheControl: '3600',
+            //     upsert: true
+            //   });
+            // if (error) {
+            //   console.error('Error uploading image:', error);
+            //   continue;
+            // }
+          } else {
+            // This is an existing image that needs to be renamed
+            console.log('Renaming existing image:', newFileName);
 
-          uploadedImages.push({
-            id: image.id,
-            name: newFileName,
-            url: urlData.publicUrl
-          });
-
-          console.log('uploadedImages:', uploadedImages.map(img => img.name));
-
-          imageCounter++;
+            // // Uncomment and adjust these lines when ready to actually rename
+            // const { error } = await supabase.storage
+            //   .from('problem-images')
+            //   .move(image.name, newFileName);
+            // if (error) {
+            //   console.error('Error renaming image:', error);
+            //   continue;
+            // }
+          }
         } else {
-          console.error('Image file not found:', image.name);
+          console.log('Image name unchanged:', newFileName);
         }
+
+        // Hardcoded URL for testing
+        const urlData = {publicUrl: 'https://example.com/' + newFileName};
+        console.log('Image URL:', urlData.publicUrl);
+
+        renamedImages.push({
+          id: image.id,
+          name: newFileName,
+          url: urlData.publicUrl,
+          file: image.file // Preserve the file object for new images
+        });
+
+        imageCounter++;
       }
 
-      return uploadedImages;
-    }
+      return renamedImages;
+    };
 
     const updateMarkdownText = (content, images) => {
       let updatedContent = content;
@@ -582,6 +611,8 @@ export default {
 
         // Escape special characters in the image name for the regular expression
         const escapedOldLink = oldLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        console.log('Replacing:', escapedOldLink, 'with:', newLink);
 
         updatedContent = updatedContent.replace(new RegExp(escapedOldLink, 'g'), newLink);
 
