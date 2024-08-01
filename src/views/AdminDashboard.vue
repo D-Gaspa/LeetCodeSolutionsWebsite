@@ -289,10 +289,6 @@ export default {
 
     const openProblemForm = () => {
       originalImages.value = problemForm.content.images || []
-
-      console.log('Original images:', originalImages.value.map(img => img.name))
-      console.log('Problem form content:', problemForm.content)
-
       showProblemForm.value = true
     }
 
@@ -333,18 +329,13 @@ export default {
       if (markdownEditor.value) {
         const newContent = markdownEditor.value.getContent()
 
-        console.log('New content:', newContent)
-
         unsavedChanges = newContent.text !== problemForm.content.text
             || newContent.images.length !== problemForm.content.images.length
 
         if (!unsavedChanges) {
-          console.log('No changes to save')
           showContentEditor.value = false
           return
         }
-
-        console.log('Saving content changes')
 
         problemForm.content = {
           text: newContent.text,
@@ -418,7 +409,6 @@ export default {
       try {
         // Only proceed with image management if there are changes
         const imagesChanged = areImagesChanged(problemForm.content.images, originalImages.value)
-        console.log('imagesChanged:', imagesChanged)
 
         if (imagesChanged) {
           const {renamedImages, updatedContent} = await handleImageManagement(
@@ -427,45 +417,41 @@ export default {
               problemForm.content.text
           );
 
-          console.log('Managed images:', renamedImages);
-
           // Update the problem form with the new content and images
           problemForm.content.text = updatedContent;
           problemForm.content.images = renamedImages;
-
-          console.log('Updated problemForm:', problemForm);
         }
 
-        // const formData = {...problemForm}
-        //
-        // if (formData.problem_type === 'daily') {
-        //   formData.problem_year = new Date(formData.problem_date).getFullYear()
-        //   formData.problem_week = null
-        // } else {
-        //   formData.problem_date = null
-        // }
-        //
-        // // Combine problem number and name into title
-        // formData.title = `${formData.id}. ${formData.name}`
-        // delete formData.name  // Remove the separate name field
-        //
-        // // Save problem
-        // const {error} = editingProblem.value
-        //     ? await supabase
-        //         .from('problems')
-        //         .update(formData)
-        //         .eq('id', editingProblem.value.id)
-        //     : await supabase
-        //         .from('problems')
-        //         .insert([formData])
-        //
-        // if (error) {
-        //   console.error('Error saving problem:', error)
-        //   formError.value = 'An error occurred while saving the problem. Please try again.'
-        // } else {
-        //   await fetchProblems()
-        //   closeProblemForm()
-        // }
+        const formData = {...problemForm}
+
+        if (formData.problem_type === 'daily') {
+          formData.problem_year = new Date(formData.problem_date).getFullYear()
+          formData.problem_week = null
+        } else {
+          formData.problem_date = null
+        }
+
+        // Combine problem number and name into title
+        formData.title = `${formData.id}. ${formData.name}`
+        delete formData.name  // Remove the separate name field
+
+        // Save problem
+        const {error} = editingProblem.value
+            ? await supabase
+                .from('problems')
+                .update(formData)
+                .eq('id', editingProblem.value.id)
+            : await supabase
+                .from('problems')
+                .insert([formData])
+
+        if (error) {
+          console.error('Error saving problem:', error)
+          formError.value = 'An error occurred while saving the problem. Please try again.'
+        } else {
+          await fetchProblems()
+          closeProblemForm()
+        }
       } catch (error) {
         console.error('Error in saveProblem:', error);
         formError.value = 'An unexpected error occurred. Please try again.';
@@ -484,13 +470,9 @@ export default {
       // Order the current images based on their appearance in the content
       const orderedCurrentImages = getOrderedImages(content, currentImages);
 
-      console.log('orderedCurrentImages:', orderedCurrentImages.map(img => img.name));
-
       const imagesToDelete = originalImages.value.filter(
           orig => !orderedCurrentImages.some(curr => curr.url === orig.url)
       );
-
-      console.log('imagesToDelete:', imagesToDelete.map(img => img.name));
 
       // Delete removed images
       for (const image of imagesToDelete) {
@@ -499,8 +481,6 @@ export default {
 
       // Rename and upload all images (existing and new) based on their new order
       const {renamedImages, updatedContent} = await renameAndUploadImages(orderedCurrentImages, problemNumber, content);
-
-      console.log('renamedImages:', renamedImages.map(img => img.name));
 
       return {renamedImages, updatedContent};
     };
@@ -529,15 +509,13 @@ export default {
     };
 
     const deleteImageFromStorage = async (imageName) => {
-      console.log('Deleting image:', imageName);
+      const {error} = await supabase.storage
+          .from('problem-images')
+          .remove([imageName]);
 
-      // const {error} = await supabase.storage
-      //     .from('problem-images')
-      //     .remove([imageName]);
-      //
-      // if (error) {
-      //   console.error('Error deleting image:', error);
-      // }
+      if (error) {
+        console.error('Error deleting image:', error);
+      }
     }
 
     const renameAndUploadImages = async (orderedImages, problemNumber, content) => {
@@ -549,71 +527,59 @@ export default {
         const fileExtension = image.name.split('.').pop();
         const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`;
 
-        console.log('Processing image:', image.name);
-
         let newUrl;
 
         if (image.name !== newFileName) {
-          console.log(`Renaming ${image.name} to ${newFileName}`);
-
           if (image.file instanceof File) {
-            console.log('Uploading new image:', newFileName);
-
-            // Uncomment this block when ready to actually upload
-            /*
+            // Upload new image
             try {
               const arrayBuffer = await image.file.arrayBuffer();
-              const { error } = await supabase.storage
-                .from('problem-images')
-                .upload(newFileName, arrayBuffer, {
-                  contentType: image.file.type,
-                  cacheControl: '3600',
-                  upsert: true
-                });
+              const {error} = await supabase.storage
+                  .from('problem-images')
+                  .upload(newFileName, arrayBuffer, {
+                    contentType: image.file.type,
+                    cacheControl: '3600',
+                    upsert: true
+                  });
 
-              if (error) throw error;
+              if (error) {
+                console.error('Error uploading image (Database error):', error);
+              }
             } catch (error) {
               console.error('Error uploading image:', error);
               continue;
             }
-            */
           } else {
-            console.log('Renaming existing image:', newFileName);
-
-            // Uncomment this block when ready to actually rename
-            /*
+            // Rename existing image
             try {
-              const { error } = await supabase.storage
-                .from('problem-images')
-                .move(image.name, newFileName);
+              const {error} = await supabase.storage
+                  .from('problem-images')
+                  .move(image.name, newFileName);
 
-              if (error) throw error;
+              if (error) {
+                console.error('Error renaming image (Database error):', error);
+              }
             } catch (error) {
               console.error('Error renaming image:', error);
               continue;
             }
-            */
           }
 
           // Get the public URL for the new or renamed image
-          // Uncomment this when ready to use actual Supabase URLs
-          /*
           try {
-            const { data: urlData, error } = supabase.storage
-              .from('problem-images')
-              .getPublicUrl(newFileName);
-            if (error) throw error;
+            const {data: urlData, error} = supabase.storage
+                .from('problem-images')
+                .getPublicUrl(newFileName);
+            if (error) {
+              console.error('Error getting public URL:', error);
+              continue;
+            }
             newUrl = urlData.publicUrl;
           } catch (error) {
             console.error('Error getting public URL:', error);
             continue;
           }
-          */
 
-          // For testing, use a placeholder URL
-          newUrl = `https://example.com/problem-images/${newFileName}`;
-
-          // Update content
           // Update content
           try {
             if (image.file instanceof File) {
@@ -627,7 +593,6 @@ export default {
             console.error('Error updating content:', error);
           }
         } else {
-          console.log('Image name unchanged:', newFileName);
           newUrl = image.url; // Keep the existing URL if the image name hasn't changed
         }
 
