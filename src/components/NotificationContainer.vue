@@ -3,16 +3,18 @@
     <Notification
         v-for="notification in notifications"
         :key="notification.id"
-        :duration="notification.duration"
-        :isLoading="notification.isLoading"
         :message="notification.message"
         :type="notification.type"
-        @close="removeNotification(notification.id)"
+        :duration="notification.duration"
+        :isLoading="notification.isLoading"
+        @close="initiateNotificationRemoval(notification.id)"
+        @hide-complete="removeNotification(notification.id)"
     />
   </div>
 </template>
 
 <script>
+import {ref} from 'vue'
 import Notification from './Notification.vue'
 
 export default {
@@ -20,31 +22,46 @@ export default {
   components: {
     Notification
   },
-  data() {
-    return {
-      notifications: []
-    }
-  },
-  methods: {
-    addNotification(notification) {
-      const id = Date.now()
-      this.notifications.push({...notification, id})
-      if (!notification.isLoading && notification.duration) {
-        setTimeout(() => this.removeNotification(id), notification.duration)
-      }
+  setup() {
+    const notifications = ref([])
+
+    const addNotification = (notification) => {
+      const id = Date.now() + Math.random()
+      notifications.value.push({...notification, id})
       return id
-    },
-    removeNotification(id) {
-      this.notifications = this.notifications.filter(n => n.id !== id)
-    },
-    updateNotification(id, updates) {
-      const index = this.notifications.findIndex(n => n.id === id)
+    }
+
+    const initiateNotificationRemoval = (id) => {
+      const index = notifications.value.findIndex(n => n.id === id)
       if (index !== -1) {
-        this.notifications[index] = {...this.notifications[index], ...updates}
-        if (!updates.isLoading && updates.duration) {
-          setTimeout(() => this.removeNotification(id), updates.duration)
+        notifications.value[index] = {...notifications.value[index], isRemoving: true}
+      }
+    }
+
+    const removeNotification = (id) => {
+      notifications.value = notifications.value.filter(n => n.id !== id)
+    }
+
+    const updateNotification = (id, updates) => {
+      const index = notifications.value.findIndex(n => n.id === id)
+      if (index !== -1) {
+        const updatedNotification = {...notifications.value[index], ...updates}
+        notifications.value[index] = updatedNotification
+
+        if (!updatedNotification.isLoading && updatedNotification.duration) {
+          setTimeout(() => {
+            initiateNotificationRemoval(id)
+          }, updatedNotification.duration)
         }
       }
+    }
+
+    return {
+      notifications,
+      addNotification,
+      initiateNotificationRemoval,
+      removeNotification,
+      updateNotification
     }
   }
 }

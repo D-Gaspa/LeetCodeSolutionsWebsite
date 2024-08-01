@@ -50,6 +50,9 @@ export default {
     }
 
     const showNotification = (message, type = 'info', options = {}) => {
+      if (type === 'loading') {
+        options.isLoading = true
+      }
       return notificationContainer.value.addNotification({message, type, ...options})
     }
 
@@ -64,7 +67,7 @@ export default {
     return {
       user,
       handleLogout,
-      notificationContainer
+      notificationContainer,
     }
   }
 }
