@@ -288,7 +288,7 @@ export default {
     })
 
     const openProblemForm = () => {
-      originalImages.value = problemForm.content.images
+      originalImages.value = problemForm.content.images || []
 
       console.log('Original images:', originalImages.value.map(img => img.name))
       console.log('Problem form content:', problemForm.content)
@@ -378,13 +378,18 @@ export default {
       }
 
       // Check if problem ID exists (for both new and edited problems)
-      const {data} = await supabase
+      const {data, error} = await supabase
           .from('problems')
           .select('id')
           .eq('id', problemForm.id)
-          .single()
 
-      if (data && (!editingProblem.value || data.id !== editingProblem.value.id)) {
+      if (error) {
+        console.error('Error checking problem ID:', error)
+        formError.value = 'An error occurred while validating the problem number. Please try again.'
+        return
+      }
+
+      if (data && data.length > 0 && (!editingProblem.value || data[0].id !== editingProblem.value.id)) {
         formError.value = 'This problem number already exists. Please choose a different one.'
         return
       }
