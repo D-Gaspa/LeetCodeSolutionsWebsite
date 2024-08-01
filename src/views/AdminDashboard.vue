@@ -192,7 +192,7 @@
 </template>
 
 <script>
-import {computed, onMounted, reactive, ref, watch} from 'vue'
+import {computed, inject, onMounted, reactive, ref, watch} from 'vue'
 import {supabase} from '../services/supabase'
 import debounce from 'lodash/debounce'
 import MarkdownEditor from '../components/MarkdownEditor.vue'
@@ -203,6 +203,8 @@ export default {
     MarkdownEditor
   },
   setup() {
+    const showNotification = inject('showNotification')
+    const updateNotification = inject('updateNotification')
     const problems = ref([])
     const showProblemForm = ref(false)
     const showSolutionForm = ref(false)
@@ -664,16 +666,66 @@ export default {
     const deleteProblem = async () => {
       if (!problemToDelete.value) return
 
-      const {error} = await supabase
-          .from('problems')
-          .delete()
-          .eq('id', problemToDelete.value.id)
+      const notificationId = showNotification('Deleting problem...', 'loading', {isLoading: true})
 
-      if (error) console.error('Error deleting problem:', error)
-      else {
+      try {
+        // Get the problem's content to delete any associated images
+        const {data: problemData, error: problemError} = await supabase
+            .from('problems')
+            .select('content')
+            .eq('id', problemToDelete.value.id)
+            .single()
+
+        if (problemError) {
+          updateNotification(notificationId, {
+            message: 'Error fetching problem data',
+            type: 'error',
+            isLoading: false,
+            duration: 3000
+          })
+          return
+        }
+
+        const content = problemData.content
+        const imagesToDelete = content.images || []
+
+        // Delete the problem from the database
+        const {error: deleteError} = await supabase
+            .from('problems')
+            .delete()
+            .eq('id', problemToDelete.value.id)
+
+        if (deleteError) {
+          updateNotification(notificationId, {
+            message: 'Error deleting problem',
+            type: 'error',
+            isLoading: false,
+            duration: 3000
+          })
+          return
+        }
+
+        // Delete images associated with the problem
+        const deleteImagePromises = imagesToDelete.map(image => deleteImageFromStorage(image.name))
+        await Promise.all(deleteImagePromises)
+
         await fetchProblems()
         showConfirmDialog.value = false
         problemToDelete.value = null
+
+        updateNotification(notificationId, {
+          message: 'Problem and associated images deleted successfully',
+          type: 'success',
+          isLoading: false,
+          duration: 3000
+        })
+      } catch (error) {
+        updateNotification(notificationId, {
+          message: `Error deleting problem: ${error.message}`,
+          type: 'error',
+          isLoading: false,
+          duration: 3000
+        })
       }
     }
 

@@ -15,19 +15,25 @@
       </template>
     </nav>
     <router-view/>
+    <NotificationContainer ref="notificationContainer"/>
   </div>
 </template>
 
 <script>
-import {onMounted, ref} from 'vue'
+import {onMounted, provide, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from './services/supabase'
+import NotificationContainer from './components/NotificationContainer.vue'
 
 export default {
   name: 'App',
+  components: {
+    NotificationContainer
+  },
   setup() {
     const router = useRouter()
     const user = ref(null)
+    const notificationContainer = ref(null)
 
     onMounted(() => {
       user.value = supabase.auth.getUserIdentities()?.[0]?.user ?? null
@@ -43,9 +49,22 @@ export default {
       await router.push('/login')
     }
 
+    const showNotification = (message, type = 'info', options = {}) => {
+      return notificationContainer.value.addNotification({message, type, ...options})
+    }
+
+    const updateNotification = (id, updates) => {
+      notificationContainer.value.updateNotification(id, updates)
+    }
+
+    // Provide both methods
+    provide('showNotification', showNotification)
+    provide('updateNotification', updateNotification)
+
     return {
       user,
-      handleLogout
+      handleLogout,
+      notificationContainer
     }
   }
 }
