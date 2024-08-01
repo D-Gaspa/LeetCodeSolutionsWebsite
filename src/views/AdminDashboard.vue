@@ -119,7 +119,6 @@
               Delete Content
             </button>
           </div>
-          <p v-if="formError" class="error-message">{{ formError }}</p>
           <div class="form-actions">
             <button type="submit">Save Problem</button>
             <button type="button" @click="closeProblemForm">Cancel</button>
@@ -219,7 +218,6 @@ export default {
     const dateFilter = ref('')
     const currentPage = ref(1)
     const itemsPerPage = 10
-    const formError = ref('')
     const markdownEditor = ref(null)
     const originalImages = ref([])
 
@@ -267,8 +265,9 @@ export default {
 
       const {data, error} = await query
 
-      if (error) console.error('Error fetching problems:', error)
-      else problems.value = data
+      if (error) {
+        showNotification('An error occurred while fetching problems', 'error')
+      } else problems.value = data
     }
 
     const searchProblems = () => {
@@ -298,7 +297,6 @@ export default {
       showProblemForm.value = false
       editingProblem.value = null
       clearProblemForm()
-      formError.value = ''
       originalImages.value = []
     }
 
@@ -317,7 +315,7 @@ export default {
       }
 
       if (!unsavedChanges || confirm('Are you sure you want to close? Any unsaved changes will be lost.')) {
-        showContentEditor.value = false;
+        showContentEditor.value = false
       }
     }
 
@@ -344,29 +342,31 @@ export default {
           images: newContent.images
         }
         showContentEditor.value = false
+
+        showNotification('Content saved successfully', 'success')
       } else {
-        console.error('Markdown editor reference not found')
+        showNotification('An error occurred while saving the content', 'error')
       }
     }
 
     const deleteContent = () => {
       if (confirm('Are you sure you want to delete the content?')) {
         problemForm.content = {text: '', images: []}
+
+        showNotification('Content deleted successfully', 'success')
       }
     }
 
     const validateAndSaveProblem = async () => {
-      formError.value = ''
-
       // Validate problem number
       if (!Number.isInteger(problemForm.id) || problemForm.id < 1) {
-        formError.value = 'Problem number must be a positive integer.'
+        showNotification('Problem number must be a positive integer', 'warning')
         return
       }
 
       // Validate content
       if (!problemForm.content || !problemForm.content.text || problemForm.content.text.trim() === '') {
-        formError.value = 'Problem content cannot be empty.'
+        showNotification('Problem content cannot be empty', 'warning')
         return
       }
 
@@ -377,13 +377,12 @@ export default {
           .eq('id', problemForm.id)
 
       if (error) {
-        console.error('Error checking problem ID:', error)
-        formError.value = 'An error occurred while validating the problem number. Please try again.'
+        showNotification('An error occurred while validating the problem number', 'error')
         return
       }
 
       if (data && data.length > 0 && (!editingProblem.value || data[0].id !== editingProblem.value.id)) {
-        formError.value = 'This problem number already exists. Please choose a different one.'
+        showNotification('This problem number already exists. Please choose a different one.', 'warning')
         return
       }
 
@@ -408,20 +407,44 @@ export default {
     }
 
     const saveProblem = async () => {
+      const notificationId = showNotification('Initializing problem save...', 'loading', {isLoading: true})
+
       try {
-        // Only proceed with image management if there are changes
         const imagesChanged = areImagesChanged(problemForm.content.images, originalImages.value)
 
         if (imagesChanged) {
-          const {renamedImages, updatedContent} = await handleImageManagement(
+          updateNotification(notificationId, {
+            message: 'Processing image changes...'
+          })
+
+          const result = await handleImageManagement(
               problemForm.content.images,
               problemForm.id,
-              problemForm.content.text
-          );
+              problemForm.content.text,
+              notificationId
+          )
+
+          if (!result.success) {
+            updateNotification(notificationId, {
+              message: result.error,
+              type: 'error',
+              isLoading: false,
+              duration: 3000
+            })
+            return
+          }
 
           // Update the problem form with the new content and images
-          problemForm.content.text = updatedContent;
-          problemForm.content.images = renamedImages;
+          problemForm.content.text = result.updatedContent
+          problemForm.content.images = result.renamedImages
+
+          updateNotification(notificationId, {
+            message: 'Image processing complete. Preparing to save problem...'
+          })
+        } else {
+          updateNotification(notificationId, {
+            message: 'No image changes detected. Preparing to save problem...'
+          })
         }
 
         const formData = {...problemForm}
@@ -437,6 +460,10 @@ export default {
         formData.title = `${formData.id}. ${formData.name}`
         delete formData.name  // Remove the separate name field
 
+        updateNotification(notificationId, {
+          message: 'Saving problem to database...'
+        })
+
         // Save problem
         const {error} = editingProblem.value
             ? await supabase
@@ -448,15 +475,34 @@ export default {
                 .insert([formData])
 
         if (error) {
-          console.error('Error saving problem:', error)
-          formError.value = 'An error occurred while saving the problem. Please try again.'
+          updateNotification(notificationId, {
+            message: 'Error saving problem to database',
+            type: 'error',
+            isLoading: false,
+            duration: 3000
+          })
         } else {
+          updateNotification(notificationId, {
+            message: 'Problem saved successfully. Refreshing problem list...'
+          })
+
           await fetchProblems()
+
+          updateNotification(notificationId, {
+            message: 'Problem saved and list refreshed successfully',
+            type: 'success',
+            isLoading: false,
+            duration: 3000
+          })
           closeProblemForm()
         }
       } catch (error) {
-        console.error('Error in saveProblem:', error);
-        formError.value = 'An unexpected error occurred. Please try again.';
+        updateNotification(notificationId, {
+          message: `Unexpected error saving problem: ${error.message}`,
+          type: 'error',
+          isLoading: false,
+          duration: 3000
+        })
       }
     }
 
@@ -468,134 +514,150 @@ export default {
       })
     }
 
-    const handleImageManagement = async (currentImages, problemNumber, content) => {
+
+    const handleImageManagement = async (currentImages, problemNumber, content, notificationId) => {
       // Order the current images based on their appearance in the content
-      const orderedCurrentImages = getOrderedImages(content, currentImages);
+      const orderedCurrentImages = getOrderedImages(content, currentImages)
 
       const imagesToDelete = originalImages.value.filter(
           orig => !orderedCurrentImages.some(curr => curr.url === orig.url)
-      );
+      )
 
-      // Delete removed images
-      for (const image of imagesToDelete) {
-        await deleteImageFromStorage(image.name);
+      if (imagesToDelete.length > 0) {
+        updateNotification(notificationId, {
+          message: `Deleting ${imagesToDelete.length} removed image(s)...`
+        })
+
+        // Delete removed images
+        for (const image of imagesToDelete) {
+          const deleteResult = await deleteImageFromStorage(image.name)
+          if (!deleteResult.success) {
+            return {success: false, error: deleteResult.error}
+          }
+        }
+
+        updateNotification(notificationId, {
+          message: 'Removed images deleted successfully. Processing remaining images...'
+        })
       }
 
       // Rename and upload all images (existing and new) based on their new order
-      const {renamedImages, updatedContent} = await renameAndUploadImages(orderedCurrentImages, problemNumber, content);
+      updateNotification(notificationId, {
+        message: `Processing ${orderedCurrentImages.length} image(s)...`
+      })
 
-      return {renamedImages, updatedContent};
-    };
-
-    const getOrderedImages = (content, images) => {
-      const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g;
-      const orderedImages = [];
-      let match;
-
-      while ((match = imageRegex.exec(content)) !== null) {
-        const [, , src] = match;
-        const image = images.find(img => img.id === src || img.url === src);
-        if (image && !orderedImages.includes(image)) {
-          orderedImages.push(image);
-        }
+      const renameResult = await renameAndUploadImages(orderedCurrentImages, problemNumber, content, notificationId)
+      if (!renameResult.success) {
+        return {success: false, error: renameResult.error}
       }
 
-      // Add any remaining images that weren't found in the content
-      images.forEach(image => {
-        if (!orderedImages.includes(image)) {
-          orderedImages.push(image);
-        }
-      });
+      updateNotification(notificationId, {
+        message: 'Image processing completed successfully'
+      })
 
-      return orderedImages;
-    };
+      return {
+        success: true,
+        renamedImages: renameResult.renamedImages,
+        updatedContent: renameResult.updatedContent
+      }
+    }
+
+    const getOrderedImages = (content, images) => {
+      const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g
+      const orderedImages = []
+      let match
+
+      while ((match = imageRegex.exec(content)) !== null) {
+        const [, , src] = match
+        const image = images.find(img => img.id === src || img.url === src)
+        if (image && !orderedImages.includes(image)) {
+          orderedImages.push(image)
+        }
+      }
+    }
 
     const deleteImageFromStorage = async (imageName) => {
       const {error} = await supabase.storage
           .from('problem-images')
-          .remove([imageName]);
+          .remove([imageName])
 
       if (error) {
-        console.error('Error deleting image:', error);
+        return {success: false, error: `Error deleting image ${imageName}: ${error.message}`}
       }
+      return {success: true}
     }
 
-    const renameAndUploadImages = async (orderedImages, problemNumber, content) => {
-      const renamedImages = [];
-      let imageCounter = 1;
-      let updatedContent = content;
+    const renameAndUploadImages = async (orderedImages, problemNumber, content, notificationId) => {
+      const renamedImages = []
+      let imageCounter = 1
+      let updatedContent = content
 
       for (const image of orderedImages) {
-        const fileExtension = image.name.split('.').pop();
-        const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`;
+        const fileExtension = image.name.split('.').pop()
+        const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`
 
-        let newUrl;
+        let newUrl
 
         if (image.name !== newFileName) {
           if (image.file instanceof File) {
             // Upload new image
-            try {
-              const arrayBuffer = await image.file.arrayBuffer();
-              const {error} = await supabase.storage
-                  .from('problem-images')
-                  .upload(newFileName, arrayBuffer, {
-                    contentType: image.file.type,
-                    cacheControl: '3600',
-                    upsert: true
-                  });
-
-              if (error) {
-                console.error('Error uploading image (Database error):', error);
-              }
-            } catch (error) {
-              console.error('Error uploading image:', error);
-              continue;
+            const uploadResult = await uploadNewImage(image.file, newFileName)
+            if (!uploadResult.success) {
+              updateNotification(notificationId, {
+                message: uploadResult.error,
+                type: 'error',
+                isLoading: false,
+                duration: 3000
+              })
+              return {success: false, error: uploadResult.error}
             }
           } else {
             // Rename existing image
-            try {
-              const {error} = await supabase.storage
-                  .from('problem-images')
-                  .move(image.name, newFileName);
-
-              if (error) {
-                console.error('Error renaming image (Database error):', error);
-              }
-            } catch (error) {
-              console.error('Error renaming image:', error);
-              continue;
+            const renameResult = await renameExistingImage(image.name, newFileName)
+            if (!renameResult.success) {
+              updateNotification(notificationId, {
+                message: renameResult.error,
+                type: 'error',
+                isLoading: false,
+                duration: 3000
+              })
+              return {success: false, error: renameResult.error}
             }
           }
 
           // Get the public URL for the new or renamed image
-          try {
-            const {data: urlData, error} = supabase.storage
-                .from('problem-images')
-                .getPublicUrl(newFileName);
-            if (error) {
-              console.error('Error getting public URL:', error);
-              continue;
-            }
-            newUrl = urlData.publicUrl;
-          } catch (error) {
-            console.error('Error getting public URL:', error);
-            continue;
+          const urlResult = await getPublicUrl(newFileName)
+          if (!urlResult.success) {
+            updateNotification(notificationId, {
+              message: urlResult.error,
+              type: 'error',
+              isLoading: false,
+              duration: 3000
+            })
+            return {success: false, error: urlResult.error}
           }
+          newUrl = urlResult.url
 
           // Update content
           try {
             if (image.file instanceof File) {
-              let newImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.id)}\\)`, 'g');
-              updatedContent = updatedContent.replace(newImagePattern, `![${newFileName}](${newUrl})`);
+              let newImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.id)}\\)`, 'g')
+              updatedContent = updatedContent.replace(newImagePattern, `![${newFileName}](${newUrl})`)
             } else {
-              let existingImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.url)}\\)`, 'g');
-              updatedContent = updatedContent.replace(existingImagePattern, `![${newFileName}](${newUrl})`);
+              let existingImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.url)}\\)`, 'g')
+              updatedContent = updatedContent.replace(existingImagePattern, `![${newFileName}](${newUrl})`)
             }
           } catch (error) {
-            console.error('Error updating content:', error);
+            updateNotification(notificationId, {
+              message: 'Error updating content',
+              type: 'error',
+              isLoading: false,
+              duration: 3000
+            })
+            return {success: false, error: 'Error updating content'}
           }
         } else {
-          newUrl = image.url; // Keep the existing URL if the image name hasn't changed
+          newUrl = image.url // Keep the existing URL if the image name hasn't changed
         }
 
         renamedImages.push({
@@ -603,16 +665,65 @@ export default {
           name: newFileName,
           url: newUrl,
           file: image.file // Preserve the file object for new images
-        });
+        })
 
-        imageCounter++;
+        imageCounter++
       }
 
-      return {renamedImages, updatedContent};
-    };
+      return {success: true, renamedImages, updatedContent}
+    }
+
+    const uploadNewImage = async (file, fileName) => {
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const {error} = await supabase.storage
+            .from('problem-images')
+            .upload(fileName, arrayBuffer, {
+              contentType: file.type,
+              cacheControl: '3600',
+              upsert: true
+            })
+
+        if (error) {
+          return {success: false, error: 'Error uploading image'}
+        }
+        return {success: true}
+      } catch (error) {
+        return {success: false, error: 'Error uploading image'}
+      }
+    }
+
+    const renameExistingImage = async (oldName, newName) => {
+      try {
+        const {error} = await supabase.storage
+            .from('problem-images')
+            .move(oldName, newName)
+
+        if (error) {
+          return {success: false, error: 'Error renaming image'}
+        }
+        return {success: true}
+      } catch (error) {
+        return {success: false, error: 'Error renaming image'}
+      }
+    }
+
+    const getPublicUrl = async (fileName) => {
+      try {
+        const {data: urlData, error} = supabase.storage
+            .from('problem-images')
+            .getPublicUrl(fileName)
+        if (error) {
+          return {success: false, error: 'Error getting public URL'}
+        }
+        return {success: true, url: urlData.publicUrl}
+      } catch (error) {
+        return {success: false, error: 'Error getting public URL'}
+      }
+    }
 
     function escapeRegExp(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     }
 
     const saveSolution = async () => {
@@ -666,10 +777,14 @@ export default {
     const deleteProblem = async () => {
       if (!problemToDelete.value) return
 
-      const notificationId = showNotification('Deleting problem...', 'loading', {isLoading: true})
+      const notificationId = showNotification('Initializing problem deletion...', 'loading', {isLoading: true})
 
       try {
-        // Get the problem's content to delete any associated images
+        // Fetch problem data
+        updateNotification(notificationId, {
+          message: 'Fetching problem data...'
+        })
+
         const {data: problemData, error: problemError} = await supabase
             .from('problems')
             .select('content')
@@ -678,7 +793,7 @@ export default {
 
         if (problemError) {
           updateNotification(notificationId, {
-            message: 'Error fetching problem data',
+            message: `Error fetching problem data: ${problemError.message}`,
             type: 'error',
             isLoading: false,
             duration: 3000
@@ -690,6 +805,10 @@ export default {
         const imagesToDelete = content.images || []
 
         // Delete the problem from the database
+        updateNotification(notificationId, {
+          message: 'Deleting problem from database...'
+        })
+
         const {error: deleteError} = await supabase
             .from('problems')
             .delete()
@@ -697,7 +816,7 @@ export default {
 
         if (deleteError) {
           updateNotification(notificationId, {
-            message: 'Error deleting problem',
+            message: `Error deleting problem from database: ${deleteError.message}`,
             type: 'error',
             isLoading: false,
             duration: 3000
@@ -706,13 +825,43 @@ export default {
         }
 
         // Delete images associated with the problem
-        const deleteImagePromises = imagesToDelete.map(image => deleteImageFromStorage(image.name))
-        await Promise.all(deleteImagePromises)
+        if (imagesToDelete.length > 0) {
+          updateNotification(notificationId, {
+            message: `Deleting ${imagesToDelete.length} associated image(s)...`
+          })
+
+          const deleteImageResults = await Promise.all(
+              imagesToDelete.map(image => deleteImageFromStorage(image.name))
+          )
+
+          const failedDeletes = deleteImageResults.filter(result => !result.success)
+          if (failedDeletes.length > 0) {
+            updateNotification(notificationId, {
+              message: `Error deleting ${failedDeletes.length} image(s). Problem deleted, but some images may remain.`,
+              type: 'warning',
+              isLoading: false,
+              duration: 5000
+            })
+            console.error('Failed image deletes:', failedDeletes)
+          } else {
+            updateNotification(notificationId, {
+              message: 'All associated images deleted successfully'
+            })
+          }
+        }
+
+        // Refresh the problem list
+        updateNotification(notificationId, {
+          message: 'Refreshing problems list...'
+        })
 
         await fetchProblems()
+
+        // Clean up
         showConfirmDialog.value = false
         problemToDelete.value = null
 
+        // Final success notification
         updateNotification(notificationId, {
           message: 'Problem and associated images deleted successfully',
           type: 'success',
@@ -721,7 +870,7 @@ export default {
         })
       } catch (error) {
         updateNotification(notificationId, {
-          message: `Error deleting problem: ${error.message}`,
+          message: `Unexpected error during problem deletion: ${error.message}`,
           type: 'error',
           isLoading: false,
           duration: 3000
@@ -756,7 +905,6 @@ export default {
       currentPage,
       totalPages,
       paginatedProblems,
-      formError,
       showContentEditor,
       markdownEditor,
       openContentEditor,
@@ -905,12 +1053,6 @@ input, select, textarea {
 
 .form-actions button {
   margin-left: 10px;
-}
-
-.error-message {
-  color: red;
-  font-size: 0.9em;
-  margin-top: 5px;
 }
 
 </style>

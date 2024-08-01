@@ -43,7 +43,7 @@ export default {
   emits: ['close', 'hide-complete'],
   setup(props, {emit}) {
     const show = ref(false)
-    const timeoutId = ref(null)
+    const timeoutId = ref(0)
 
     const iconComponent = computed(() => {
       const iconMap = {
