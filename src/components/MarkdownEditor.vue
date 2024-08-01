@@ -341,10 +341,6 @@ export default {
       editorView.value.focus()
     }
 
-    const saveImages = () => {
-      emit('save-images', tempImages.value)
-    }
-
     const isGalleryCollapsed = ref(false)
     const toggleGallery = () => {
       isGalleryCollapsed.value = !isGalleryCollapsed.value
@@ -411,7 +407,6 @@ export default {
       handleReady,
       insertImageToEditor,
       removeImage,
-      saveImages,
     }
   }
 }

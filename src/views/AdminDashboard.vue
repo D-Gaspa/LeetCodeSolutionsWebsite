@@ -458,7 +458,14 @@ export default {
 
         // Combine problem number and name into title
         formData.title = `${formData.id}. ${formData.name}`
-        delete formData.name  // Remove the separate name field
+
+        // Remove the separate name field and the file property from images
+        delete formData.name
+        formData.content.images = formData.content.images.map(img => ({
+          id: img.id,
+          name: img.name,
+          url: img.url
+        }))
 
         updateNotification(notificationId, {
           message: 'Saving problem to database...'
@@ -574,6 +581,7 @@ export default {
           orderedImages.push(image)
         }
       }
+      return orderedImages
     }
 
     const deleteImageFromStorage = async (imageName) => {
