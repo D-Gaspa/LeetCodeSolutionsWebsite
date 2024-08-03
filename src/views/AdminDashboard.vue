@@ -11,6 +11,9 @@
         @add-solution="openSolutionForm"
     />
 
+    <!-- Test button for delete confirmation dialog -->
+    <button @click="confirmDeleteProblem"> Test Delete</button>
+
     <!-- Problem Form Modal -->
     <div v-if="showProblemForm" class="modal" @click.self="closeProblemForm">
       <div class="modal-content">
@@ -120,7 +123,7 @@
 
     <!-- Confirmation Dialog -->
     <ConfirmDialog
-        v-if="showConfirmDialog"
+        v-model:show="showConfirmDialog"
         message="Are you sure you want to delete this problem?"
         title="Confirm Delete"
         @confirm="deleteProblem"
@@ -146,11 +149,11 @@ export default {
   setup() {
     const showNotification = inject('showNotification')
     const updateNotification = inject('updateNotification')
+    const showConfirmDialog = ref(false)
     const problems = ref([])
     const showProblemForm = ref(false)
     const showSolutionForm = ref(false)
     const showContentEditor = ref(false)
-    const showConfirmDialog = ref(false)
     const editingProblem = ref(null)
     const editingSolution = ref(null)
     const problemToDelete = ref(null)
