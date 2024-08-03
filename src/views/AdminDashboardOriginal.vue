@@ -1,15 +1,74 @@
 <template>
   <div class="admin-dashboard">
     <h1>Admin Dashboard</h1>
+    <h2>Test</h2>
 
-    <ProblemList
-        :problems="problems"
-        @add="openProblemForm"
-        @delete="confirmDeleteProblem"
-        @edit="editProblem"
-        @search="handleSearch"
-        @add-solution="openSolutionForm"
-    />
+    <!-- Search, Filters, and Add Problem -->
+    <div class="dashboard-header">
+      <div class="search-filters">
+        <input
+            v-model="searchQuery"
+            placeholder="Search problems..."
+            @input="debouncedSearch"
+        >
+        <select v-model="difficultyFilter">
+          <option value="">All Difficulties</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+        <select v-model="typeFilter">
+          <option value="">All Types</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        <input
+            v-model="dateFilter"
+            placeholder="Filter by date"
+            type="date"
+        >
+      </div>
+      <button class="add-problem-btn" @click="openProblemForm">Add Problem</button>
+    </div>
+
+    <!-- Problem List -->
+    <table>
+      <thead>
+      <tr>
+        <th>Title</th>
+        <th>Difficulty</th>
+        <th>Type</th>
+        <th>Date/Week</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr v-for="problem in paginatedProblems" :key="problem.id">
+        <td>{{ problem.title }}</td>
+        <td>{{ problem.difficulty }}</td>
+        <td>{{ problem.problem_type }}</td>
+        <td>
+          {{
+            problem.problem_type === 'daily'
+                ? formatDate(problem.problem_date)
+                : `Week ${problem.problem_week}, ${problem.problem_year}`
+          }}
+        </td>
+        <td>
+          <button @click="editProblem(problem)">Edit</button>
+          <button @click="confirmDeleteProblem(problem)">Delete</button>
+          <button @click="openSolutionForm(problem)">Add Solution</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button :disabled="currentPage === 1" @click="currentPage--">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
+    </div>
 
     <!-- Problem Form Modal -->
     <div v-if="showProblemForm" class="modal" @click.self="closeProblemForm">
@@ -119,28 +178,28 @@
     </div>
 
     <!-- Confirmation Dialog -->
-    <ConfirmDialog
-        v-if="showConfirmDialog"
-        message="Are you sure you want to delete this problem?"
-        title="Confirm Delete"
-        @confirm="deleteProblem"
-        @dismiss="showConfirmDialog = false"
-    />
+    <div v-if="showConfirmDialog" class="modal">
+      <div class="modal-content">
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete this problem?</p>
+        <div class="form-actions">
+          <button @click="deleteProblem">Yes, Delete</button>
+          <button @click="showConfirmDialog = false">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import {inject, onMounted, reactive, ref} from 'vue'
+import {computed, inject, onMounted, reactive, ref, watch} from 'vue'
 import {supabase} from '../services/supabase'
+import debounce from 'lodash/debounce'
 import MarkdownEditor from '../components/AdminDashboard/MarkdownEditor.vue'
-import ProblemList from "@/components/AdminDashboard/ProblemList.vue";
-import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 export default {
   name: 'AdminDashboard',
   components: {
-    ConfirmDialog,
-    ProblemList,
     MarkdownEditor
   },
   setup() {
@@ -159,6 +218,7 @@ export default {
     const typeFilter = ref('')
     const dateFilter = ref('')
     const currentPage = ref(1)
+    const itemsPerPage = 10
     const markdownEditor = ref(null)
     const originalImages = ref([])
 
@@ -182,23 +242,26 @@ export default {
       space_complexity: ''
     })
 
-    const fetchProblems = async (filters = {}) => {
+    const fetchProblems = async () => {
       let query = supabase
           .from('problems')
           .select('*')
           .order('created_at', {ascending: false})
 
-      if (filters.query) {
-        query = query.ilike('title', `%${filters.query}%`)
+      if (searchQuery.value) {
+        query = query.ilike('title', `%${searchQuery.value}%`)
       }
-      if (filters.difficulty) {
-        query = query.eq('difficulty', filters.difficulty)
+
+      if (difficultyFilter.value) {
+        query = query.eq('difficulty', difficultyFilter.value)
       }
-      if (filters.type) {
-        query = query.eq('problem_type', filters.type)
+
+      if (typeFilter.value) {
+        query = query.eq('problem_type', typeFilter.value)
       }
-      if (filters.date) {
-        query = query.eq('problem_date', filters.date)
+
+      if (dateFilter.value) {
+        query = query.eq('problem_date', dateFilter.value)
       }
 
       const {data, error} = await query
@@ -208,9 +271,23 @@ export default {
       } else problems.value = data
     }
 
-    const handleSearch = (filters) => {
-      fetchProblems(filters)
+    const searchProblems = () => {
+      currentPage.value = 1 // Reset to first page when searching
     }
+
+    const filteredProblems = computed(() => {
+      return problems.value.filter(problem =>
+          problem.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    })
+
+    const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+
+    const paginatedProblems = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage
+      const end = start + itemsPerPage
+      return filteredProblems.value.slice(start, end)
+    })
 
     const openProblemForm = () => {
       originalImages.value = problemForm.content.images || []
@@ -222,127 +299,6 @@ export default {
       editingProblem.value = null
       clearProblemForm()
       originalImages.value = []
-    }
-
-    const editProblem = (problem) => {
-      editingProblem.value = problem
-      const [id, ...nameParts] = problem.title.split('.')
-
-      Object.assign(problemForm, {
-        ...problem,
-        id: parseInt(id),
-        name: nameParts.join('.').trim(),
-      })
-      openProblemForm()
-    }
-
-    const confirmDeleteProblem = (problem) => {
-      problemToDelete.value = problem
-      showConfirmDialog.value = true
-    }
-
-    const deleteProblem = async () => {
-      if (!problemToDelete.value) return
-
-      const notificationId = showNotification('Initializing problem deletion...', 'loading', {isLoading: true})
-
-      try {
-        // Fetch problem data
-        updateNotification(notificationId, {
-          message: 'Fetching problem data...'
-        })
-
-        const {data: problemData, error: problemError} = await supabase
-            .from('problems')
-            .select('content')
-            .eq('id', problemToDelete.value.id)
-            .single()
-
-        if (problemError) {
-          updateNotification(notificationId, {
-            message: `Error fetching problem data: ${problemError.message}`,
-            type: 'error',
-            isLoading: false,
-            duration: 3000
-          })
-          return
-        }
-
-        const content = problemData.content
-        const imagesToDelete = content.images || []
-
-        // Delete the problem from the database
-        updateNotification(notificationId, {
-          message: 'Deleting problem from database...'
-        })
-
-        const {error: deleteError} = await supabase
-            .from('problems')
-            .delete()
-            .eq('id', problemToDelete.value.id)
-
-        if (deleteError) {
-          updateNotification(notificationId, {
-            message: `Error deleting problem from database: ${deleteError.message}`,
-            type: 'error',
-            isLoading: false,
-            duration: 3000
-          })
-          return
-        }
-
-        // Delete images associated with the problem
-        if (imagesToDelete.length > 0) {
-          updateNotification(notificationId, {
-            message: `Deleting ${imagesToDelete.length} associated image(s)...`
-          })
-
-          const deleteImageResults = await Promise.all(
-              imagesToDelete.map(image => deleteImageFromStorage(image.name))
-          )
-
-          const failedDeletes = deleteImageResults.filter(result => !result.success)
-          if (failedDeletes.length > 0) {
-            updateNotification(notificationId, {
-              message: `Error deleting ${failedDeletes.length} image(s). Problem deleted, but some images may remain.`,
-              type: 'warning',
-              isLoading: false,
-              duration: 5000
-            })
-            console.error('Failed image deletes:', failedDeletes)
-          } else {
-            updateNotification(notificationId, {
-              message: 'All associated images deleted successfully'
-            })
-          }
-        }
-
-        // Refresh the problem list
-        updateNotification(notificationId, {
-          message: 'Refreshing problems list...'
-        })
-
-        await fetchProblems()
-
-        // Clean up
-        showConfirmDialog.value = false
-        problemToDelete.value = null
-
-        // Final success notification
-        updateNotification(notificationId, {
-          message: 'Problem and associated images deleted successfully',
-          type: 'success',
-          isLoading: false,
-          duration: 3000
-        })
-      } catch (error) {
-        updateNotification(notificationId, {
-          message: `Unexpected error during problem deletion: ${error.message}`,
-          type: 'error',
-          isLoading: false,
-          duration: 3000
-        })
-      }
     }
 
 
@@ -433,6 +389,22 @@ export default {
 
       // If all validations pass, proceed with saving
       await saveProblem()
+    }
+
+    const debouncedSearch = debounce(() => {
+      fetchProblems()
+    }, 300)
+
+    const editProblem = (problem) => {
+      editingProblem.value = problem
+      const [id, ...nameParts] = problem.title.split('.')
+
+      Object.assign(problemForm, {
+        ...problem,
+        id: parseInt(id),
+        name: nameParts.join('.').trim(),
+      })
+      openProblemForm()
     }
 
     const saveProblem = async () => {
@@ -806,39 +778,160 @@ export default {
       solutionForm.space_complexity = ''
     }
 
+    const confirmDeleteProblem = (problem) => {
+      problemToDelete.value = problem
+      showConfirmDialog.value = true
+    }
+
+    const deleteProblem = async () => {
+      if (!problemToDelete.value) return
+
+      const notificationId = showNotification('Initializing problem deletion...', 'loading', {isLoading: true})
+
+      try {
+        // Fetch problem data
+        updateNotification(notificationId, {
+          message: 'Fetching problem data...'
+        })
+
+        const {data: problemData, error: problemError} = await supabase
+            .from('problems')
+            .select('content')
+            .eq('id', problemToDelete.value.id)
+            .single()
+
+        if (problemError) {
+          updateNotification(notificationId, {
+            message: `Error fetching problem data: ${problemError.message}`,
+            type: 'error',
+            isLoading: false,
+            duration: 3000
+          })
+          return
+        }
+
+        const content = problemData.content
+        const imagesToDelete = content.images || []
+
+        // Delete the problem from the database
+        updateNotification(notificationId, {
+          message: 'Deleting problem from database...'
+        })
+
+        const {error: deleteError} = await supabase
+            .from('problems')
+            .delete()
+            .eq('id', problemToDelete.value.id)
+
+        if (deleteError) {
+          updateNotification(notificationId, {
+            message: `Error deleting problem from database: ${deleteError.message}`,
+            type: 'error',
+            isLoading: false,
+            duration: 3000
+          })
+          return
+        }
+
+        // Delete images associated with the problem
+        if (imagesToDelete.length > 0) {
+          updateNotification(notificationId, {
+            message: `Deleting ${imagesToDelete.length} associated image(s)...`
+          })
+
+          const deleteImageResults = await Promise.all(
+              imagesToDelete.map(image => deleteImageFromStorage(image.name))
+          )
+
+          const failedDeletes = deleteImageResults.filter(result => !result.success)
+          if (failedDeletes.length > 0) {
+            updateNotification(notificationId, {
+              message: `Error deleting ${failedDeletes.length} image(s). Problem deleted, but some images may remain.`,
+              type: 'warning',
+              isLoading: false,
+              duration: 5000
+            })
+            console.error('Failed image deletes:', failedDeletes)
+          } else {
+            updateNotification(notificationId, {
+              message: 'All associated images deleted successfully'
+            })
+          }
+        }
+
+        // Refresh the problem list
+        updateNotification(notificationId, {
+          message: 'Refreshing problems list...'
+        })
+
+        await fetchProblems()
+
+        // Clean up
+        showConfirmDialog.value = false
+        problemToDelete.value = null
+
+        // Final success notification
+        updateNotification(notificationId, {
+          message: 'Problem and associated images deleted successfully',
+          type: 'success',
+          isLoading: false,
+          duration: 3000
+        })
+      } catch (error) {
+        updateNotification(notificationId, {
+          message: `Unexpected error during problem deletion: ${error.message}`,
+          type: 'error',
+          isLoading: false,
+          duration: 3000
+        })
+      }
+    }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
+    }
+
+    watch([difficultyFilter, typeFilter, dateFilter], fetchProblems)
+
     onMounted(fetchProblems)
 
     return {
       problems,
       showProblemForm,
       showSolutionForm,
-      showContentEditor,
       showConfirmDialog,
-      editingProblem,
-      editingSolution,
       problemForm,
       solutionForm,
+      editingProblem,
+      editingSolution,
+      debouncedSearch,
       searchQuery,
       difficultyFilter,
       typeFilter,
       dateFilter,
       currentPage,
+      totalPages,
+      paginatedProblems,
+      showContentEditor,
       markdownEditor,
-      handleSearch,
-      openProblemForm,
-      editProblem,
-      saveProblem,
-      validateAndSaveProblem,
-      confirmDeleteProblem,
-      deleteProblem,
-      closeProblemForm,
       openContentEditor,
+      closeContentEditor,
       updateContent,
       saveContent,
       deleteContent,
-      closeContentEditor,
+      validateAndSaveProblem,
+      editProblem,
+      closeProblemForm,
+      saveProblem,
+      openProblemForm,
       openSolutionForm,
       saveSolution,
+      confirmDeleteProblem,
+      deleteProblem,
+      formatDate,
+      searchProblems
     }
   }
 }
@@ -847,6 +940,76 @@ export default {
 <style scoped>
 .admin-dashboard {
   padding: 20px;
+}
+
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.search-filters {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+
+.add-problem-btn {
+  margin-left: 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-problem-btn:hover {
+  filter: brightness(0.9);
+  background-color: #3f9442;
+}
+
+.search-filters input,
+.search-filters select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.search-filters input:hover,
+.search-filters select:hover {
+  border-color: #333;
+  filter: brightness(0.95);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination button {
+  margin: 0 10px;
 }
 
 .modal {
