@@ -16,6 +16,8 @@
     </nav>
     <router-view/>
     <NotificationContainer ref="notificationContainer"/>
+    <ConfirmDialog ref="confirmDialog" v-model:show="showConfirmDialog" @confirm="handleConfirm"
+                   @dismiss="handleDismiss"/>
   </div>
 </template>
 
@@ -24,16 +26,21 @@ import {onMounted, provide, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from './services/supabase'
 import NotificationContainer from './components/NotificationContainer.vue'
+import ConfirmDialog from "@/components/ConfirmDialog.vue";
 
 export default {
   name: 'App',
   components: {
+    ConfirmDialog,
     NotificationContainer
   },
   setup() {
     const router = useRouter()
     const user = ref(null)
     const notificationContainer = ref(null)
+    const showConfirmDialog = ref(false)
+    const confirmDialog = ref(null)
+    let confirmResolve = null
 
     onMounted(() => {
       user.value = supabase.auth.getUserIdentities()?.[0]?.user ?? null
@@ -60,14 +67,39 @@ export default {
       notificationContainer.value.updateNotification(id, updates)
     }
 
-    // Provide both methods
+    const showConfirm = (title, message) => {
+      return new Promise((resolve) => {
+        confirmResolve = resolve
+        confirmDialog.value.open(title, message)
+      })
+    }
+
+    const handleConfirm = () => {
+      if (confirmResolve) {
+        confirmResolve(true)
+        confirmResolve = null
+      }
+    }
+
+    const handleDismiss = () => {
+      if (confirmResolve) {
+        confirmResolve(false)
+        confirmResolve = null
+      }
+    }
+
     provide('showNotification', showNotification)
     provide('updateNotification', updateNotification)
+    provide('showConfirm', showConfirm)
 
     return {
       user,
-      handleLogout,
       notificationContainer,
+      showConfirmDialog,
+      confirmDialog,
+      handleLogout,
+      handleConfirm,
+      handleDismiss
     }
   }
 }
