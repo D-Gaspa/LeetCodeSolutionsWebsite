@@ -21,17 +21,23 @@ import {ref, watch} from 'vue'
 export default {
   name: 'ConfirmDialog',
   props: {
-    title: String,
-    message: String,
     show: Boolean,
   },
   emits: ['update:show', 'confirm', 'dismiss'],
   setup(props, {emit}) {
     const isVisible = ref(false)
+    const title = ref('')
+    const message = ref('')
 
     watch(() => props.show, (newValue) => {
       isVisible.value = newValue;
     })
+
+    const open = (newTitle, newMessage) => {
+      title.value = newTitle
+      message.value = newMessage
+      emit('update:show', true)
+    }
 
     const onConfirm = () => {
       emit('confirm')
@@ -51,6 +57,9 @@ export default {
 
     return {
       isVisible,
+      title,
+      message,
+      open,
       onConfirm,
       onDismiss,
       onBackdropClick,
