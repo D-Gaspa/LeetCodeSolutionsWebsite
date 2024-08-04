@@ -55,14 +55,14 @@ export function useImageManagement() {
 
         // First pass: Rename existing images and upload new images with temporary names
         updateNotification(notificationId, {message: 'Preparing images...'})
-        const firstPassResult = await prepareImages(orderedCurrentImages, notificationId)
+        const firstPassResult = await prepareImages(orderedCurrentImages, content, notificationId)
         if (!firstPassResult.success) {
             return {success: false, error: firstPassResult.error}
         }
 
         // Second pass: Rename all images to their final names
         updateNotification(notificationId, {message: 'Finalizing images...'})
-        const renameResult = await renameAndUploadImages(firstPassResult.preparedImages, problemNumber, content, notificationId)
+        const renameResult = await renameAndUploadImages(firstPassResult.preparedImages, firstPassResult.updatedContent, problemNumber, notificationId)
         if (!renameResult.success) {
             return {success: false, error: renameResult.error}
         }
@@ -78,15 +78,16 @@ export function useImageManagement() {
         }
     }
 
-    const prepareImages = async (orderedImages, notificationId) => {
+    const prepareImages = async (orderedImages, content, notificationId) => {
         const preparedImages = []
-        const timestamp = Date.now()
+        let updatedContent = content
+        let imageCounter = 1
 
         for (const image of orderedImages) {
-            let tempName
+            let tempName, tempUrl
             if (image.file instanceof File) {
                 // New image: upload with temporary name
-                tempName = `new_${timestamp}_${image.name}`
+                tempName = `new_${imageCounter++}_${image.name}`
                 const uploadResult = await uploadNewImage(image.file, tempName)
                 if (!uploadResult.success) {
                     updateNotification(notificationId, {
@@ -97,6 +98,11 @@ export function useImageManagement() {
                     })
                     return {success: false, error: uploadResult.error}
                 }
+                const urlResult = await getPublicUrl(tempName)
+                if (!urlResult.success) {
+                    return {success: false, error: urlResult.error}
+                }
+                tempUrl = urlResult.url
             } else {
                 // Existing image: rename to temporary name
                 tempName = `existing_${image.name}`
@@ -110,19 +116,28 @@ export function useImageManagement() {
                     })
                     return {success: false, error: renameResult.error}
                 }
+                const urlResult = await getPublicUrl(tempName)
+                if (!urlResult.success) {
+                    return {success: false, error: urlResult.error}
+                }
+                tempUrl = urlResult.url
             }
+
+            // Update content with temporary name
+            const oldImagePattern = new RegExp(`!\\[${escapeRegExp(image.id)}]\\([^)]+\\)`, 'g')
+            updatedContent = updatedContent.replace(oldImagePattern, `![${tempName}](${tempUrl})`)
 
             preparedImages.push({
                 ...image,
                 tempName: tempName,
+                tempUrl: tempUrl,
                 originalName: image.name
             })
         }
-
-        return {success: true, preparedImages}
+        return {success: true, preparedImages, updatedContent}
     }
 
-    const renameAndUploadImages = async (preparedImages, problemNumber, content, notificationId) => {
+    const renameAndUploadImages = async (preparedImages, content, problemNumber, notificationId) => {
         const renamedImages = []
         let imageCounter = 1
         let updatedContent = content
@@ -158,8 +173,8 @@ export function useImageManagement() {
 
             // Update content
             try {
-                const oldImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.id || image.url)}\\)`, 'g')
-                updatedContent = updatedContent.replace(oldImagePattern, `![${newFileName}](${newUrl})`)
+                const tempImagePattern = new RegExp(`!\\[${escapeRegExp(image.tempName)}]\\([^)]+\\)`, 'g')
+                updatedContent = updatedContent.replace(tempImagePattern, `![${newFileName}](${newUrl})`)
             } catch (error) {
                 updateNotification(notificationId, {
                     message: 'Error updating content',
