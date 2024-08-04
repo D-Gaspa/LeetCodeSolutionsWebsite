@@ -57,8 +57,8 @@
 <script>
 import {inject, onMounted, reactive, ref} from 'vue'
 import {supabase} from '../services/supabase'
-import MarkdownEditor from '../components/AdminDashboard/MarkdownEditor.vue'
-import ProblemList from "@/components/AdminDashboard/ProblemList.vue";
+import MarkdownEditor from '../components/MarkdownEditor.vue'
+import ProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue";
 import {useProblemStore} from "@/stores/problemsStore.js";

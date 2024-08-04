@@ -11,7 +11,7 @@
 
 <script>
 import {ref, watch} from 'vue'
-import MarkdownEditor from "@/components/AdminDashboard/MarkdownEditor.vue";
+import MarkdownEditor from "@/components/MarkdownEditor.vue";
 
 export default {
   name: 'ContentEditor',
