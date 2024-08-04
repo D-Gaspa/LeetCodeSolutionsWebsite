@@ -29,11 +29,11 @@ export const uploadNewImage = async (file, fileName) => {
             })
 
         if (error) {
-            return {success: false, error: 'Error uploading image'}
+            return {success: false, error: `Error uploading image ${fileName}: ${error.message}`}
         }
         return {success: true}
     } catch (error) {
-        return {success: false, error: 'Error uploading image'}
+        return {success: false, error: `Error uploading image ${fileName}: ${error.message}`}
     }
 }
 
