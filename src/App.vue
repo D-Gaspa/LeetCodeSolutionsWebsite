@@ -1,5 +1,8 @@
 <template>
   <div id="app">
+    <header>
+      <ThemeToggle class="theme-toggle-position"/>
+    </header>
     <nav>
       <router-link to="/">Home</router-link>
       |
@@ -26,15 +29,19 @@ import {onMounted, provide, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from './services/supabase'
 import NotificationContainer from './components/NotificationContainer.vue'
-import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue"
+import ThemeToggle from "@/components/ThemeToggle.vue"
+import {useTheme} from "@/composables/useTheme.js"
 
 export default {
   name: 'App',
   components: {
+    ThemeToggle,
     ConfirmDialog,
     NotificationContainer
   },
   setup() {
+    const {theme} = useTheme()
     const router = useRouter()
     const user = ref(null)
     const notificationContainer = ref(null)
@@ -48,6 +55,11 @@ export default {
       supabase.auth.onAuthStateChange((_, session) => {
         user.value = session?.user ?? null
       })
+
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (prefersDark && !localStorage.getItem('theme')) {
+        theme.value = 'dark'
+      }
     })
 
     const handleLogout = async () => {
@@ -111,7 +123,14 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  min-height: 100vh;
+}
+
+.theme-toggle-position {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
 }
 
 nav {
@@ -120,7 +139,6 @@ nav {
 
 nav a {
   font-weight: bold;
-  color: #2c3e50;
+  color: var(--text-color-primary);
 }
-
 </style>
