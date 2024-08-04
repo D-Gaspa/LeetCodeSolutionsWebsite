@@ -148,15 +148,16 @@ export default {
 
 .search-filters input,
 .search-filters select {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  border: var(--border-width) solid var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--text-color-primary);
   transition: all 0.3s ease;
 }
 
 .search-filters input:hover,
 .search-filters select:hover {
-  border-color: #333;
   filter: brightness(0.95);
 }
 
@@ -166,13 +167,8 @@ table {
 }
 
 th, td {
-  border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
-}
-
-th {
-  background-color: #f2f2f2;
 }
 
 .pagination button {

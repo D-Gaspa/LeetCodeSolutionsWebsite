@@ -293,8 +293,18 @@ export default {
 
 <style scoped>
 .problem-form {
-  background-color: #f9f9f9;
+  background-color: var(--bg-color-secondary);
   padding: 1rem;
+}
+
+.problem-form input,
+.problem-form select {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  border: var(--border-width) solid var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--text-color-primary);
+  transition: all 0.3s ease;
 }
 
 .modal-content.large {

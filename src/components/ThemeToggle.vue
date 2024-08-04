@@ -114,7 +114,7 @@ const {theme, toggleTheme} = useTheme()
 /* Hover and focus styles */
 .theme-toggle:hover .toggle-track,
 .theme-toggle:focus-visible .toggle-track {
-  box-shadow: 0 0 0 2px var(--toggle-icon-color);
+  box-shadow: 0 0 0 1px var(--toggle-icon-color);
 }
 
 .theme-toggle:hover .toggle-indicator,

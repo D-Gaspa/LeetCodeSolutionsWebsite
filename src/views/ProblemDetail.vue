@@ -117,7 +117,6 @@ export default {
 
 <style scoped>
 pre {
-  background-color: #f4f4f4;
   padding: 10px;
   border-radius: 5px;
 }
