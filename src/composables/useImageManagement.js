@@ -12,6 +12,21 @@ export function useImageManagement() {
         })
     }
 
+    const getOrderedImages = (content, images) => {
+        const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g
+        const orderedImages = []
+        let match
+
+        while ((match = imageRegex.exec(content)) !== null) {
+            const [, , src] = match
+            const image = images.find(img => img.id === src || img.url === src)
+            if (image && !orderedImages.includes(image)) {
+                orderedImages.push(image)
+            }
+        }
+        return orderedImages
+    }
+
     const handleImageManagement = async (currentImages, originalImages, problemNumber, content, notificationId) => {
         // Order the current images based on their appearance in the content
         const orderedCurrentImages = getOrderedImages(content, currentImages)
@@ -38,12 +53,16 @@ export function useImageManagement() {
             })
         }
 
-        // Rename and upload all images (existing and new) based on their new order
-        updateNotification(notificationId, {
-            message: `Processing ${orderedCurrentImages.length} image(s)...`
-        })
+        // First pass: Rename existing images and upload new images with temporary names
+        updateNotification(notificationId, {message: 'Preparing images...'})
+        const firstPassResult = await prepareImages(orderedCurrentImages, notificationId)
+        if (!firstPassResult.success) {
+            return {success: false, error: firstPassResult.error}
+        }
 
-        const renameResult = await renameAndUploadImages(orderedCurrentImages, problemNumber, content, notificationId)
+        // Second pass: Rename all images to their final names
+        updateNotification(notificationId, {message: 'Finalizing images...'})
+        const renameResult = await renameAndUploadImages(firstPassResult.preparedImages, problemNumber, content, notificationId)
         if (!renameResult.success) {
             return {success: false, error: renameResult.error}
         }
@@ -59,92 +78,96 @@ export function useImageManagement() {
         }
     }
 
-    const getOrderedImages = (content, images) => {
-        const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g
-        const orderedImages = []
-        let match
+    const prepareImages = async (orderedImages, notificationId) => {
+        const preparedImages = []
+        const timestamp = Date.now()
 
-        while ((match = imageRegex.exec(content)) !== null) {
-            const [, , src] = match
-            const image = images.find(img => img.id === src || img.url === src)
-            if (image && !orderedImages.includes(image)) {
-                orderedImages.push(image)
+        for (const image of orderedImages) {
+            let tempName
+            if (image.file instanceof File) {
+                // New image: upload with temporary name
+                tempName = `new_${timestamp}_${image.name}`
+                const uploadResult = await uploadNewImage(image.file, tempName)
+                if (!uploadResult.success) {
+                    updateNotification(notificationId, {
+                        message: uploadResult.error,
+                        type: 'error',
+                        isLoading: false,
+                        duration: 3000
+                    })
+                    return {success: false, error: uploadResult.error}
+                }
+            } else {
+                // Existing image: rename to temporary name
+                tempName = `existing_${image.name}`
+                const renameResult = await renameExistingImage(image.name, tempName)
+                if (!renameResult.success) {
+                    updateNotification(notificationId, {
+                        message: renameResult.error,
+                        type: 'error',
+                        isLoading: false,
+                        duration: 3000
+                    })
+                    return {success: false, error: renameResult.error}
+                }
             }
+
+            preparedImages.push({
+                ...image,
+                tempName: tempName,
+                originalName: image.name
+            })
         }
-        return orderedImages
+
+        return {success: true, preparedImages}
     }
 
-    const renameAndUploadImages = async (orderedImages, problemNumber, content, notificationId) => {
+    const renameAndUploadImages = async (preparedImages, problemNumber, content, notificationId) => {
         const renamedImages = []
         let imageCounter = 1
         let updatedContent = content
 
-        for (const image of orderedImages) {
-            const fileExtension = image.name.split('.').pop()
+        for (const image of preparedImages) {
+            const fileExtension = image.originalName.split('.').pop()
             const newFileName = `${problemNumber}-problem-${imageCounter}.${fileExtension}`
 
-            let newUrl
+            // Rename image from temporary name to final name
+            const renameResult = await renameExistingImage(image.tempName, newFileName)
+            if (!renameResult.success) {
+                updateNotification(notificationId, {
+                    message: renameResult.error,
+                    type: 'error',
+                    isLoading: false,
+                    duration: 3000
+                })
+                return {success: false, error: renameResult.error}
+            }
 
-            if (image.name !== newFileName) {
-                if (image.file instanceof File) {
-                    // Upload new image
-                    const uploadResult = await uploadNewImage(image.file, newFileName)
-                    if (!uploadResult.success) {
-                        updateNotification(notificationId, {
-                            message: uploadResult.error,
-                            type: 'error',
-                            isLoading: false,
-                            duration: 3000
-                        })
-                        return {success: false, error: uploadResult.error}
-                    }
-                } else {
-                    // Rename existing image
-                    const renameResult = await renameExistingImage(image.name, newFileName)
-                    if (!renameResult.success) {
-                        updateNotification(notificationId, {
-                            message: renameResult.error,
-                            type: 'error',
-                            isLoading: false,
-                            duration: 3000
-                        })
-                        return {success: false, error: renameResult.error}
-                    }
-                }
+            // Get the public URL for the renamed image
+            const urlResult = await getPublicUrl(newFileName)
+            if (!urlResult.success) {
+                updateNotification(notificationId, {
+                    message: urlResult.error,
+                    type: 'error',
+                    isLoading: false,
+                    duration: 3000
+                })
+                return {success: false, error: urlResult.error}
+            }
+            const newUrl = urlResult.url
 
-                // Get the public URL for the new or renamed image
-                const urlResult = await getPublicUrl(newFileName)
-                if (!urlResult.success) {
-                    updateNotification(notificationId, {
-                        message: urlResult.error,
-                        type: 'error',
-                        isLoading: false,
-                        duration: 3000
-                    })
-                    return {success: false, error: urlResult.error}
-                }
-                newUrl = urlResult.url
-
-                // Update content
-                try {
-                    if (image.file instanceof File) {
-                        let newImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.id)}\\)`, 'g')
-                        updatedContent = updatedContent.replace(newImagePattern, `![${newFileName}](${newUrl})`)
-                    } else {
-                        let existingImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.url)}\\)`, 'g')
-                        updatedContent = updatedContent.replace(existingImagePattern, `![${newFileName}](${newUrl})`)
-                    }
-                } catch (error) {
-                    updateNotification(notificationId, {
-                        message: 'Error updating content',
-                        type: 'error',
-                        isLoading: false,
-                        duration: 3000
-                    })
-                    return {success: false, error: 'Error updating content'}
-                }
-            } else {
-                newUrl = image.url // Keep the existing URL if the image name hasn't changed
+            // Update content
+            try {
+                const oldImagePattern = new RegExp(`!\\[([^\\]]*)]\\(${escapeRegExp(image.id || image.url)}\\)`, 'g')
+                updatedContent = updatedContent.replace(oldImagePattern, `![${newFileName}](${newUrl})`)
+            } catch (error) {
+                updateNotification(notificationId, {
+                    message: 'Error updating content',
+                    type: 'error',
+                    isLoading: false,
+                    duration: 3000
+                })
+                return {success: false, error: 'Error updating content'}
             }
 
             renamedImages.push({

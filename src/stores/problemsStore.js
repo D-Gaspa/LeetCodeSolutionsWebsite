@@ -36,29 +36,34 @@ export const useProblemStore = defineStore('problems', {
             return data
         },
 
-        async getProblemById(id) {
+        async checkProblemIdExists(id) {
             const {data, error} = await supabase
                 .from('problems')
-                .select('*')
+                .select('id')
                 .eq('id', id)
-                .single()
 
             if (error) {
-                throw new Error('Error fetching problem: ' + error.message)
+                throw new Error('Error checking problem ID: ' + error.message)
             }
 
-            return data
+            return data && data.length > 0 ? data[0] : null
         },
 
-        async saveProblem(problemData) {
-            const {data, error} = problemData.id
-                ? await supabase
+        async saveProblem(problemData, isEditing) {
+            let result;
+
+            if (isEditing) {
+                result = await supabase
                     .from('problems')
                     .update(problemData)
                     .eq('id', problemData.id)
-                : await supabase
+            } else {
+                result = await supabase
                     .from('problems')
                     .insert([problemData])
+            }
+
+            const {data, error} = result
 
             if (error) {
                 throw new Error('Error saving problem: ' + error.message)
@@ -105,8 +110,6 @@ export const useProblemStore = defineStore('problems', {
                     throw new Error(`Error deleting ${failedDeletes.length} image(s). Problem deleted, but some images may remain.`)
                 }
             }
-
-            await this.fetchProblems() // Refresh the problem list
         }
     }
 })

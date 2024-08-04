@@ -156,6 +156,7 @@ export default {
           duration: 5000
         })
       } finally {
+        await fetchProblems()
         problemToDelete.value = null
       }
     }

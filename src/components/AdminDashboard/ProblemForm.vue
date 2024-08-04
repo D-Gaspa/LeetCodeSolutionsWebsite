@@ -93,14 +93,15 @@ export default {
     const {areImagesChanged, handleImageManagement} = useImageManagement()
     const showContentEditor = ref(false)
     const contentEditorRef = ref(null)
+    const editingProblem = ref(props.editingProblem)
     const originalImages = ref([])
 
     const problemForm = reactive({
-      id: null,
-      name: '',
+      id: 1,
+      name: 'Test Problem',
       difficulty: 'Easy',
       problem_type: 'daily',
-      problem_date: '',
+      problem_date: new Date().toISOString().split('T')[0],
       problem_week: 1,
       problem_year: new Date().getFullYear(),
       content: {}
@@ -174,15 +175,20 @@ export default {
         return
       }
 
-      // Check if problem ID exists (for both new and edited problems)
-      const existingProblem = await problemStore.getProblemById(problemForm.id)
-      if (existingProblem && (!props.editingProblem || existingProblem.id !== props.editingProblem.id)) {
-        showNotification('This problem number already exists. Please choose a different one.', 'warning')
-        return
-      }
+      try {
+        // Check if problem ID exists (for both new and edited problems)
+        const existingProblem = await problemStore.checkProblemIdExists(problemForm.id)
 
-      // If all validations pass, proceed with saving
-      await saveProblem()
+        if (existingProblem && (!props.editingProblem || existingProblem.id !== props.editingProblem.id)) {
+          showNotification('This problem number already exists. Please choose a different one.', 'warning')
+          return
+        }
+
+        // If all validations pass, proceed with saving
+        await saveProblem()
+      } catch (error) {
+        showNotification('An error occurred while validating the problem number: ' + error.message, 'error')
+      }
     }
 
     const saveProblem = async () => {
@@ -196,6 +202,7 @@ export default {
 
           const result = await handleImageManagement(
               problemForm.content.images,
+              originalImages.value,
               problemForm.id,
               problemForm.content.text,
               notificationId
@@ -241,21 +248,19 @@ export default {
 
         updateNotification(notificationId, {message: 'Saving problem to database...'})
 
-        const result = await problemStore.saveProblem(formData)
+        const result = await problemStore.saveProblem(formData, !!editingProblem.value)
 
         if (result.error) {
           updateNotification(notificationId, {
             message: 'Error saving problem to database',
             type: 'error',
             isLoading: false,
-            duration: 3000
           })
         } else {
           updateNotification(notificationId, {
             message: 'Problem saved successfully',
             type: 'success',
             isLoading: false,
-            duration: 3000
           })
           emit('problem-saved')
           emit('close')
@@ -265,7 +270,6 @@ export default {
           message: `Unexpected error saving problem: ${error.message}`,
           type: 'error',
           isLoading: false,
-          duration: 3000
         })
       }
     }
@@ -276,6 +280,7 @@ export default {
       problemForm,
       showContentEditor,
       contentEditorRef,
+      editingProblem,
       openContentEditor,
       closeContentEditor,
       saveContent,
@@ -287,6 +292,11 @@ export default {
 </script>
 
 <style scoped>
+.problem-form {
+  background-color: #f9f9f9;
+  padding: 1rem;
+}
+
 .modal-content.large {
   max-width: 90%;
   width: 90%;
