@@ -45,8 +45,8 @@
             <input v-model="solutionForm.space_complexity">
           </label>
           <div class="form-actions">
-            <button type="submit">Save Solution</button>
-            <button type="button" @click="showSolutionForm = false">Cancel</button>
+            <button class="btn-neutral" type="submit">Save Solution</button>
+            <button class="btn-neutral" type="button" @click="showSolutionForm = false">Cancel</button>
           </div>
         </form>
       </div>

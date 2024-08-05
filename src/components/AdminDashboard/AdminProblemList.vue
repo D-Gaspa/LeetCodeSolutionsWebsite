@@ -23,7 +23,7 @@
                           placeholder="Filter by date"
         />
       </div>
-      <button class="add-problem-btn" @click="$emit('add')">Add Problem</button>
+      <button class="btn-primary" @click="$emit('add')">Add Problem</button>
     </div>
 
     <table>
@@ -49,18 +49,18 @@
           }}
         </td>
         <td>
-          <button @click="$emit('edit', problem)">Edit</button>
-          <button @click="$emit('delete', problem)">Delete</button>
-          <button @click="$emit('add-solution', problem)">Add Solution</button>
+          <button class="btn-neutral" @click="$emit('edit', problem)">Edit</button>
+          <button class="btn-neutral" @click="$emit('delete', problem)">Delete</button>
+          <button class="btn-neutral" @click="$emit('add-solution', problem)">Add Solution</button>
         </td>
       </tr>
       </tbody>
     </table>
 
     <div class="pagination">
-      <button :disabled="currentPage === 1" @click="currentPage--">Previous</button>
+      <button :disabled="currentPage === 1" class="btn-neutral" @click="currentPage--">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
+      <button :disabled="currentPage === totalPages" class="btn-neutral" @click="currentPage++">Next</button>
     </div>
   </div>
 </template>
@@ -139,6 +139,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 10px;
 }
 
 .search-filters {
@@ -166,21 +167,6 @@ th, td {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.add-problem-btn {
-  margin-left: 10px;
-  padding: 10px 20px;
-  background-color: var(--color-primary-dark);
-  color: white;
-  border: 1px solid var(--color-primary-dark);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.add-problem-btn:hover {
-  filter: brightness(0.9);
-  background-color: var(--color-primary);
 }
 
 .date-picker {
