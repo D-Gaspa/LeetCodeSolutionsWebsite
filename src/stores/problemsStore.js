@@ -8,7 +8,6 @@ export const useProblemStore = defineStore('problems', {
     }),
     actions: {
         async fetchProblems(filters = {}) {
-            console.log('Fetching problems with filters:', filters)
             let query = supabase
                 .from('problems')
                 .select('*')
