@@ -1,20 +1,22 @@
 <template>
   <div id="app">
     <header>
-      <ThemeToggle class="theme-toggle-position"/>
+      <div class="header-icons">
+        <ThemeToggle class="theme-toggle-position"/>
+      </div>
     </header>
     <nav>
-      <router-link to="/">Home</router-link>
+      <router-link class="nav-link" to="/">Home</router-link>
       |
-      <router-link to="/problems">Problems</router-link>
+      <router-link class="nav-link" to="/problems">Problems</router-link>
       |
       <template v-if="user">
-        <router-link to="/admin">Admin</router-link>
+        <router-link class="nav-link" to="/admin">Admin</router-link>
         |
         <a href="#" @click.prevent="handleLogout">Logout</a>
       </template>
       <template v-else>
-        <router-link to="/login">Login</router-link>
+        <router-link class="nav-link" to="/login">Login</router-link>
       </template>
     </nav>
     <router-view/>
@@ -126,19 +128,28 @@ export default {
   min-height: 100vh;
 }
 
+.header-icons {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  gap: 10px;
+  align-content: center;
+}
+
 .theme-toggle-position {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
 }
 
 nav {
-  padding: 30px;
+  padding: 15px;
 }
 
 nav a {
   font-weight: bold;
   color: var(--text-color-primary);
+}
+
+.nav-link.router-link-active {
+  border-bottom: 2px solid var(--color-primary);
 }
 </style>

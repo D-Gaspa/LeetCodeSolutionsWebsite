@@ -297,16 +297,6 @@ export default {
   padding: 1rem;
 }
 
-.problem-form input,
-.problem-form select {
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
-  border: var(--border-width) solid var(--input-border);
-  background-color: var(--input-bg);
-  color: var(--text-color-primary);
-  transition: all 0.3s ease;
-}
-
 .modal-content.large {
   max-width: 90%;
   width: 90%;

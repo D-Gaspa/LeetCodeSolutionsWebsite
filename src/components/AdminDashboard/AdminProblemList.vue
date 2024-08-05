@@ -146,21 +146,6 @@ export default {
   flex: 1;
 }
 
-.search-filters input,
-.search-filters select {
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
-  border: var(--border-width) solid var(--input-border);
-  background-color: var(--input-bg);
-  color: var(--text-color-primary);
-  transition: all 0.3s ease;
-}
-
-.search-filters input:hover,
-.search-filters select:hover {
-  filter: brightness(0.95);
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -185,23 +170,22 @@ th, td {
 .add-problem-btn {
   margin-left: 10px;
   padding: 10px 20px;
-  background-color: #4CAF50;
+  background-color: var(--color-primary-dark);
   color: white;
-  border: 1px solid #4CAF50;
-  border-radius: 4px;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .add-problem-btn:hover {
   filter: brightness(0.9);
-  background-color: #3f9442;
+  background-color: var(--color-primary);
 }
 
 input, select, textarea {
   resize: none;
   box-sizing: border-box;
   width: 100%;
-  padding: 5px;
 }
 </style>

@@ -1,6 +1,4 @@
 :root {
-
-
     /* Basic Colors */
     --color-primary: #3498db;
     --color-primary-light: #5dade2;
@@ -29,7 +27,7 @@
     /* Component Colors */
     --button-bg: var(--color-primary);
     --button-bg-alt: #f3f3f3;
-    --button-bg-special: var(--color-primary), var(--color-secondary), var(--color-primary);
+    --button-gradient-colors: var(--color-primary), var(--color-secondary), var(--color-primary);
     --button-text: #ffffff;
     --button-text-alt: #476582;
     --button-hover: var(--color-primary-dark);
@@ -41,9 +39,9 @@
 
     /* Typography */
     --font-family: 'Arial', sans-serif;
-    --font-size-base: 1em;
-    --font-size-sm: 0.875em;
-    --font-size-lg: 1.25em;
+    --font-size-base: 1.10em;
+    --font-size-small: 0.875em;
+    --font-size-large: 1.25em;
     --line-height-base: 1.5;
     --font-weight-normal: 400;
     --font-weight-bold: 700;
@@ -78,13 +76,13 @@
     --bg-color-secondary: #1e2022;
     --bg-color-tertiary: #2d3135;
 
-    --text-color-primary: #ffffff;
-    --text-color-secondary: #ced4da;
-    --text-color-muted: #adb5bd;
+    --text-color-primary: #ced4da;
+    --text-color-secondary: #adb5bd;
+    --text-color-muted: #868e96;
 
     --button-bg: var(--color-primary-dark);
     --button-bg-alt: #2d3135;
-    --button-bg-special: var(--color-primary), var(--color-secondary), var(--color-primary);
+    --button-gradient-colors: var(--color-primary), var(--color-secondary), var(--color-primary);
     --button-text: #ffffff;
     --button-text-alt: #aac8e4;
     --button-hover: var(--color-primary);
@@ -94,6 +92,13 @@
     --card-border: #2d3135;
 
     --border-color: #2d3135;
+}
+
+@media (max-width: 768px) {
+    .btn, .btn-special {
+        font-size: var(--font-size-small);
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
 }
 
 body {
@@ -133,7 +138,7 @@ body {
     cursor: pointer;
 }
 
-.btn-special::after, .btn-special::before {
+.btn-special::before, .btn-special::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -143,9 +148,13 @@ body {
     height: 100%;
     padding: 2px;
     border-radius: var(--border-radius);
-    background-image: conic-gradient(var(--button-bg-special));
+    background-image: conic-gradient(var(--button-gradient-colors));
     transition: all var(--transition-base);
     z-index: -1;
+}
+
+.btn-special:hover::before {
+    padding: 3px;
 }
 
 .btn-special:hover::after {
@@ -153,8 +162,8 @@ body {
     opacity: 0.75;
 }
 
-.btn-special:hover::before {
-    padding: 3px;
+.btn-special::before, .btn-special::after {
+    will-change: transform, opacity, filter;
 }
 
 @property --angle {
@@ -164,7 +173,7 @@ body {
 }
 
 .btn-special:hover::before, .btn-special:hover::after {
-    background-image: conic-gradient(from var(--angle), var(--button-bg-special));
+    background-image: conic-gradient(from var(--angle), var(--button-gradient-colors));
     animation: 3s spin ease-in-out infinite;
 }
 
@@ -184,39 +193,46 @@ body {
 
 
 /* Input styles */
-.input {
+input {
     background-color: var(--input-bg);
     border: var(--border-width) solid var(--input-border);
     border-radius: var(--border-radius);
     padding: var(--spacing-sm);
     color: var(--text-color-primary);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-small);
+    transition: all var(--transition-base);
 }
 
-.input:focus {
+input:focus, select:focus {
     outline: none;
     border-color: var(--input-focus);
     box-shadow: 0 0 0 2px rgba(var(--input-focus), 0.2);
 }
 
+input:hover, select:hover {
+    transition: all var(--transition-base);
+    border-color: var(--input-focus);
+}
+
 /* Select styles */
-.select {
+select {
     background-color: var(--input-bg);
     border: var(--border-width) solid var(--input-border);
     border-radius: var(--border-radius);
     padding: var(--spacing-sm);
     color: var(--text-color-primary);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-small);
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='%23333' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.7em top 50%;
     background-size: 0.65em auto;
     padding-right: 2.5em;
+    transition: all var(--transition-base);
 }
 
 /* Card styles */
-.card {
+card {
     background-color: var(--card-bg);
     border: var(--border-width) solid var(--card-border);
     border-radius: var(--border-radius);
@@ -227,6 +243,7 @@ body {
 /* Typography styles */
 h1, h2, h3, h4, h5, h6 {
     color: var(--text-color-primary);
+    margin-top: var(--spacing-md);
     margin-bottom: var(--spacing-md);
 }
 
@@ -264,6 +281,32 @@ h5 {
 
 h6 {
     font-size: var(--font-size-base);
+}
+
+/* Text size classes */
+.text-sm {
+    font-size: var(--font-size-small);
+}
+
+.text-base {
+    font-size: var(--font-size-base);
+}
+
+.text-lg {
+    font-size: var(--font-size-large);
+}
+
+/* Text color classes */
+.text-primary {
+    color: var(--text-color-primary);
+}
+
+.text-secondary {
+    color: var(--text-color-secondary);
+}
+
+.text-muted {
+    color: var(--text-color-muted);
 }
 
 /* Link styles */

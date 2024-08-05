@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h1>LeetCode Problems</h1>
+  <div class="problem-list">
+    <h2>LeetCode Problems</h2>
     <div class="filters">
       <select v-model="selectedDifficulty">
         <option value="">All Difficulties</option>
@@ -81,11 +81,14 @@ export default {
 </script>
 
 <style scoped>
-.filters {
-  margin-bottom: 20px;
+.problem-list {
+  padding: 20px;
 }
 
-select {
-  margin-right: 10px;
+.filters {
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
 }
 </style>
