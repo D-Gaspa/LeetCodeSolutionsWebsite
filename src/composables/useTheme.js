@@ -1,8 +1,8 @@
 import {ref, watch} from 'vue'
 
-export function useTheme() {
-    const theme = ref(localStorage.getItem('theme') || 'light')
+const theme = ref(localStorage.getItem('theme') || 'light')
 
+export function useTheme() {
     const applyTheme = (newTheme) => {
         document.documentElement.setAttribute('data-theme', newTheme)
         localStorage.setItem('theme', newTheme)
