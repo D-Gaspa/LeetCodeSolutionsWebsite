@@ -19,6 +19,7 @@
         <input
             :class="inputClass"
             :placeholder="placeholder"
+            :value="formattedDate"
             readonly
         />
         <calendar-icon class="calendar-icon"/>
@@ -64,12 +65,24 @@ export default {
       return `${year}-${month}-${day}`
     }
 
-    // watch(props, (newValue) => {
-    //   date.value = newValue.modelValue ? new Date(newValue.modelValue) : null
-    // })
+    const formatDateForDisplay = (date) => {
+      if (!date) return ''
+      return date.toLocaleDateString()
+    }
+
+    const formattedDate = computed(() => formatDateForDisplay(date.value))
+
+    watch(() => props.modelValue, (newValue) => {
+      if (newValue !== formatDateForEmit(date.value)) {
+        date.value = newValue ? new Date(newValue) : null
+      }
+    })
 
     watch(date, (newValue) => {
-      emit('update:modelValue', formatDateForEmit(newValue))
+      const formattedDate = formatDateForEmit(newValue)
+      if (formattedDate !== props.modelValue) {
+        emit('update:modelValue', formattedDate)
+      }
     })
 
     const menuClass = computed(() => [
@@ -102,6 +115,7 @@ export default {
 
     return {
       date,
+      formattedDate,
       menuClass,
       inputClass,
       calendarClass,
