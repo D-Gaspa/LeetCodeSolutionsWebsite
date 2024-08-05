@@ -153,8 +153,8 @@ export default {
   background-color: var(--input-bg);
   border: var(--border-width) solid var(--input-border);
   border-radius: var(--border-radius);
-  padding: var(--spacing-sm);
-  padding-right: calc(var(--spacing-sm) * 2 + 20px);
+  padding: var(--spacing-small);
+  padding-right: calc(var(--spacing-small) * 2 + 20px);
   color: var(--text-color-primary);
   font-size: var(--font-size-small);
   width: 100%;
@@ -169,7 +169,6 @@ export default {
   box-shadow: 0 0 0 2px rgba(var(--input-focus), 0.2);
 }
 
-.custom-trigger:hover .calendar-icon,
 .custom-trigger:focus-within .calendar-icon,
 .custom-trigger.is-open .calendar-icon {
   color: var(--color-primary);
