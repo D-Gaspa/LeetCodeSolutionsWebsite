@@ -212,15 +212,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     transition: all var(--transition-base);
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    filter: invert(43%) sepia(97%) saturate(1752%) hue-rotate(194deg) brightness(97%) contrast(87%);
-}
-
-
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(100%);
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
 [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
     filter: invert(43%) sepia(97%) saturate(1752%) hue-rotate(194deg) brightness(97%) contrast(87%);
 }
@@ -240,6 +236,7 @@ select {
     background-size: 0.65em auto;
     padding-right: 2.5em;
     transition: all var(--transition-base);
+    cursor: pointer;
 }
 
 /* Card styles */
@@ -336,16 +333,19 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--spacing-lg);
+    transition: all var(--transition-base);
 }
 
 th, td {
     padding: var(--spacing-sm) var(--spacing-md);
     border: var(--border-width) solid var(--border-color);
+    transition: all var(--transition-base);
 }
 
 th {
     background-color: var(--bg-color-secondary);
     font-weight: var(--font-weight-bold);
+    transition: all var(--transition-base);
 }
 
 /* Form group styles */

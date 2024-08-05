@@ -18,11 +18,10 @@
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
         </select>
-        <input
-            v-model="dateFilter"
-            placeholder="Filter by date"
-            type="date"
-        >
+        <CustomDatePicker v-model="dateFilter"
+                          class="date-picker"
+                          placeholder="Filter by date"
+        />
       </div>
       <button class="add-problem-btn" @click="$emit('add')">Add Problem</button>
     </div>
@@ -70,9 +69,11 @@
 import {computed, ref, watch} from 'vue'
 import debounce from 'lodash/debounce'
 import {formatDate} from '@/utils/dateFormatters.js'
+import CustomDatePicker from "@/components/CustomDatePicker.vue";
 
 export default {
   name: 'ProblemList',
+  components: {CustomDatePicker},
   props: {
     problems: {
       type: Array,
@@ -114,7 +115,7 @@ export default {
       })
     }, 300)
 
-    watch([difficultyFilter, typeFilter, dateFilter], debouncedSearch)
+    watch([searchQuery, difficultyFilter, typeFilter, dateFilter], debouncedSearch)
 
     return {
       searchQuery,
@@ -181,6 +182,11 @@ th, td {
 .add-problem-btn:hover {
   filter: brightness(0.9);
   background-color: var(--color-primary);
+}
+
+.date-picker {
+  box-sizing: border-box;
+  width: 100%;
 }
 
 input, select, textarea {
