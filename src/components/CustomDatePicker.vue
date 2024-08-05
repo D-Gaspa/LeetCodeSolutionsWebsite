@@ -13,9 +13,11 @@
       :placeholder="placeholder"
       :teleport="true"
       :weekday-class-name="weekdayClassName"
+      @closed="isOpen = false"
+      @open="isOpen = true"
   >
     <template #trigger>
-      <div class="custom-trigger">
+      <div :class="['custom-trigger', { 'is-open': isOpen }]">
         <input
             :class="inputClass"
             :placeholder="placeholder"
@@ -54,6 +56,7 @@ export default {
   setup(props, {emit}) {
     const {theme} = useTheme()
     const date = ref(props.modelValue ? new Date(props.modelValue) : null)
+    const isOpen = ref(false)
 
     const isDarkMode = computed(() => theme.value === 'dark')
 
@@ -121,6 +124,7 @@ export default {
       calendarClass,
       weekdayClassName,
       isDarkMode,
+      isOpen,
       calendarCellClassName
     }
   }
@@ -158,14 +162,16 @@ export default {
 }
 
 .custom-trigger:hover .custom-datepicker-input,
-.custom-trigger:focus-within .custom-datepicker-input {
+.custom-trigger:focus-within .custom-datepicker-input,
+.custom-trigger.is-open .custom-datepicker-input {
   border-color: var(--input-focus);
   outline: none;
   box-shadow: 0 0 0 2px rgba(var(--input-focus), 0.2);
 }
 
 .custom-trigger:hover .calendar-icon,
-.custom-trigger:focus-within .calendar-icon {
+.custom-trigger:focus-within .calendar-icon,
+.custom-trigger.is-open .calendar-icon {
   color: var(--color-primary);
 }
 
