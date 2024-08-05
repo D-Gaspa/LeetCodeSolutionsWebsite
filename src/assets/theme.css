@@ -25,15 +25,22 @@
     --color-info: #3498db;
 
     /* Component Colors */
-    --button-bg: var(--color-primary);
+    /* Buttons */
+    --button-bg-primary: var(--color-primary);
+    --button-bg-secondary: var(--color-secondary);
+    --button-bg-neutral: #f8f9fa;
     --button-bg-alt: #f3f3f3;
     --button-gradient-colors: var(--color-primary), var(--color-secondary), var(--color-primary);
     --button-text: #ffffff;
     --button-text-alt: #476582;
-    --button-hover: var(--color-primary-dark);
+    --button-hover-primary: var(--color-primary-dark);
+    --button-hover-secondary: var(--color-secondary-dark);
+    --button-hover-neutral: #e9ecef;
+    /* Inputs */
     --input-bg: #ffffff;
     --input-border: #ced4da;
     --input-focus: var(--color-primary);
+    /* Cards */
     --card-bg: #ffffff;
     --card-border: #e9ecef;
 
@@ -72,6 +79,7 @@
 }
 
 [data-theme="dark"] {
+    /* Basic Colors */
     --bg-color-primary: #141516;
     --bg-color-secondary: #1e2022;
     --bg-color-tertiary: #2d3135;
@@ -80,20 +88,30 @@
     --text-color-secondary: #adb5bd;
     --text-color-muted: #868e96;
 
-    --button-bg: var(--color-primary-dark);
+    /* Component Colors */
+    /* Buttons */
+    --button-bg-primary: var(--color-primary-dark);
+    --button-bg-secondary: var(--color-secondary-dark);
+    --button-bg-neutral: #495057;
     --button-bg-alt: #2d3135;
     --button-gradient-colors: var(--color-primary), var(--color-secondary), var(--color-primary);
     --button-text: #ffffff;
     --button-text-alt: #aac8e4;
-    --button-hover: var(--color-primary);
+    --button-hover-primary: var(--color-primary);
+    --button-hover-secondary: var(--color-secondary);
+    --button-hover-neutral: #343a40;
+    /* Inputs */
     --input-bg: #2d3135;
     --input-border: #495057;
+    /* Cards */
     --card-bg: #1e2022;
     --card-border: #2d3135;
 
+    /* Borders */
     --border-color: #2d3135;
 }
 
+/* Global styles */
 @media (max-width: 768px) {
     .btn, .btn-special {
         font-size: var(--font-size-small);
@@ -118,6 +136,33 @@ button {
     font-size: var(--font-size-small);
     transition: all var(--transition-base);
     cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--button-bg-primary);
+    color: var(--button-text);
+}
+
+.btn-primary:hover {
+    background: var(--button-hover-primary);
+}
+
+.btn-secondary {
+    background: var(--button-bg-secondary);
+    color: var(--button-text);
+}
+
+.btn-secondary:hover {
+    background: var(--button-hover-secondary);
+}
+
+.btn-neutral {
+    background: var(--button-bg-neutral);
+    color: var(--button-text-alt);
+}
+
+.btn-neutral:hover {
+    background: var(--button-hover-neutral);
 }
 
 .btn-special {
@@ -176,7 +221,6 @@ button:disabled, .btn-special:disabled {
     cursor: not-allowed;
 }
 
-
 /* Input styles */
 input {
     background-color: var(--input-bg);
@@ -197,28 +241,6 @@ input:focus, select:focus {
 input:hover, select:hover {
     transition: all var(--transition-base);
     border-color: var(--input-focus);
-}
-
-/* Custom calendar icon */
-input[type="date"]::-webkit-calendar-picker-indicator {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 15px;
-    height: 15px;
-    cursor: pointer;
-    filter: invert(50%);
-    transition: all var(--transition-base);
-}
-
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(100%);
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    filter: invert(43%) sepia(97%) saturate(1752%) hue-rotate(194deg) brightness(97%) contrast(87%);
 }
 
 /* Select styles */
