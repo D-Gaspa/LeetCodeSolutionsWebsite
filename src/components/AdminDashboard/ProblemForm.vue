@@ -67,8 +67,8 @@
             :initial-content="problemForm.content"
         />
         <div class="form-actions">
-          <button @click="saveContent">Save Content</button>
-          <button @click="closeContentEditor">Close</button>
+          <button class="btn-secondary" @click="saveContent">Save Content</button>
+          <button class="btn-danger" @click="closeContentEditor">Close</button>
         </div>
       </div>
     </div>

@@ -52,8 +52,8 @@
           <div class="image-info">
             <span class="image-name">{{ image.name }}</span>
             <div class="image-actions">
-              <button @click="insertImageToEditor(image)">Insert</button>
-              <button @click="removeImage(index)">Delete</button>
+              <button class="btn-neutral" @click="insertImageToEditor(image)">Insert</button>
+              <button class="btn-danger" @click="removeImage(index)">Delete</button>
             </div>
           </div>
         </div>
