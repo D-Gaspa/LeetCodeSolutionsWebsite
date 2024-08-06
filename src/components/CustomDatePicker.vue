@@ -193,8 +193,8 @@ export default {
   --dp-primary-color: var(--color-primary);
   --dp-primary-text-color: var(--button-text);
   --dp-secondary-color: var(--color-secondary);
-  --dp-border-color: var(--border-color);
-  --dp-menu-border-color: var(--border-color);
+  --dp-border-color: var(--border-color-primary);
+  --dp-menu-border-color: var(--border-color-primary);
 }
 
 :deep(.dp__theme_dark) {
@@ -206,7 +206,7 @@ export default {
   --dp-primary-color: var(--color-primary);
   --dp-primary-text-color: var(--button-text);
   --dp-secondary-color: var(--color-secondary);
-  --dp-border-color: var(--border-color);
-  --dp-menu-border-color: var(--border-color);
+  --dp-border-color: var(--border-color-primary);
+  --dp-menu-border-color: var(--border-color-primary);
 }
 </style>
