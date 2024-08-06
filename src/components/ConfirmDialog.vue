@@ -6,8 +6,8 @@
           <h2>{{ title }}</h2>
           <p>{{ message }}</p>
           <div class="confirm-dialog-actions">
-            <button class="confirm-btn" @click="onConfirm">Yes</button>
-            <button class="dismiss-btn" @click="onDismiss">No</button>
+            <button class="btn-secondary" @click="onConfirm">Yes</button>
+            <button class="btn-danger" @click="onDismiss">No</button>
           </div>
         </div>
       </Transition>
@@ -83,55 +83,28 @@ export default {
 }
 
 .confirm-dialog-content {
-  background-color: white;
+  background-color: var(--bg-color-secondary);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-medium);
   max-width: 400px;
   width: 100%;
 }
 
 h2 {
   margin-top: 0;
-  color: #333;
+  color: var(--text-color-primary);
 }
 
 p {
-  color: #666;
+  color: var(--text-color-secondary);
 }
 
 .confirm-dialog-actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 1.5rem;
-}
-
-button {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-
-.confirm-btn {
-  background-color: #4CAF50;
-  color: white;
-  margin-right: 0.5rem;
-}
-
-.confirm-btn:hover {
-  background-color: #45a049;
-}
-
-.dismiss-btn {
-  background-color: #f44336;
-  color: white;
-}
-
-.dismiss-btn:hover {
-  background-color: #da190b;
+  gap: 1rem;
 }
 
 .fade-enter-active,

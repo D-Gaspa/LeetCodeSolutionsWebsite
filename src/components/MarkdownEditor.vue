@@ -40,7 +40,7 @@
     </div>
     <div v-if="tempImages.length > 0" :class="{ 'collapsed': isGalleryCollapsed }" class="image-gallery">
       <div class="gallery-header" @click="toggleGallery">
-        <h3 class="gallery-title">Uploaded Images</h3>
+        <h5 class="gallery-title">Uploaded Images</h5>
         <button class="collapse-button">
           <ChevronDownIcon v-if="!isGalleryCollapsed"/>
           <ChevronUpIcon v-else/>

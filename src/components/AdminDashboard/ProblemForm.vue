@@ -27,7 +27,10 @@
       </label>
       <label v-if="problemForm.problem_type === 'daily'">
         Date:
-        <input v-model="problemForm.problem_date" required type="date">
+        <CustomDatePicker v-model="problemForm.problem_date"
+                          class="date-picker"
+                          placeholder="mm/dd/yyyy"
+        />
       </label>
       <label v-else>
         Week:
@@ -40,16 +43,17 @@
         <input v-model="problemForm.problem_year" required type="number">
       </label>
       <div>
-        <button type="button" @click="openContentEditor">
+        <button class="btn-primary" type="button" @click="openContentEditor">
           {{ problemForm.content && problemForm.content.text ? 'Edit' : 'Add' }} Content
         </button>
-        <button v-if="problemForm.content && problemForm.content.text" type="button" @click="deleteContent">
+        <button v-if="problemForm.content && problemForm.content.text" class="btn-secondary" type="button"
+                @click="deleteContent">
           Delete Content
         </button>
       </div>
       <div class="form-actions">
-        <button type="submit">Save Problem</button>
-        <button type="button" @click="$emit('close')">Cancel</button>
+        <button class="btn-secondary" type="submit">Save Problem</button>
+        <button class="btn-danger" type="button" @click="$emit('close')">Cancel</button>
       </div>
     </form>
 
@@ -77,10 +81,11 @@ import {inject, onMounted, reactive, ref} from 'vue'
 import ContentEditor from './ContentEditor.vue'
 import {useImageManagement} from '@/composables/useImageManagement.js'
 import {useProblemStore} from "@/stores/problemsStore.js";
+import CustomDatePicker from "@/components/CustomDatePicker.vue";
 
 export default {
   name: 'ProblemForm',
-  components: {ContentEditor},
+  components: {CustomDatePicker, ContentEditor},
   props: {
     editingProblem: Object,
   },
@@ -298,8 +303,12 @@ export default {
 }
 
 .modal-content.large {
-  max-width: 90%;
-  width: 90%;
-  height: 90%;
+  background-color: var(--bg-color-secondary);
+  padding: 1rem;
+  width: 80%;
+  min-width: 80vw;
+  height: 80%;
+  min-height: 80vh;
+  max-height: 90%;
 }
 </style>
