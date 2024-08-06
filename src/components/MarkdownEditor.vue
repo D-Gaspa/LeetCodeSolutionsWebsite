@@ -52,7 +52,7 @@
           <div class="image-info">
             <span class="image-name">{{ image.name }}</span>
             <div class="image-actions">
-              <button class="btn-neutral" @click="insertImageToEditor(image)">Insert</button>
+              <button class="btn-primary" @click="insertImageToEditor(image)">Insert</button>
               <button class="btn-danger" @click="removeImage(index)">Delete</button>
             </div>
           </div>
@@ -64,6 +64,7 @@
 
 <script>
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
+import {useTheme} from "@/composables/useTheme.js";
 import {Codemirror} from 'vue-codemirror'
 import {markdown} from '@codemirror/lang-markdown'
 import {oneDark} from '@codemirror/theme-one-dark'
@@ -107,6 +108,7 @@ export default {
   },
   emits: ['update:modelValue'],
   setup(props) {
+    const {theme} = useTheme()
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref(props.initialContent.images || props.modelValue.images || [])
     const showPreview = ref(true)
@@ -186,7 +188,7 @@ export default {
 
     const extensions = [
       markdown(),
-      oneDark,
+      theme.value === 'dark' ? oneDark : oneDark,
       EditorView.lineWrapping,
     ]
 
@@ -414,14 +416,14 @@ export default {
 
 <style scoped>
 .markdown-editor {
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  border: var(--border-width) solid var(--border-color-secondary);
   display: flex;
   flex-direction: column;
   height: 100%;
   max-height: 80vh;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: var(--bg-color-secondary);
+  box-shadow: var(--shadow-small);
+  transition: all var(--transition-base);
 }
 
 .editor-layout {
@@ -433,33 +435,35 @@ export default {
 .editor-toolbar {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #ccc;
-  background-color: #e9ecef;
+  border-right: var(--border-width) solid var(--border-color-secondary);
+  background-color: var(--bg-color-tertiary);
   min-width: 50px;
   overflow-y: auto;
+  transition: all var(--transition-base);
 }
 
 .toolbar-title {
-  font-size: 0.8em;
+  font-size: var(--font-size-small);
   text-align: center;
-  margin-bottom: 10px;
-  color: #495057;
+  margin-bottom: var(--spacing-small);
+  color: var(--text-color-secondary);
 }
 
 .editor-toolbar button {
   margin: 0;
-  padding: 10px;
+  padding: var(--spacing-small);
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
+  color: var(--text-color-primary);
 }
 
 .editor-toolbar button:hover {
-  background-color: #ced4da;
+  background-color: var(--button-hover-neutral);
 }
 
 .editor-content {
@@ -476,12 +480,13 @@ export default {
 }
 
 .editor-title, .preview-title {
-  font-size: 1em;
-  padding: 10px;
+  font-size: var(--font-size-base);
+  padding: var(--spacing-small) var(--spacing-medium);
   margin: 0;
-  background-color: #e9ecef;
-  border-bottom: 1px solid #ccc;
-  color: #495057;
+  background-color: var(--bg-color-tertiary);
+  border-bottom: var(--border-width) solid var(--border-color-secondary);
+  color: var(--text-color-secondary);
+  font-weight: var(--font-weight-bold);
 }
 
 .editor-wrapper {
@@ -497,19 +502,20 @@ export default {
 .preview {
   text-align: left;
   flex: 1;
-  padding-left: 10px;
-  padding-right: 10px;
-  border-left: 1px solid #ccc;
+  padding: var(--spacing-medium);
+  border-left: var(--border-width) solid var(--border-color-secondary);
   overflow-y: auto;
-  background-color: #fff;
+  background-color: var(--bg-color-secondary);
+  color: var(--text-color-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
 }
 
 .image-gallery {
-  background-color: #e9ecef;
-  border-top: 1px solid #ccc;
-  transition: max-height 0.3s ease;
+  background-color: var(--bg-color-tertiary);
+  border-top: var(--border-width) solid var(--border-color-secondary);
+  transition: max-height var(--transition-base);
   max-height: 35%;
-  overflow-y: auto;
 }
 
 .image-gallery.collapsed {
@@ -520,18 +526,19 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
+  padding: var(--spacing-small) var(--spacing-medium);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--transition-base);
 }
 
 .gallery-header:hover {
-  background-color: #dee2e6;
+  background-color: var(--button-hover-neutral);
 }
 
 .gallery-title {
   margin: 0;
-  color: #495057;
+  color: var(--text-color-secondary);
+  font-weight: var(--font-weight-bold);
 }
 
 .collapse-button {
@@ -539,16 +546,16 @@ export default {
   border: none;
   cursor: pointer;
   padding: 0;
-  color: #495057;
+  color: var(--text-color-secondary);
 }
 
 .gallery-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  padding: 15px;
+  gap: var(--spacing-medium);
+  padding: var(--spacing-medium);
   max-height: calc(35% - 50px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity var(--transition-base), transform var(--transition-base);
 }
 
 .collapsed .gallery-content {
@@ -557,32 +564,32 @@ export default {
 }
 
 .image-item {
-  background-color: white;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  padding: 10px;
+  background-color: var(--bg-color-secondary);
+  border: 1px solid var(--border-color-secondary);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-small);
   width: auto;
   height: fit-content;
   max-width: 100px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-small);
+  transition: all var(--transition-base);
   display: flex;
   flex-direction: column;
 }
 
 .image-item:hover {
-  filter: brightness(0.85);
+  box-shadow: var(--shadow-medium);
 }
 
 .thumbnail {
   width: 100%;
   height: 100px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: calc(var(--border-radius) / 2);
 }
 
 .image-info {
-  margin-top: 10px;
+  margin-top: var(--spacing-small);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -590,30 +597,18 @@ export default {
 
 .image-name {
   display: block;
-  font-size: 0.8em;
-  margin-bottom: 5px;
+  font-size: var(--font-size-small);
+  margin-bottom: var(--spacing-small);
   word-break: break-all;
-  color: #495057;
+  color: var(--text-color-secondary);
 }
 
 .image-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  align-items: center;
   margin-top: auto;
-}
-
-.image-actions button {
-  flex: 1;
-  padding: 5px;
-  font-size: 0.7em;
-  background-color: #e9ecef;
-  border: 1px solid #ced4da;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.image-actions button:hover {
-  background-color: #ced4da;
+  gap: var(--spacing-small);
+  flex-wrap: wrap;
 }
 </style>

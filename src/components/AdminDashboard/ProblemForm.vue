@@ -60,7 +60,7 @@
     <!-- Content Editor Modal -->
     <div v-if="showContentEditor" class="modal" @click.self="closeContentEditor">
       <div class="modal-content large">
-        <h2>Edit Problem Content</h2>
+        <h4>Edit Problem Content</h4>
         <ContentEditor
             ref="contentEditorRef"
             v-model="problemForm.content"
@@ -304,11 +304,14 @@ export default {
 
 .modal-content.large {
   background-color: var(--bg-color-secondary);
+  border: var(--border-width) solid var(--border-color-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-small);
   padding: 1rem;
   width: 80%;
   min-width: 80vw;
   height: 80%;
   min-height: 80vh;
-  max-height: 90%;
+  overflow-y: auto;
 }
 </style>
