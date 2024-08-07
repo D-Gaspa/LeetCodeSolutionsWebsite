@@ -7,7 +7,7 @@
           <component :is="action.icon"/>
         </button>
         <button class="btn-neutral" title="Toggle Image Gallery" @click="toggleImageGallery">
-          <imageIcon/>
+          <ImageIcon :size="20"/>
         </button>
         <button title="Clear Content" @click="clearContent">
           <TrashIcon/>
@@ -41,16 +41,19 @@
           <div class="preview" v-html="renderedContent"></div>
         </div>
       </div>
-      <div v-if="showImageGallery" class="image-gallery">
-        <button class="btn-primary" @click="$refs.fileInput.click()">Upload Image</button>
-        <div class="gallery-content">
-          <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
-            <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
-            <button class="btn-danger" @click="removeImage(index)">Remove</button>
+      <transition name="gallery-slide">
+        <div v-if="showImageGallery" class="image-gallery">
+          <input ref="fileInput" accept="image/*" multiple style="display: none;" type="file"
+                 @change="handleImageUpload">
+          <button class="btn-primary" @click="$refs.fileInput.click()">Upload Images</button>
+          <div class="gallery-content">
+            <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
+              <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
+              <button class="btn-danger delete-image-btn" @click="removeImage(index)">Remove</button>
+            </div>
           </div>
         </div>
-        <input ref="fileInput" accept="image/*" style="display: none;" type="file" @change="handleImageUpload">
-      </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -237,15 +240,15 @@ export default {
     })
 
     const handleImageUpload = async (event) => {
-      const file = event.target.files[0]
-      if (file) {
-        await addTempImage(file)
-        // Reset the file input to allow re-uploading of the same file
-        if (fileInput.value) {
-          fileInput.value.value = ''
-        }
+      const files = event.target.files;
+      for (let i = 0; i < files.length; i++) {
+        await addTempImage(files[i]);
       }
-    }
+      // Reset the file input to allow re-uploading of the same file
+      if (fileInput.value) {
+        fileInput.value.value = '';
+      }
+    };
 
     const handleDrop = async (event) => {
       const file = event.dataTransfer.files[0]
@@ -287,9 +290,6 @@ export default {
         }
 
         imageMap.value.set(imageId, newImage)
-
-        // Automatically insert the pasted image into the editor
-        insertImageToEditor(newImage)
       }
       reader.readAsDataURL(file)
 
@@ -297,7 +297,7 @@ export default {
     }
 
     const insertImageToEditor = (image) => {
-      const imageMarkdown = `![${image.name}](${image.id})`
+      const imageMarkdown = `![${image.name}](${image.id})\n`
       insertText(imageMarkdown, '')
 
       // Add the image to tempImages if it's not already there
@@ -309,28 +309,28 @@ export default {
     }
 
     const removeImage = (index) => {
-      const image = tempImages.value[index]
+      const image = tempImages.value[index];
+
+      // Remove all occurrences of the image from the Markdown content
+      const imageRegex = new RegExp(`!\\[${image.name}\\]\\(${image.id}\\)`, 'g');
+      localContent.value = localContent.value.replace(imageRegex, '');
 
       // Remove the image from the tempImages array
-      tempImages.value.splice(index, 1)
+      tempImages.value.splice(index, 1);
 
       // Remove the image from the imageMap
-      imageMap.value.delete(image.id)
+      imageMap.value.delete(image.id);
 
       // If the image URL is an object URL, revoke it
       if (image.url.startsWith('blob:')) {
-        URL.revokeObjectURL(image.url)
+        URL.revokeObjectURL(image.url);
       }
 
       // Trigger reactivity
-      tempImages.value = [...tempImages.value]
+      tempImages.value = [...tempImages.value];
 
-      // Re-render the preview to remove the deleted image
-      localContent.value = localContent.value.replace(`![${image.name}](${image.id})`, '') // For newly added images
-      localContent.value = localContent.value.replace(`![${image.name}](${image.url})`, '') // For existing images
-
-      updateImageMap()
-    }
+      updateImageMap();
+    };
 
     const insertText = (before, after) => {
       if (!editorView.value) return
@@ -532,6 +532,16 @@ export default {
   line-height: var(--line-height-base);
 }
 
+.gallery-slide-enter-active,
+.gallery-slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.gallery-slide-enter-from,
+.gallery-slide-leave-to {
+  transform: translateX(100%);
+}
+
 .image-gallery {
   width: 150px;
   min-width: 120px;
@@ -563,9 +573,10 @@ export default {
   padding: var(--spacing-small);
   align-items: center;
   transition: all var(--transition-base);
+  cursor: pointer;
 }
 
-.image-item:hover {
+.image-item:hover:not(:has(.delete-image-btn:hover)) {
   border-color: var(--input-focus);
   box-shadow: 0 0 0 2px rgba(var(--input-focus), 0.2);
 }
