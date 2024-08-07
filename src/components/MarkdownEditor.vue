@@ -434,11 +434,12 @@ export default {
   border: var(--border-width) solid var(--border-color-secondary);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 80vh;
+  height: 70vh;
+  max-height: 70vh;
   background-color: var(--bg-color-secondary);
   box-shadow: var(--shadow-small);
   transition: all var(--transition-base);
+  overflow-y: auto;
 }
 
 .editor-layout {

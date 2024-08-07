@@ -53,9 +53,11 @@
           </button>
         </div>
       </div>
-      <div class="form-actions">
-        <button class="btn-secondary" type="submit">Save Problem</button>
-        <button class="btn-danger" type="button" @click="$emit('close')">Cancel</button>
+      <div class="form-actions-container">
+        <div class="form-actions">
+          <button class="btn-secondary" type="submit">Save Problem</button>
+          <button class="btn-danger" type="button" @click="$emit('close')">Cancel</button>
+        </div>
       </div>
     </form>
 
@@ -68,9 +70,11 @@
             v-model="problemForm.content"
             :initial-content="problemForm.content"
         />
-        <div class="form-actions">
-          <button class="btn-secondary" @click="saveContent">Save Content</button>
-          <button class="btn-danger" @click="closeContentEditor">Close</button>
+        <div class="form-actions-container">
+          <div class="form-actions">
+            <button class="btn-secondary" @click="saveContent">Save Content</button>
+            <button class="btn-danger" @click="closeContentEditor">Close</button>
+          </div>
         </div>
       </div>
     </div>
@@ -312,20 +316,37 @@ h4 {
 }
 
 .content-actions {
-  margin-top: 10px;
+  margin-top: 5px;
+  margin-bottom: 10px;
   display: flex;
   justify-content: center;
   gap: 10px;
 }
 
 .modal-content.large {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   background-color: var(--bg-color-secondary);
   border: var(--border-width) solid var(--border-color-primary);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-small);
   padding: 1rem;
   width: 80%;
-  min-width: 80vw;
-  overflow-y: auto;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.form-actions-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.form-actions {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 </style>

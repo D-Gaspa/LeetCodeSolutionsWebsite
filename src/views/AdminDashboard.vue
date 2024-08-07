@@ -262,8 +262,4 @@ input, select, textarea {
   margin-top: 20px;
 }
 
-.form-actions button {
-  margin-left: 10px;
-}
-
 </style>
