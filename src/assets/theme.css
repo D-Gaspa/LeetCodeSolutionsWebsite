@@ -14,8 +14,11 @@
     --color-accent-darker: #922b21;
 
     --bg-color-primary: #ffffff;
+    --bg-color-primary-transparent: rgba(255, 255, 255, 0.5);
     --bg-color-secondary: #f8f9fa;
+    --bg-color-secondary-transparent: rgba(248, 249, 250, 0.5);
     --bg-color-tertiary: #e9ecef;
+    --bg-color-tertiary-transparent: rgba(233, 236, 239, 0.5);
 
     --text-color-primary: #333333;
     --text-color-secondary: #6c757d;
@@ -89,8 +92,11 @@
 [data-theme="dark"] {
     /* Basic Colors */
     --bg-color-primary: #141516;
+    --bg-color-primary-transparent: rgba(20, 21, 22, 0.5);
     --bg-color-secondary: #1e2022;
+    --bg-color-secondary-transparent: rgba(30, 32, 34, 0.5);
     --bg-color-tertiary: #2d3135;
+    --bg-color-tertiary-transparent: rgba(45, 49, 53, 0.5);
 
     --text-color-primary: #ced4da;
     --text-color-secondary: #adb5bd;

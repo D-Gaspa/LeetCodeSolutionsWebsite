@@ -6,9 +6,8 @@
         <button v-for="action in toolbarActions" :key="action.label" :title="action.label" @click="action.action">
           <component :is="action.icon"/>
         </button>
-        <input ref="fileInput" accept="image/*" style="display: none;" type="file" @change="handleImageUpload">
-        <button title="Add Image" @click="$refs.fileInput.click()">
-          <ImageIcon/>
+        <button class="btn-neutral" title="Toggle Image Gallery" @click="toggleImageGallery">
+          <imageIcon/>
         </button>
         <button title="Clear Content" @click="clearContent">
           <TrashIcon/>
@@ -17,8 +16,12 @@
           <EyeIcon v-if="showPreview"/>
           <EyeOffIcon v-else/>
         </button>
+        <button class="btn-neutral" title="Toggle Theme" @click="toggleTheme">
+          <SunIcon v-if="theme === 'dark'" :size="20"/>
+          <MoonIcon v-else :size="20"/>
+        </button>
       </div>
-      <div :class="{ 'split-view': showPreview }" class="editor-content">
+      <div :class="{ 'with-gallery': showImageGallery }" class="editor-content">
         <div class="editor-container">
           <h3 class="editor-title">Markdown Editor</h3>
           <div class="editor-wrapper"
@@ -26,6 +29,7 @@
                @dragover.prevent="() => {}"
                @dragenter.prevent="() => {}">
             <Codemirror
+                v-if="editorKey"
                 v-model="localContent"
                 :extensions="extensions"
                 @ready="handleReady"
@@ -37,26 +41,15 @@
           <div class="preview" v-html="renderedContent"></div>
         </div>
       </div>
-    </div>
-    <div v-if="tempImages.length > 0" :class="{ 'collapsed': isGalleryCollapsed }" class="image-gallery">
-      <div class="gallery-header" @click="toggleGallery">
-        <h5 class="gallery-title">Uploaded Images</h5>
-        <button class="collapse-button">
-          <ChevronDownIcon v-if="!isGalleryCollapsed"/>
-          <ChevronUpIcon v-else/>
-        </button>
-      </div>
-      <div v-show="!isGalleryCollapsed" class="gallery-content">
-        <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
-          <img :alt="image.name" :src="image.url" class="thumbnail">
-          <div class="image-info">
-            <span class="image-name">{{ image.name }}</span>
-            <div class="image-actions">
-              <button class="btn-primary" @click="insertImageToEditor(image)">Insert</button>
-              <button class="btn-danger" @click="removeImage(index)">Delete</button>
-            </div>
+      <div v-if="showImageGallery" class="image-gallery">
+        <button class="btn-primary" @click="$refs.fileInput.click()">Upload Image</button>
+        <div class="gallery-content">
+          <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
+            <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
+            <button class="btn-danger" @click="removeImage(index)">Remove</button>
           </div>
         </div>
+        <input ref="fileInput" accept="image/*" style="display: none;" type="file" @change="handleImageUpload">
       </div>
     </div>
   </div>
@@ -85,6 +78,8 @@ import {
   ImageIcon,
   ItalicIcon,
   LinkIcon,
+  MoonIcon,
+  SunIcon,
   TrashIcon,
   TypeIcon
 } from 'lucide-vue-next'
@@ -96,7 +91,8 @@ export default {
     Codemirror,
     BoldIcon, ItalicIcon, CodeIcon, LinkIcon,
     ImageIcon, TrashIcon, EyeIcon, EyeOffIcon,
-    TypeIcon, FunctionSquareIcon, ChevronUpIcon, ChevronDownIcon
+    TypeIcon, FunctionSquareIcon, ChevronUpIcon, ChevronDownIcon,
+    MoonIcon, SunIcon
   },
   props: {
     initialContent: {
@@ -108,7 +104,8 @@ export default {
   },
   emits: ['update:modelValue'],
   setup(props) {
-    const {theme} = useTheme()
+    const {theme, toggleTheme} = useTheme()
+    const editorKey = ref(0)
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref(props.initialContent.images || props.modelValue.images || [])
     const showPreview = ref(true)
@@ -116,6 +113,7 @@ export default {
     const editorView = ref(null)
     const editorRef = ref(null)
     const imageMap = ref(new Map())
+    const showImageGallery = ref(false)
 
     const md = new MarkdownIt({
       html: true,
@@ -186,11 +184,20 @@ export default {
       }
     }, {deep: true})
 
-    const extensions = [
+    const extensions = computed(() => [
       markdown(),
-      theme.value === 'dark' ? oneDark : oneDark,
+      theme.value === 'dark' ? oneDark : [],
       EditorView.lineWrapping,
-    ]
+    ])
+
+    watch(theme, () => {
+      // Force re-render of the Codemirror component
+      editorKey.value += 1
+    })
+
+    const toggleImageGallery = () => {
+      showImageGallery.value = !showImageGallery.value
+    }
 
     const handleReady = (payload) => {
       editorView.value = payload.view
@@ -378,6 +385,9 @@ export default {
     })
 
     onMounted(() => {
+      // Set the editor for the first time
+      editorKey.value += 1
+
       initializeContent()
       document.addEventListener('keydown', handleKeyboardShortcuts)
     })
@@ -398,6 +408,11 @@ export default {
       extensions,
       tempImages,
       isGalleryCollapsed,
+      theme,
+      editorKey,
+      showImageGallery,
+      toggleImageGallery,
+      toggleTheme,
       getContent,
       toggleGallery,
       handleKeyboardShortcuts,
@@ -454,6 +469,7 @@ export default {
   padding: var(--spacing-small);
   background: none;
   border: none;
+  border-radius: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -471,6 +487,10 @@ export default {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.editor-content.with-gallery {
+  width: calc(100% - 200px);
 }
 
 .editor-container, .preview-container {
@@ -512,103 +532,47 @@ export default {
 }
 
 .image-gallery {
+  width: 150px;
+  min-width: 120px;
+  border-left: var(--border-width) solid var(--border-color-secondary);
   background-color: var(--bg-color-tertiary);
-  border-top: var(--border-width) solid var(--border-color-secondary);
-  transition: max-height var(--transition-base);
-  max-height: 35%;
-}
-
-.image-gallery.collapsed {
-  max-height: 50px;
-}
-
-.gallery-header {
+  overflow-y: auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-small) var(--spacing-medium);
-  cursor: pointer;
-  transition: background-color var(--transition-base);
+  flex-direction: column;
 }
 
-.gallery-header:hover {
-  background-color: var(--button-hover-neutral);
-}
-
-.gallery-title {
-  margin: 0;
-  color: var(--text-color-secondary);
-  font-weight: var(--font-weight-bold);
-}
-
-.collapse-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  color: var(--text-color-secondary);
+.image-gallery button {
+  margin: 10px;
 }
 
 .gallery-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-medium);
-  padding: var(--spacing-medium);
-  max-height: calc(35% - 50px);
-  transition: opacity var(--transition-base), transform var(--transition-base);
-}
-
-.collapsed .gallery-content {
-  opacity: 0;
-  transform: translateY(-20px);
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-small);
 }
 
 .image-item {
-  background-color: var(--bg-color-secondary);
-  border: 1px solid var(--border-color-secondary);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-small);
-  width: auto;
-  height: fit-content;
-  max-width: 100px;
-  box-shadow: var(--shadow-small);
-  transition: all var(--transition-base);
   display: flex;
   flex-direction: column;
+  border: var(--border-width) solid var(--border-color-secondary);
+  border-radius: var(--border-radius);
+  background-color: var(--button-bg-neutral);
+  margin-bottom: var(--spacing-small);
+  text-align: center;
+  padding: var(--spacing-small);
+  align-items: center;
+  transition: all var(--transition-base);
 }
 
 .image-item:hover {
-  box-shadow: var(--shadow-medium);
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 2px rgba(var(--input-focus), 0.2);
 }
 
 .thumbnail {
-  width: 100%;
-  height: 100px;
-  object-fit: cover;
-  border-radius: calc(var(--border-radius) / 2);
-}
-
-.image-info {
-  margin-top: var(--spacing-small);
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.image-name {
-  display: block;
-  font-size: var(--font-size-small);
-  margin-bottom: var(--spacing-small);
-  word-break: break-all;
-  color: var(--text-color-secondary);
-}
-
-.image-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: auto;
-  gap: var(--spacing-small);
-  flex-wrap: wrap;
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  border-radius: var(--border-radius);
 }
 </style>

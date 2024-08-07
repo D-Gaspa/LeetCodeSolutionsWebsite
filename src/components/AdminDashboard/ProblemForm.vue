@@ -43,13 +43,15 @@
         <input v-model="problemForm.problem_year" required type="number">
       </label>
       <div>
-        <button class="btn-primary" type="button" @click="openContentEditor">
-          {{ problemForm.content && problemForm.content.text ? 'Edit' : 'Add' }} Content
-        </button>
-        <button v-if="problemForm.content && problemForm.content.text" class="btn-secondary" type="button"
-                @click="deleteContent">
-          Delete Content
-        </button>
+        <div class="content-actions">
+          <button class="btn-primary" type="button" @click="openContentEditor">
+            {{ problemForm.content && problemForm.content.text ? 'Edit' : 'Add' }} Content
+          </button>
+          <button v-if="problemForm.content && problemForm.content.text" class="btn-danger" type="button"
+                  @click="deleteContent">
+            Delete Content
+          </button>
+        </div>
       </div>
       <div class="form-actions">
         <button class="btn-secondary" type="submit">Save Problem</button>
@@ -299,7 +301,21 @@ export default {
 <style scoped>
 .problem-form {
   background-color: var(--bg-color-secondary);
+  border: var(--border-width) solid var(--border-color-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-small);
   padding: 1rem;
+}
+
+h4 {
+  margin: 5px;
+}
+
+.content-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 .modal-content.large {
@@ -310,8 +326,6 @@ export default {
   padding: 1rem;
   width: 80%;
   min-width: 80vw;
-  height: 80%;
-  min-height: 80vh;
   overflow-y: auto;
 }
 </style>
