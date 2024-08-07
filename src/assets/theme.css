@@ -142,8 +142,7 @@ body {
     line-height: var(--line-height-base);
     color: var(--text-color-primary);
     background-color: var(--bg-color-primary);
-    transition: color var(--transition-base),
-    background-color var(--transition-base);
+    transition: color var(--transition-base), background-color var(--transition-base);
 }
 
 /* Button styles */
@@ -311,10 +310,7 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-color-primary);
     margin-top: var(--spacing-medium);
     margin-bottom: var(--spacing-medium);
-}
-
-h1 {
-    font-size: calc(var(--font-size-base) * 2.5);
+    transition: color var(--transition-base);
 }
 
 .main-title {
@@ -327,6 +323,10 @@ h1 {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     -webkit-background-clip: text;
+}
+
+h1 {
+    font-size: calc(var(--font-size-base) * 2.5);
 }
 
 h2 {
@@ -391,19 +391,19 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--spacing-large);
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-base), border-color var(--transition-base);
 }
 
 th, td {
     padding: var(--spacing-small) var(--spacing-medium);
     border: var(--border-width) solid var(--border-color-primary);
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-base), border-color var(--transition-base);
 }
 
 th {
     background-color: var(--bg-color-secondary);
     font-weight: var(--font-weight-bold);
-    transition: all var(--transition-base);
+    transition: background-color var(--transition-base), border-color var(--transition-base);
 }
 
 /* Form group styles */
