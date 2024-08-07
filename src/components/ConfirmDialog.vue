@@ -80,15 +80,19 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  transition: all var(--transition-base);
 }
 
 .confirm-dialog-content {
   background-color: var(--bg-color-secondary);
+  border: var(--border-width) solid var(--border-color-secondary);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   box-shadow: var(--shadow-medium);
   max-width: 400px;
   width: 100%;
+  backdrop-filter: blur(10px);
+  transition: all var(--transition-base);
 }
 
 h2 {
