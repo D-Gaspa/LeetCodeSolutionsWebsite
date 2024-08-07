@@ -11,10 +11,11 @@ export function useMdEditorToolbar(editorView: Ref<EditorView | null>) {
     const insertText = (before: string, after: string) => {
         if (!editorView.value) return
 
-        const selection = editorView.value.state.selection.main
-        const insertedText = before + editorView.value.state.sliceDoc(selection.from, selection.to) + after
+        const view = editorView.value as EditorView
+        const selection = view.state.selection.main
+        const insertedText = before + view.state.sliceDoc(selection.from, selection.to) + after
 
-        editorView.value.dispatch({
+        view.dispatch({
             changes: {
                 from: selection.from,
                 to: selection.to,
@@ -23,7 +24,7 @@ export function useMdEditorToolbar(editorView: Ref<EditorView | null>) {
             selection: {anchor: selection.from + before.length}
         })
 
-        editorView.value.focus()
+        view.focus()
     }
 
     const toolbarActions: ToolbarAction[] = [

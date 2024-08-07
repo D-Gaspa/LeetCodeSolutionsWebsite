@@ -13,9 +13,10 @@
       />
       <div class="editor-content">
         <MdEditorContent
-            v-model="content.text"
             :enable-images="enableImages"
+            :model-value="content.text"
             :theme="theme"
+            @update:model-value="updateContentText"
             @editor-ready="handleEditorReady"
             @image-drop="handleImageDrop"
         />
@@ -26,7 +27,7 @@
       </div>
       <transition name="gallery-slide">
         <ImageGallery
-            v-if="enableImages"
+            v-if="enableImages && showImageGallery"
             :images="content.images"
             :show="showImageGallery"
             @upload-images="handleImageUpload"
@@ -39,7 +40,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, PropType, Ref, ref, watch} from 'vue'
+import {defineComponent, PropType, ref, Ref, watch} from 'vue'
 import {MarkdownEditorContent, useMdEditor} from '@/composables/useMdEditor'
 import {useMdEditorImageManagement} from '@/composables/useMdEditorImageManagement'
 import {useMdEditorToolbar} from '@/composables/useMdEditorToolbar'
@@ -48,7 +49,7 @@ import MarkdownEditorToolbar from './MdEditorToolbar.vue'
 import MdEditorContent from './MdEditorContent.vue'
 import MarkdownEditorPreview from './MdEditorPreview.vue'
 import MdEditorImageGallery from './MdEditorImageGallery.vue'
-import {EditorView} from "@codemirror/view";
+import {EditorView} from "@codemirror/view"
 
 export default defineComponent({
   name: 'MarkdownEditor',
@@ -74,18 +75,17 @@ export default defineComponent({
       content,
       showPreview,
       renderedContent,
-      updateContent,
       togglePreview,
       clearContent
-    } = useMdEditor(props.initialContent)
+    } = useMdEditor(props.initialContent, props.enableImages)
 
     const {
-      images,
       showImageGallery,
       addImage,
       removeImage,
       toggleImageGallery
-    } = useMdEditorImageManagement(props.initialContent.images)
+    } = useMdEditorImageManagement(props.initialContent.images, props.enableImages)
+
     const {theme, toggleTheme} = useTheme()
 
     const editorView: Ref<EditorView | null> = ref(null)
@@ -100,20 +100,36 @@ export default defineComponent({
 
     const {insertText, toolbarActions} = useMdEditorToolbar(editorView)
 
+    const updateContentText = (newText: string) => {
+      content.value = {...content.value, text: newText}
+    }
+
     const handleImageDrop = async (file: File) => {
-      const newImage = await addImage(file)
-      insertImageToEditor(newImage)
+      if (props.enableImages) {
+        const newImage = await addImage(file)
+        insertImageToEditor(newImage)
+      }
     }
 
     const handleImageUpload = async (files: File[]) => {
-      for (const file of files) {
-        await addImage(file)
+      console.log(`Handling image upload on ${files}`)
+      if (props.enableImages) {
+        for (const file of files) {
+          console.log(`Adding image ${file.name}`)
+          await addImage(file)
+        }
       }
     }
 
     const insertImageToEditor = (image: { id: string, name: string }) => {
-      const imageMarkdown = `![${image.name}](${image.id})\n`
-      insertText(imageMarkdown, '')
+      if (props.enableImages) {
+        const imageMarkdown = `![${image.name}](${image.id})\n`
+        insertText(imageMarkdown, '')
+      }
+    }
+
+    const getContent = () => {
+      return content.value
     }
 
     return {
@@ -123,9 +139,11 @@ export default defineComponent({
       theme,
       showImageGallery,
       toolbarActions,
+      getContent,
       togglePreview,
       toggleTheme,
       clearContent,
+      updateContentText,
       toggleImageGallery,
       handleEditorReady,
       handleImageDrop,
@@ -134,7 +152,6 @@ export default defineComponent({
       removeImage
     }
   }
-
 })
 </script>
 

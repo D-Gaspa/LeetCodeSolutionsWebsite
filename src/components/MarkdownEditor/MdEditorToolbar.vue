@@ -13,18 +13,18 @@
         v-if="enableImages"
         class="btn-neutral"
         title="Toggle Image Gallery"
-        @click="toggleImageGallery"
+        @click="$emit('toggle-image-gallery')"
     >
       <ImageIcon/>
     </button>
-    <button title="Clear Content" @click="clearContent">
+    <button title="Clear Content" @click="$emit('clear-content')">
       <TrashIcon/>
     </button>
-    <button title="Toggle Preview" @click="togglePreview">
+    <button title="Toggle Preview" @click="$emit('toggle-preview')">
       <EyeIcon v-if="showPreview"/>
       <EyeOffIcon v-else/>
     </button>
-    <button class="btn-neutral" title="Toggle Theme" @click="toggleTheme">
+    <button class="btn-neutral" title="Toggle Theme" @click="$emit('toggle-theme')">
       <SunIcon v-if="theme === 'dark'"/>
       <MoonIcon v-else/>
     </button>
@@ -33,7 +33,6 @@
 
 <script lang="ts">
 import {defineComponent, PropType} from 'vue'
-import {ToolbarAction} from '@/composables/useMdEditorToolbar'
 import {
   BoldIcon,
   CodeIcon,
@@ -48,9 +47,10 @@ import {
   TrashIcon,
   TypeIcon
 } from 'lucide-vue-next'
+import {ToolbarAction} from '@/composables/useMdEditorToolbar'
 
 export default defineComponent({
-  name: 'MarkdownEditorToolbar',
+  name: 'MdEditorToolbar',
   components: {
     BoldIcon, ItalicIcon, CodeIcon, LinkIcon, ImageIcon,
     TrashIcon, EyeIcon, EyeOffIcon, TypeIcon, FunctionSquareIcon,
@@ -75,19 +75,6 @@ export default defineComponent({
     }
   },
   emits: ['toggle-preview', 'toggle-theme', 'clear-content', 'toggle-image-gallery'],
-  setup(_, {emit}) {
-    const togglePreview = () => emit('toggle-preview')
-    const toggleTheme = () => emit('toggle-theme')
-    const clearContent = () => emit('clear-content')
-    const toggleImageGallery = () => emit('toggle-image-gallery')
-
-    return {
-      togglePreview,
-      toggleTheme,
-      clearContent,
-      toggleImageGallery
-    }
-  }
 })
 </script>
 

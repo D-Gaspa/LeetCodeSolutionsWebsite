@@ -35,7 +35,7 @@ import {defineComponent, PropType, ref} from 'vue'
 import {Image} from '@/composables/useMdEditorImageManagement'
 
 export default defineComponent({
-  name: 'ImageGallery',
+  name: 'MdEditorImageGallery',
   props: {
     show: {
       type: Boolean,
@@ -50,6 +50,7 @@ export default defineComponent({
   setup(_, {emit}) {
     const fileInput = ref<HTMLInputElement | null>(null)
     const handleImageUpload = (event: Event) => {
+      console.log(`Handling image upload on ${event}`)
       const target = event.target as HTMLInputElement
       if (target.files) {
         emit('upload-images', Array.from(target.files))

@@ -39,7 +39,8 @@ export default defineComponent({
 .preview {
   text-align: left;
   flex: 1;
-  padding: var(--spacing-medium);
+  padding: var(--spacing-small);
+  padding-top: 0;
   border-left: var(--border-width) solid var(--border-color-secondary);
   overflow-y: auto;
   background-color: var(--bg-color-secondary);

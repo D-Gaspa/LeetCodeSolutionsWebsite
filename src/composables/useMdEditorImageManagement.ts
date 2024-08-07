@@ -1,4 +1,4 @@
-import {ref} from 'vue'
+import {ref, Ref} from 'vue'
 
 export interface Image {
     id: string
@@ -7,16 +7,23 @@ export interface Image {
     file?: File
 }
 
-export function useMdEditorImageManagement(initialImages: Image[] = []) {
-    const images = ref<Image[]>(initialImages)
+export function useMdEditorImageManagement(initialImages: Image[] = [], enableImages: boolean) {
+    const images: Ref<Image[]> = ref(enableImages ? initialImages : [])
     const showImageGallery = ref(false)
 
-    const addImage = (file: File) => {
+    const addImage = (file: File): Promise<Image> => {
+        if (!enableImages) {
+            console.warn('Image functionality is disabled')
+            return Promise.reject('Image functionality is disabled')
+        }
+
+        console.log('Adding image in useMdEditorImageManagement', file)
+
         return new Promise<Image>((resolve) => {
             const reader = new FileReader()
             reader.onload = (e) => {
                 const newImage: Image = {
-                    id: `${file.name.replace(/\s+/g, '-')}`,
+                    id: `${file.name.replace(/\s+/g, '-')}-${Date.now()}`,
                     name: file.name,
                     url: e.target?.result as string,
                     file: file
@@ -29,6 +36,11 @@ export function useMdEditorImageManagement(initialImages: Image[] = []) {
     }
 
     const removeImage = (id: string) => {
+        if (!enableImages) {
+            console.warn('Image functionality is disabled')
+            return
+        }
+
         const index = images.value.findIndex(img => img.id === id)
         if (index !== -1) {
             images.value.splice(index, 1)
@@ -36,6 +48,11 @@ export function useMdEditorImageManagement(initialImages: Image[] = []) {
     }
 
     const toggleImageGallery = () => {
+        if (!enableImages) {
+            console.warn('Image functionality is disabled')
+            return
+        }
+
         showImageGallery.value = !showImageGallery.value
     }
 

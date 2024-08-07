@@ -8,9 +8,10 @@
     <h3 class="editor-title">Markdown Editor</h3>
     <div class="editor-wrapper">
       <Codemirror
-          v-model="modelValue"
           :extensions="extensions"
+          :model-value="modelValue"
           @ready="handleReady"
+          @update:model-value="$emit('update:modelValue', $event)"
       />
     </div>
   </div>
