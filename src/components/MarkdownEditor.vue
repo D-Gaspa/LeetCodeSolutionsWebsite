@@ -7,7 +7,7 @@
           <component :is="action.icon"/>
         </button>
         <button class="btn-neutral" title="Toggle Image Gallery" @click="toggleImageGallery">
-          <ImageIcon :size="20"/>
+          <ImageIcon/>
         </button>
         <button title="Clear Content" @click="clearContent">
           <TrashIcon/>
@@ -17,11 +17,11 @@
           <EyeOffIcon v-else/>
         </button>
         <button class="btn-neutral" title="Toggle Theme" @click="toggleTheme">
-          <SunIcon v-if="theme === 'dark'" :size="20"/>
-          <MoonIcon v-else :size="20"/>
+          <SunIcon v-if="theme === 'dark'"/>
+          <MoonIcon v-else/>
         </button>
       </div>
-      <div :class="{ 'with-gallery': showImageGallery }" class="editor-content">
+      <div class="editor-content">
         <div class="editor-container">
           <h3 class="editor-title">Markdown Editor</h3>
           <div class="editor-wrapper"
@@ -41,17 +41,19 @@
           <div class="preview" v-html="renderedContent"></div>
         </div>
       </div>
-      <div v-if="showImageGallery" class="image-gallery">
-        <input ref="fileInput" accept="image/*" multiple style="display: none;" type="file"
-               @change="handleImageUpload">
-        <button class="btn-primary" @click="$refs.fileInput.click()">Upload Images</button>
-        <div class="gallery-content">
-          <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
-            <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
-            <button class="btn-danger delete-image-btn" @click="removeImage(index)">Remove</button>
+      <transition name="gallery-slide">
+        <div v-if="showImageGallery" class="image-gallery">
+          <input ref="fileInput" accept="image/*" multiple style="display: none;" type="file"
+                 @change="handleImageUpload">
+          <button class="btn-primary" @click="$refs.fileInput.click()">Upload Images</button>
+          <div class="gallery-content">
+            <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
+              <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
+              <button class="btn-danger delete-image-btn" @click="removeImage(index)">Remove</button>
+            </div>
           </div>
         </div>
-      </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -348,11 +350,6 @@ export default {
       editorView.value.focus()
     }
 
-    const isGalleryCollapsed = ref(false)
-    const toggleGallery = () => {
-      isGalleryCollapsed.value = !isGalleryCollapsed.value
-    }
-
     const handleKeyboardShortcuts = (event) => {
       if (event.ctrlKey || event.metaKey) {
         switch (event.key.toLowerCase()) {
@@ -417,14 +414,12 @@ export default {
       toolbarActions,
       extensions,
       tempImages,
-      isGalleryCollapsed,
       theme,
       editorKey,
       showImageGallery,
       toggleImageGallery,
       toggleTheme,
       getContent,
-      toggleGallery,
       handleKeyboardShortcuts,
       togglePreview,
       clearContent,
@@ -453,6 +448,8 @@ export default {
 }
 
 .editor-layout {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -497,11 +494,7 @@ export default {
   display: flex;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-}
-
-.editor-content.with-gallery {
-  width: calc(100% - 200px);
+  overflow: auto;
 }
 
 .editor-container, .preview-container {
@@ -543,13 +536,27 @@ export default {
 }
 
 .image-gallery {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 150px;
-  min-width: 120px;
-  border-left: var(--border-width) solid var(--border-color-secondary);
   background-color: var(--bg-color-tertiary);
+  border-left: var(--border-width) solid var(--border-color-secondary);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+
+.gallery-slide-enter-active,
+.gallery-slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.gallery-slide-enter-from,
+.gallery-slide-leave-to {
+  transform: translateX(100%);
 }
 
 .image-gallery button {
