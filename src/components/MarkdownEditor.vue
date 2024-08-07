@@ -41,19 +41,17 @@
           <div class="preview" v-html="renderedContent"></div>
         </div>
       </div>
-      <transition name="gallery-slide">
-        <div v-if="showImageGallery" class="image-gallery">
-          <input ref="fileInput" accept="image/*" multiple style="display: none;" type="file"
-                 @change="handleImageUpload">
-          <button class="btn-primary" @click="$refs.fileInput.click()">Upload Images</button>
-          <div class="gallery-content">
-            <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
-              <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
-              <button class="btn-danger delete-image-btn" @click="removeImage(index)">Remove</button>
-            </div>
+      <div v-if="showImageGallery" class="image-gallery">
+        <input ref="fileInput" accept="image/*" multiple style="display: none;" type="file"
+               @change="handleImageUpload">
+        <button class="btn-primary" @click="$refs.fileInput.click()">Upload Images</button>
+        <div class="gallery-content">
+          <div v-for="(image, index) in tempImages" :key="image.id" class="image-item">
+            <img :alt="image.name" :src="image.url" class="thumbnail" @click="insertImageToEditor(image)">
+            <button class="btn-danger delete-image-btn" @click="removeImage(index)">Remove</button>
           </div>
         </div>
-      </transition>
+      </div>
     </div>
   </div>
 </template>
@@ -117,6 +115,10 @@ export default {
     const editorRef = ref(null)
     const imageMap = ref(new Map())
     const showImageGallery = ref(false)
+
+    const toggleImageGallery = () => {
+      showImageGallery.value = !showImageGallery.value
+    }
 
     const md = new MarkdownIt({
       html: true,
@@ -197,10 +199,6 @@ export default {
       // Force re-render of the Codemirror component
       editorKey.value += 1
     })
-
-    const toggleImageGallery = () => {
-      showImageGallery.value = !showImageGallery.value
-    }
 
     const handleReady = (payload) => {
       editorView.value = payload.view
@@ -374,6 +372,18 @@ export default {
             event.preventDefault()
             insertText('`', '`')
             break
+          case 'e':
+            event.preventDefault()
+            insertText('$', '$')
+            break
+          case 'q':
+            event.preventDefault()
+            insertText('$$\n', '\n$$')
+            break
+          case 'g':
+            event.preventDefault()
+            toggleImageGallery()
+            break
         }
       }
     }
@@ -530,16 +540,6 @@ export default {
   color: var(--text-color-primary);
   font-size: var(--font-size-base);
   line-height: var(--line-height-base);
-}
-
-.gallery-slide-enter-active,
-.gallery-slide-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.gallery-slide-enter-from,
-.gallery-slide-leave-to {
-  transform: translateX(100%);
 }
 
 .image-gallery {
