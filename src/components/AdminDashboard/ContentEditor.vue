@@ -1,6 +1,6 @@
 <template>
   <div class="content-editor">
-    <MarkdownEditor
+    <MdEditor
         ref="markdownEditorRef"
         v-model="localContent"
         :initial-content="modelValue"
@@ -11,11 +11,11 @@
 
 <script>
 import {ref, watch} from 'vue'
-import MarkdownEditor from "@/components/MarkdownEditor.vue";
+import MdEditor from "@/components/MarkdownEditor/MdEditor.vue"
 
 export default {
   name: 'ContentEditor',
-  components: {MarkdownEditor},
+  components: {MdEditor},
   props: {
     initialContent: Object,
     modelValue: Object,
@@ -60,6 +60,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-</style>

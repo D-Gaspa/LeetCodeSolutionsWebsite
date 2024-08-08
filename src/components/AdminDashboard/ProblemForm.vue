@@ -84,7 +84,7 @@
 <script>
 import {inject, onMounted, reactive, ref} from 'vue'
 
-import ContentEditor from './ContentEditor.vue'
+import ContentEditor from '@/components/AdminDashboard/ContentEditor.vue'
 import {useImageManagement} from '@/composables/useImageManagement.js'
 import {useProblemStore} from "@/stores/problemsStore.js";
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
