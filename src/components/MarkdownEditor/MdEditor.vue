@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, inject, onMounted, onUnmounted, ref, watch} from 'vue'
+import {defineComponent, onMounted, onUnmounted, ref, watch} from 'vue'
 import MdEditorToolbar from './MdEditorToolbar.vue'
 import MdEditorContent from './MdEditorContent.vue'
 import MdEditorPreview from './MdEditorPreview.vue'
@@ -50,6 +50,7 @@ import {useMdToolbar} from '@/composables/useMdToolbar'
 import {useTheme} from '@/composables/useTheme'
 import {EditorView} from "@codemirror/view";
 import {isEqual} from "lodash";
+import {useNotification} from "@/composables/useNotification";
 
 export interface EditorContent {
   text: string;
@@ -75,15 +76,13 @@ export default defineComponent({
     },
     enableImages: {
       type: Boolean,
-      default: true,
+      required: true,
     },
   },
   emits: ['update:modelValue'],
   setup(props, {emit}) {
-    const showNotification = inject('showNotification') as (message: string, type: string, options?: object) => number;
-    const updateNotification = inject('updateNotification') as (id: number, updates: object) => void;
-
     const {theme, toggleTheme} = useTheme()
+    const {showNotification, updateNotification} = useNotification()
 
     const {
       localContent,
@@ -95,7 +94,7 @@ export default defineComponent({
       clearContent,
       initializeContent,
       updateImageMap,
-    } = useMdEditor(props, emit, theme)
+    } = useMdEditor(props, emit, theme, showNotification)
 
     const {
       showImageGallery,
@@ -104,7 +103,10 @@ export default defineComponent({
       addTempImage,
       insertImageToEditor,
       removeImage,
-    } = useMdImageManagement(props.enableImages, editorView, tempImages, updateImageMap)
+    } = useMdImageManagement(props.enableImages, editorView, tempImages, updateImageMap, {
+      showNotification,
+      updateNotification
+    })
 
     const {toolbarActions, insertText} = useMdToolbar(editorView)
 
@@ -128,7 +130,7 @@ export default defineComponent({
           const insertToEditor = true
           await addTempImage(file, insertToEditor);
           updateNotification(notificationId, {
-            message: 'Image added to gallery',
+            message: 'Image added successfully',
             type: 'success',
             isLoading: false
           });
@@ -199,9 +201,6 @@ export default defineComponent({
 
     onUnmounted(() => {
       document.removeEventListener('keydown', handleKeyboardShortcuts)
-      // if (editorView.value && props.enableImages) {
-      //   editorView.value.dom.removeEventListener('paste', handlePaste)
-      // }
     })
 
     return {

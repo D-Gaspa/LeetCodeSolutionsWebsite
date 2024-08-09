@@ -1,5 +1,6 @@
 import {Ref, ref} from 'vue'
 import {EditorView} from '@codemirror/view'
+import {useNotification} from "./useNotification";
 
 export interface MdImage {
     id: string;
@@ -8,7 +9,13 @@ export interface MdImage {
     file?: File;
 }
 
-export function useMdImageManagement(enableImages: boolean, editorView: Ref<EditorView | null>, tempImages: Ref<MdImage[]>, updateImageMap: () => void) {
+export function useMdImageManagement(
+    enableImages: boolean,
+    editorView: Ref<EditorView | null>,
+    tempImages: Ref<MdImage[]>,
+    updateImageMap: () => void,
+    {showNotification, updateNotification}: ReturnType<typeof useNotification>
+) {
     const showImageGallery = ref(false)
 
     const toggleImageGallery = () => {
@@ -20,8 +27,26 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
     const handleImageUpload = async (files: FileList) => {
         if (!enableImages) return
 
-        for (let i = 0; i < files.length; i++) {
-            await addTempImage(files[i])
+        const notificationId = showNotification('Uploading images...', 'loading', {isLoading: true})
+
+        try {
+            for (let i = 0; i < files.length; i++) {
+                updateNotification(notificationId, {message: `Uploading image ${i + 1} of ${files.length}...`})
+                await addTempImage(files[i])
+            }
+            let message = files.length > 1 ? 'Images uploaded successfully' : 'Image uploaded successfully'
+            updateNotification(notificationId, {
+                message: message,
+                type: 'success',
+                isLoading: false
+            })
+        } catch (error) {
+            let message = files.length > 1 ? 'Error uploading images' : 'Error uploading image'
+            updateNotification(notificationId, {
+                message: `${message}: ${error.message}`,
+                type: 'error',
+                isLoading: false
+            })
         }
     }
 
@@ -46,51 +71,58 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
     const addTempImage = async (file: File, insertToEditor = false) => {
         if (!file) return
 
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            const imageId = `${file.name.replace(/\s+/g, '-')}`
-            const newImage: MdImage = {
-                id: imageId,
-                file: file,
-                name: imageId,
-                url: e.target?.result as string
-            }
+        return new Promise<void>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                const imageId = `${file.name.replace(/\s+/g, '-')}`
+                const newImage: MdImage = {
+                    id: imageId,
+                    file: file,
+                    name: imageId,
+                    url: e.target?.result as string
+                }
 
-            const existingIndex = tempImages.value.findIndex(img => img.name === newImage.name)
-            if (existingIndex !== -1) {
-                tempImages.value.splice(existingIndex, 1, newImage)
-            } else {
-                tempImages.value.push(newImage)
-            }
+                const existingIndex = tempImages.value.findIndex(img => img.name === newImage.name)
+                if (existingIndex !== -1) {
+                    tempImages.value.splice(existingIndex, 1, newImage)
+                } else {
+                    tempImages.value.push(newImage)
+                }
 
-            if (insertToEditor) {
-                insertImageToEditor(newImage)
-            }
+                if (insertToEditor) {
+                    insertImageToEditor(newImage)
+                }
 
-            updateImageMap()
-        }
-        reader.readAsDataURL(file)
+                updateImageMap()
+                resolve()
+            }
+            reader.onerror = (error) => reject(new Error(`Error reading file: ${error}`))
+            reader.readAsDataURL(file)
+        })
     }
 
     const insertImageToEditor = (image: MdImage) => {
-        console.log('Editor view:', editorView.value)
         if (editorView.value) {
-            const imageMarkdown = `![${image.name}](${image.id})\n`
-            const {from} = editorView.value.state.selection.main
-            editorView.value.dispatch({
-                changes: {
-                    from,
-                    insert: imageMarkdown,
-                },
-                selection: {anchor: from + imageMarkdown.length},
-            })
-            editorView.value.focus()
+            try {
+                const imageMarkdown = `![${image.name}](${image.id})\n`
+                const {from} = editorView.value.state.selection.main
+                editorView.value.dispatch({
+                    changes: {
+                        from,
+                        insert: imageMarkdown,
+                    },
+                    selection: {anchor: from + imageMarkdown.length},
+                })
+                editorView.value.focus()
 
-            if (!tempImages.value.some(img => img.id === image.id)) {
-                tempImages.value.push(image)
+                if (!tempImages.value.some(img => img.id === image.id)) {
+                    tempImages.value.push(image)
+                }
+
+                updateImageMap()
+            } catch (error) {
+                showNotification(`Error inserting image: ${error.message}`, 'error')
             }
-
-            updateImageMap()
         }
     }
 
