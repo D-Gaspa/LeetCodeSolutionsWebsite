@@ -48,6 +48,7 @@ import {MdImage, useMdImageManagement} from '@/composables/useMdImageManagement'
 import {useMdToolbar} from '@/composables/useMdToolbar'
 import {useTheme} from '@/composables/useTheme'
 import {EditorView} from "@codemirror/view";
+import {isEqual} from "lodash";
 
 export interface EditorContent {
   text: string;
@@ -78,18 +79,21 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, {emit}) {
+    const {theme, toggleTheme} = useTheme()
+
     const {
       localContent,
+      tempImages,
       renderedContent,
       extensions,
       editorView,
       handleReady,
-      handleContentUpdate,
       clearContent,
-    } = useMdEditor(props, emit)
+      initializeContent,
+      updateImageMap,
+    } = useMdEditor(props, emit, theme)
 
     const {
-      tempImages,
       showImageGallery,
       toggleImageGallery,
       handleImageUpload,
@@ -97,11 +101,9 @@ export default defineComponent({
       addTempImage,
       insertImageToEditor,
       removeImage,
-    } = useMdImageManagement(props.enableImages, editorView)
+    } = useMdImageManagement(props.enableImages, editorView, tempImages, updateImageMap)
 
     const {toolbarActions, insertText} = useMdToolbar(editorView)
-
-    const {theme, toggleTheme} = useTheme()
 
     const showPreview = ref(true)
     const togglePreview = () => {
@@ -165,16 +167,14 @@ export default defineComponent({
       if (newValue.text !== localContent.value) {
         localContent.value = newValue.text
       }
-      if (JSON.stringify(newValue.images) !== JSON.stringify(tempImages.value)) {
+      if (!isEqual(newValue.images, tempImages.value)) {
         tempImages.value = newValue.images
+        updateImageMap()
       }
     }, {deep: true})
 
-    watch(localContent, (newContent) => {
-      handleContentUpdate(newContent)
-    })
-
     onMounted(() => {
+      initializeContent()
       document.addEventListener('keydown', handleKeyboardShortcuts)
     })
 

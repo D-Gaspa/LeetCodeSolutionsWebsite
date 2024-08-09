@@ -44,7 +44,7 @@ export default defineComponent({
   overflow-y: auto;
   background-color: var(--bg-color-secondary);
   color: var(--text-color-primary);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-small);
   line-height: var(--line-height-base);
 }
 
