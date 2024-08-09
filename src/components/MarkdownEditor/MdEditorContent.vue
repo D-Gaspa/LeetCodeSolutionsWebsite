@@ -87,6 +87,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   flex: 1;
+  transition: all var(--transition-base);
 }
 
 .editor-title {
@@ -97,10 +98,37 @@ export default defineComponent({
   border-bottom: var(--border-width) solid var(--border-color-secondary);
   color: var(--text-color-secondary);
   font-weight: var(--font-weight-bold);
+  transition: all var(--transition-base);
 }
 
 .editor-wrapper {
   text-align: left;
   flex: 1;
   overflow: auto;
-}</style>
+}
+
+:deep(.cm-editor),
+:deep(.cm-scroller),
+:deep(.cm-content),
+:deep(.cm-line),
+:deep(.cm-gutters),
+:deep(.cm-gutterElement) {
+  transition: background-color var(--transition-base);
+}
+
+:deep(.cm-editor) {
+  height: 100%;
+  background-color: var(--bg-color-secondary);
+}
+
+:deep(.cm-gutters) {
+  border-right: none;
+}
+
+:deep(.cm-foldPlaceholder) {
+  background-color: var(--bg-color-secondary);
+  border: var(--border-width) solid var(--border-color-secondary);
+  border-radius: var(--border-radius);
+  transition: all var(--transition-base);
+}
+</style>

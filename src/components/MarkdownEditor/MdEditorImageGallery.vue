@@ -76,6 +76,7 @@ export default defineComponent({
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  transition: all var(--transition-base);
 }
 
 .image-gallery button {

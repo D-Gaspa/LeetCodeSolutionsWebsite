@@ -24,6 +24,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   flex: 1;
+  transition: all var(--transition-base);
 }
 
 .preview-title {
@@ -34,6 +35,7 @@ export default defineComponent({
   border-bottom: var(--border-width) solid var(--border-color-secondary);
   color: var(--text-color-secondary);
   font-weight: var(--font-weight-bold);
+  transition: all var(--transition-base);
 }
 
 .preview {
@@ -46,6 +48,7 @@ export default defineComponent({
   color: var(--text-color-primary);
   font-size: var(--font-size-small);
   line-height: var(--line-height-base);
+  transition: all var(--transition-base);
 }
 
 </style>
