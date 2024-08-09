@@ -8,10 +8,8 @@ export interface MdImage {
     file?: File;
 }
 
-export function useMdImageManagement(enableImages: boolean, editorView: Ref<EditorView | null>) {
-    const tempImages = ref<MdImage[]>([])
+export function useMdImageManagement(enableImages: boolean, editorView: Ref<EditorView | null>, tempImages: Ref<MdImage[]>, updateImageMap: () => void) {
     const showImageGallery = ref(false)
-    const imageMap = ref(new Map())
 
     const toggleImageGallery = () => {
         if (enableImages) {
@@ -65,7 +63,7 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
                 tempImages.value.push(newImage)
             }
 
-            imageMap.value.set(imageId, newImage)
+            updateImageMap()
         }
         reader.readAsDataURL(file)
     }
@@ -86,6 +84,8 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
             if (!tempImages.value.some(img => img.id === image.id)) {
                 tempImages.value.push(image)
             }
+
+            updateImageMap()
         }
     }
 
@@ -103,7 +103,7 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
         }
 
         tempImages.value.splice(index, 1)
-        imageMap.value.delete(image.id)
+        updateImageMap()
 
         if (image.url.startsWith('blob:')) {
             URL.revokeObjectURL(image.url)

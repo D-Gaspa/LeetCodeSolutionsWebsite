@@ -9,54 +9,56 @@
   </div>
 </template>
 
-<script>
-import {ref, watch} from 'vue'
-import MdEditor from "@/components/MarkdownEditor/MdEditor.vue"
+<script lang="ts" setup>
+import {PropType, ref, watch} from 'vue'
+import MdEditor from "@/components/MarkdownEditor/MdEditor.vue";
+import {EditorContent} from "@/composables/useMdEditor";
 
-export default {
-  name: 'ContentEditor',
-  components: {MdEditor},
-  props: {
-    initialContent: Object,
-    modelValue: Object,
+const props = defineProps({
+  initialContent: {
+    type: Object as PropType<EditorContent>,
+    required: false,
   },
-  emits: ['update:modelValue'],
-  setup(props, {emit}) {
-    const markdownEditorRef = ref(null)
-    const localContent = ref(props.initialContent || props.modelValue || {})
+  modelValue: {
+    type: Object as PropType<EditorContent>,
+    required: true,
+  },
+})
 
-    watch(() => props.modelValue, (newValue) => {
-      if (newValue !== localContent.value) {
-        localContent.value = newValue
-      }
-    }, {deep: true})
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: EditorContent): void
+}>()
 
-    const handleContentUpdate = (newContent) => {
-      localContent.value = newContent
-      emit('update:modelValue', newContent)
-    }
+const markdownEditorRef = ref<InstanceType<typeof MdEditor> | null>(null)
+const localContent = ref<EditorContent>(props.initialContent || props.modelValue || {text: '', images: []})
 
-    const hasUnsavedChanges = () => {
-      if (!markdownEditorRef.value) return false
-
-      const currentContent = markdownEditorRef.value.getContent()
-      const originalContent = props.initialContent || props.modelValue || {}
-
-      return currentContent.text !== originalContent.text ||
-          currentContent.images.length !== originalContent.images.length
-    }
-
-    const getContent = () => {
-      return markdownEditorRef.value ? markdownEditorRef.value.getContent() : localContent.value
-    }
-
-    return {
-      markdownEditorRef,
-      localContent,
-      hasUnsavedChanges,
-      handleContentUpdate,
-      getContent,
-    }
+watch(() => props.modelValue, (newValue) => {
+  if (newValue !== localContent.value) {
+    localContent.value = newValue
   }
+}, {deep: true})
+
+const handleContentUpdate = (newContent: EditorContent) => {
+  localContent.value = newContent
+  emit('update:modelValue', newContent)
 }
+
+const hasUnsavedChanges = (): boolean => {
+  if (!markdownEditorRef.value) return false
+
+  const currentContent = markdownEditorRef.value.getContent()
+  const originalContent = props.initialContent || props.modelValue
+
+  return currentContent.text !== originalContent.text ||
+      currentContent.images.length !== originalContent.images.length
+}
+
+const getContent = (): EditorContent => {
+  return markdownEditorRef.value ? markdownEditorRef.value.getContent() : localContent.value
+}
+
+defineExpose({
+  hasUnsavedChanges,
+  getContent,
+})
 </script>

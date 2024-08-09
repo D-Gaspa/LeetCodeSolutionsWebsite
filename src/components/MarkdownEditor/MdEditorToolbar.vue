@@ -72,7 +72,6 @@ export default defineComponent({
   background-color: var(--bg-color-tertiary);
   min-width: 50px;
   overflow-y: auto;
-  transition: all var(--transition-base);
 }
 
 .toolbar-title {
