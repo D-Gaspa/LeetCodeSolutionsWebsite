@@ -34,7 +34,7 @@
           </label>
           <label>
             Explanation:
-            <markdown-editor v-model="solutionForm.explanation"></markdown-editor>
+            <!--<md-editor v-model="solutionForm.explanation"></md-editor>-->
           </label>
           <label>
             Time Complexity:
@@ -57,7 +57,7 @@
 <script>
 import {inject, onMounted, reactive, ref} from 'vue'
 import {supabase} from '../services/supabase'
-import MarkdownEditor from '../components/MarkdownEditor/MarkdownEditorOriginal.vue'
+import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
 import ProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue";
@@ -69,7 +69,7 @@ export default {
     ProblemForm,
     ConfirmDialog,
     ProblemList,
-    MarkdownEditor
+    MdEditor
   },
   setup() {
     const showNotification = inject('showNotification')
@@ -146,14 +146,12 @@ export default {
           message: 'Problem and associated images deleted successfully',
           type: 'success',
           isLoading: false,
-          duration: 3000
         })
       } catch (error) {
         updateNotification(notificationId, {
           message: error.message,
           type: 'error',
           isLoading: false,
-          duration: 5000
         })
       } finally {
         await fetchProblems()

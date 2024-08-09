@@ -49,7 +49,6 @@ export default {
         message: 'Process completed successfully',
         type: 'success',
         isLoading: false,
-        duration: 3000
       })
     }
 

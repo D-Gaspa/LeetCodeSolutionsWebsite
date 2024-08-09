@@ -43,7 +43,7 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
         }
     }
 
-    const addTempImage = async (file: File) => {
+    const addTempImage = async (file: File, insertToEditor = false) => {
         if (!file) return
 
         const reader = new FileReader()
@@ -63,12 +63,17 @@ export function useMdImageManagement(enableImages: boolean, editorView: Ref<Edit
                 tempImages.value.push(newImage)
             }
 
+            if (insertToEditor) {
+                insertImageToEditor(newImage)
+            }
+
             updateImageMap()
         }
         reader.readAsDataURL(file)
     }
 
     const insertImageToEditor = (image: MdImage) => {
+        console.log('Editor view:', editorView.value)
         if (editorView.value) {
             const imageMarkdown = `![${image.name}](${image.id})\n`
             const {from} = editorView.value.state.selection.main

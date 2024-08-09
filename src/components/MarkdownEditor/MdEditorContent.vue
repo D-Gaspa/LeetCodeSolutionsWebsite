@@ -42,7 +42,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: ['update:modelValue', 'ready', 'drop-image'],
+  emits: ['update:modelValue', 'ready', 'drop-image', 'paste-image'],
   setup(props, {emit}) {
     const localContent = ref(props.modelValue)
     const editorView = ref<EditorView | null>(null)
@@ -56,6 +56,10 @@ export default defineComponent({
     const handleReady = (payload: { view: EditorView }) => {
       editorView.value = payload.view
       emit('ready', payload)
+
+      if (props.enableImages) {
+        editorView.value.dom.addEventListener('paste', handlePaste)
+      }
     }
 
     const handleChange = (value: string) => {
@@ -68,6 +72,22 @@ export default defineComponent({
         const file = event.dataTransfer.files[0]
         if (file.type.startsWith('image/')) {
           emit('drop-image', file)
+        }
+      }
+    }
+
+    const handlePaste = (event: ClipboardEvent) => {
+      if (props.enableImages && event.clipboardData) {
+        const items = event.clipboardData.items
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile()
+            if (file) {
+              emit('paste-image', file)
+              event.preventDefault() // Prevent default paste behavior
+              break
+            }
+          }
         }
       }
     }
