@@ -224,7 +224,6 @@ export default {
               message: result.error,
               type: 'error',
               isLoading: false,
-              duration: 3000
             })
             return
           }

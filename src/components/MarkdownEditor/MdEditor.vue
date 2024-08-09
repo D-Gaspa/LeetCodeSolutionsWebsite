@@ -18,6 +18,7 @@
             :extensions="extensions"
             @ready="handleReady"
             @drop-image="handleDropImage"
+            @paste-image="handlePasteImage"
         />
         <MdEditorPreview
             v-if="showPreview"
@@ -38,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, onUnmounted, ref, watch} from 'vue'
+import {defineComponent, inject, onMounted, onUnmounted, ref, watch} from 'vue'
 import MdEditorToolbar from './MdEditorToolbar.vue'
 import MdEditorContent from './MdEditorContent.vue'
 import MdEditorPreview from './MdEditorPreview.vue'
@@ -79,6 +80,9 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, {emit}) {
+    const showNotification = inject('showNotification') as (message: string, type: string, options?: object) => number;
+    const updateNotification = inject('updateNotification') as (id: number, updates: object) => void;
+
     const {theme, toggleTheme} = useTheme()
 
     const {
@@ -97,7 +101,6 @@ export default defineComponent({
       showImageGallery,
       toggleImageGallery,
       handleImageUpload,
-      handlePaste,
       addTempImage,
       insertImageToEditor,
       removeImage,
@@ -116,17 +119,33 @@ export default defineComponent({
 
     const handleEditorReady = (payload: { view: EditorView; state: any }) => {
       handleReady(payload)
-      if (props.enableImages) {
-        payload.view.dom.addEventListener('paste', handlePaste)
-      }
     }
 
-    const handleDropImage = async (event: DragEvent) => {
-      const file = event.dataTransfer?.files[0]
+    const handleImage = async (file: File, source: string) => {
       if (file && file.type.startsWith('image/')) {
-        await addTempImage(file)
+        const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading');
+        try {
+          const insertToEditor = true
+          await addTempImage(file, insertToEditor);
+          updateNotification(notificationId, {
+            message: 'Image added to gallery',
+            type: 'success',
+            isLoading: false
+          });
+        } catch (error) {
+          updateNotification(notificationId, {
+            message: `Error adding image: ${(error as Error).message}`,
+            type: 'error',
+            isLoading: false,
+          });
+        }
+      } else {
+        showNotification('Please provide a valid image file', 'error');
       }
-    }
+    };
+
+    const handleDropImage = (file: File) => handleImage(file, 'dropped');
+    const handlePasteImage = (file: File) => handleImage(file, 'pasted');
 
     const handleKeyboardShortcuts = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey) {
@@ -180,9 +199,9 @@ export default defineComponent({
 
     onUnmounted(() => {
       document.removeEventListener('keydown', handleKeyboardShortcuts)
-      if (editorView.value && props.enableImages) {
-        editorView.value.dom.removeEventListener('paste', handlePaste)
-      }
+      // if (editorView.value && props.enableImages) {
+      //   editorView.value.dom.removeEventListener('paste', handlePaste)
+      // }
     })
 
     return {
@@ -205,6 +224,7 @@ export default defineComponent({
       toggleTheme,
       togglePreview,
       handleDropImage,
+      handlePasteImage,
     }
   },
 })
