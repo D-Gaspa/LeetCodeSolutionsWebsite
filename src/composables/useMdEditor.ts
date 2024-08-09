@@ -17,7 +17,7 @@ export interface EditorContent {
 export function useMdEditor(props: {
     initialContent: EditorContent;
     modelValue: EditorContent
-}, emit: (event: 'update:modelValue', value: EditorContent) => void, theme: Ref<string>) {
+}, emit: (event: "update:modelValue", value: EditorContent) => void, theme: Ref<string>, showNotification: (message: string, type: string, options?: object) => number) {
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref<MdImage[]>([])
     const imageMap = ref(new Map())
@@ -72,16 +72,20 @@ export function useMdEditor(props: {
     }
 
     const initializeContent = () => {
-        localContent.value = props.initialContent.text || props.modelValue.text || ''
-        tempImages.value = (props.initialContent.images || props.modelValue.images || []).map(img => ({
-            id: img.id || img.url,
-            name: img.name,
-            url: img.url,
-            file: img.file || null // Preserve the file object for new images, null for existing ones
-        }))
+        try {
+            localContent.value = props.initialContent.text || props.modelValue.text || ''
+            tempImages.value = (props.initialContent.images || props.modelValue.images || []).map(img => ({
+                id: img.id || img.url,
+                name: img.name,
+                url: img.url,
+                file: img.file || null // Preserve the file object for new images, null for existing ones
+            }))
 
-        updateImageMap()
-        setupImageRenderer()
+            updateImageMap()
+            setupImageRenderer()
+        } catch (error) {
+            showNotification(`Error initializing content: ${error.message}`, 'error')
+        }
     }
 
     const extensions = computed((): Extension[] => [

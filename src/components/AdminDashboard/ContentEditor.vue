@@ -4,6 +4,7 @@
         ref="markdownEditorRef"
         v-model="localContent"
         :initial-content="modelValue"
+        :enable-images="true"
         @update:modelValue="handleContentUpdate"
     />
   </div>

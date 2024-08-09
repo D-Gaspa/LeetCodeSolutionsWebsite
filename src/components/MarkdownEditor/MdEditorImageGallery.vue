@@ -30,6 +30,7 @@
 <script lang="ts">
 import {defineComponent, PropType, ref} from 'vue'
 import {MdImage} from '@/composables/useMdImageManagement'
+import {useNotification} from "@/composables/useNotification";
 
 export default defineComponent({
   name: 'MdEditorImageGallery',
@@ -41,6 +42,7 @@ export default defineComponent({
   },
   emits: ['upload', 'insert', 'remove'],
   setup(_, {emit}) {
+    const {showNotification} = useNotification()
     const fileInput = ref<HTMLInputElement | null>(null)
 
     const triggerFileInput = () => {
@@ -50,8 +52,12 @@ export default defineComponent({
     const handleFileInputChange = (event: Event) => {
       const input = event.target as HTMLInputElement
       if (input.files) {
-        emit('upload', input.files)
-        input.value = '' // Reset the input
+        try {
+          emit('upload', input.files)
+          input.value = '' // Reset the input
+        } catch (error) {
+          showNotification(`Error processing images: ${error.message}`, 'error')
+        }
       }
     }
 

@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, PropType, ref, watch} from 'vue'
+import {defineComponent, onBeforeUnmount, PropType, ref, watch} from 'vue'
 import {Codemirror} from 'vue-codemirror'
 import {EditorView} from '@codemirror/view'
 import {Extension} from '@codemirror/state'
@@ -91,6 +91,12 @@ export default defineComponent({
         }
       }
     }
+
+    onBeforeUnmount(() => {
+      if (editorView.value) {
+        editorView.value.dom.removeEventListener('paste', handlePaste)
+      }
+    })
 
     return {
       localContent,
