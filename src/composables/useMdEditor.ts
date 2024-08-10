@@ -4,18 +4,17 @@ import {EditorView} from '@codemirror/view'
 import {Extension} from '@codemirror/state'
 import MarkdownIt from 'markdown-it'
 import MarkdownItKatex from '@vscode/markdown-it-katex'
-import hljs from 'highlight.js'
-import {MdImage} from "./useMdImageManagement";
-import {oneDark} from "@codemirror/theme-one-dark";
-import {isEqual} from "lodash";
+import {MdImage} from "./useMdImageManagement"
+import {oneDark} from "@codemirror/theme-one-dark"
+import {isEqual} from "lodash"
 
 export interface EditorContent {
-    text: string;
-    images: MdImage[];
+    text: string
+    images: MdImage[]
 }
 
 export function useMdEditor(props: {
-    initialContent: EditorContent;
+    initialContent: EditorContent
     modelValue: EditorContent
 }, emit: (event: "update:modelValue", value: EditorContent) => void, theme: Ref<string>, showNotification: (message: string, type: string, options?: object) => number) {
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
@@ -28,16 +27,11 @@ export function useMdEditor(props: {
         html: true,
         linkify: true,
         typographer: true,
-        highlight: function (str, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(str, {language: lang}).value
-                } catch (__) {
-                }
-            }
-            return '' // use external default escaping
-        }
-    }).use(MarkdownItKatex)
+    }).use(MarkdownItKatex, {
+        throwOnError: false,
+        errorColor: '#cc0000',
+        output: 'mathml', // Force MathML output
+    });
 
     const renderedContent = computed(() => md.render(localContent.value))
 
