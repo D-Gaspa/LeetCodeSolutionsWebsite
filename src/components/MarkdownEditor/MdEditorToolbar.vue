@@ -34,7 +34,7 @@
 <script lang="ts">
 import {defineComponent, PropType} from 'vue'
 import {EyeIcon, EyeOffIcon, ImageIcon, MoonIcon, SunIcon, TrashIcon} from 'lucide-vue-next'
-import {ToolbarAction} from '@/composables/useMdToolbar'
+import {ToolbarAction} from '@/composables/MarkdownEditor/useMdToolbar'
 
 export default defineComponent({
   name: 'MdEditorToolbar',

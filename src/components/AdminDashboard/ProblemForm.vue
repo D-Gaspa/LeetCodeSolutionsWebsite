@@ -85,7 +85,7 @@
 import {inject, onMounted, reactive, ref} from 'vue'
 
 import ContentEditor from './ContentEditor.vue'
-import {useImageManagement} from '@/composables/useImageManagement.js'
+import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement.js'
 import {useProblemStore} from "@/stores/problemsStore.js";
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
 

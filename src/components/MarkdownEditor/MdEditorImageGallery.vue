@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import {defineComponent, PropType, ref} from 'vue'
-import {MdImage} from '@/composables/useMdImageManagement'
+import {MdImage} from '@/composables/MarkdownEditor/useMdImageManagement'
 import {useNotification} from "@/composables/useNotification"
 
 export default defineComponent({

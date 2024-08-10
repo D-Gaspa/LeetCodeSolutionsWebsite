@@ -13,7 +13,7 @@
 <script lang="ts" setup>
 import {PropType, ref, watch} from 'vue'
 import MdEditor from "@/components/MarkdownEditor/MdEditor.vue";
-import {EditorContent} from "@/composables/useMdEditor";
+import {EditorContent} from "@/composables/MarkdownEditor/useMdEditor";
 
 const props = defineProps({
   initialContent: {

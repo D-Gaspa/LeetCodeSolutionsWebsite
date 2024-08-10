@@ -44,9 +44,9 @@ import MdEditorToolbar from './MdEditorToolbar.vue'
 import MdEditorContent from './MdEditorContent.vue'
 import MdEditorPreview from './MdEditorPreview.vue'
 import MdEditorImageGallery from './MdEditorImageGallery.vue'
-import {useMdEditor} from '@/composables/useMdEditor'
-import {MdImage, useMdImageManagement} from '@/composables/useMdImageManagement'
-import {useMdToolbar} from '@/composables/useMdToolbar'
+import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
+import {MdImage, useMdImageManagement} from '@/composables/MarkdownEditor/useMdImageManagement'
+import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
 import {useTheme} from '@/composables/useTheme'
 import {EditorView} from "@codemirror/view"
 import {isEqual} from "lodash"

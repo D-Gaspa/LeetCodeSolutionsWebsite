@@ -1,6 +1,6 @@
 import {Ref, ref} from 'vue'
 import {EditorView} from '@codemirror/view'
-import {useNotification} from "./useNotification"
+import {useNotification} from "../useNotification"
 
 export interface MdImage {
     id: string
