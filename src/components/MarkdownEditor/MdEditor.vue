@@ -48,13 +48,13 @@ import {useMdEditor} from '@/composables/useMdEditor'
 import {MdImage, useMdImageManagement} from '@/composables/useMdImageManagement'
 import {useMdToolbar} from '@/composables/useMdToolbar'
 import {useTheme} from '@/composables/useTheme'
-import {EditorView} from "@codemirror/view";
-import {isEqual} from "lodash";
-import {useNotification} from "@/composables/useNotification";
+import {EditorView} from "@codemirror/view"
+import {isEqual} from "lodash"
+import {useNotification} from "@/composables/useNotification"
 
 export interface EditorContent {
-  text: string;
-  images: MdImage[];
+  text: string
+  images: MdImage[]
 }
 
 export default defineComponent({
@@ -125,29 +125,29 @@ export default defineComponent({
 
     const handleImage = async (file: File, source: string) => {
       if (file && file.type.startsWith('image/')) {
-        const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading');
+        const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading')
         try {
           const insertToEditor = true
-          await addTempImage(file, insertToEditor);
+          await addTempImage(file, insertToEditor)
           updateNotification(notificationId, {
             message: 'Image added successfully',
             type: 'success',
             isLoading: false
-          });
+          })
         } catch (error) {
           updateNotification(notificationId, {
             message: `Error adding image: ${(error as Error).message}`,
             type: 'error',
             isLoading: false,
-          });
+          })
         }
       } else {
-        showNotification('Please provide a valid image file', 'error');
+        showNotification('Please provide a valid image file', 'error')
       }
-    };
+    }
 
-    const handleDropImage = (file: File) => handleImage(file, 'dropped');
-    const handlePasteImage = (file: File) => handleImage(file, 'pasted');
+    const handleDropImage = (file: File) => handleImage(file, 'dropped')
+    const handlePasteImage = (file: File) => handleImage(file, 'pasted')
 
     const handleKeyboardShortcuts = (event: KeyboardEvent) => {
       if (event.ctrlKey || event.metaKey) {
