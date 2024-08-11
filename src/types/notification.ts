@@ -6,12 +6,11 @@ export interface Notification {
     type: NotificationType;
     duration: number;
     isLoading: boolean;
-    isRemoving?: boolean;
 }
 
-export interface NotificationUpdate {
-    message?: string;
-    type?: NotificationType;
+export type NewNotification = Omit<Notification, 'id'>;
+
+export interface NotificationOptions {
     duration?: number;
     isLoading?: boolean;
 }
