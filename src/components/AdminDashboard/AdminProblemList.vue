@@ -32,10 +32,22 @@
     <table>
       <thead>
       <tr>
-        <th>Title</th>
-        <th>Difficulty</th>
-        <th>Type</th>
-        <th>Date/Week</th>
+        <th @click="toggleSort('title')">
+          Title
+          <span v-if="sortField === 'title'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+        </th>
+        <th @click="toggleSort('difficulty')">
+          Difficulty
+          <span v-if="sortField === 'difficulty'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+        </th>
+        <th @click="toggleSort('problem_type')">
+          Type
+          <span v-if="sortField === 'problem_type'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+        </th>
+        <th @click="toggleSort('problem_date')">
+          Date/Week
+          <span v-if="sortField === 'problem_date'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+        </th>
         <th>Actions</th>
       </tr>
       </thead>
@@ -126,6 +138,9 @@ const dateFilter = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 
+const sortField = ref<keyof Problem>('title')
+const sortOrder = ref<'asc' | 'desc'>('asc')
+
 const filteredProblems = computed(() => {
   return props.problems.filter(problem =>
       problem.title.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
@@ -135,12 +150,30 @@ const filteredProblems = computed(() => {
   )
 })
 
-const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+const sortedProblems = computed(() => {
+  return [...filteredProblems.value].sort((a, b) => {
+    let aValue = a[sortField.value] as string | number
+    let bValue = b[sortField.value] as string | number
+
+    // Special handling for difficulty
+    if (sortField.value === 'difficulty') {
+      const difficultyOrder = {'Easy': 1, 'Medium': 2, 'Hard': 3}
+      aValue = difficultyOrder[aValue as "Easy" | "Medium" | "Hard"] || 0
+      bValue = difficultyOrder[bValue as "Easy" | "Medium" | "Hard"] || 0
+    }
+
+    if (aValue < bValue) return sortOrder.value === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+})
+
+const totalPages = computed(() => Math.ceil(sortedProblems.value.length / itemsPerPage))
 
 const paginatedProblems = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  return filteredProblems.value.slice(start, end)
+  return sortedProblems.value.slice(start, end)
 })
 
 const debouncedSearch = debounce(() => {
@@ -159,7 +192,21 @@ const confirmDelete = async (problem: Problem) => {
   }
 }
 
+const toggleSort = (field: keyof Problem) => {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortOrder.value = 'asc'
+  }
+}
+
 watch([searchQuery, difficultyFilter, typeFilter, dateFilter], debouncedSearch)
+
+// Reset to first page when sorting or filtering changes
+watch([sortField, sortOrder, ...Object.values({searchQuery, difficultyFilter, typeFilter, dateFilter})], () => {
+  currentPage.value = 1
+})
 </script>
 
 <style scoped>
@@ -181,6 +228,15 @@ watch([searchQuery, difficultyFilter, typeFilter, dateFilter], debouncedSearch)
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+th {
+  cursor: pointer;
+  user-select: none;
+}
+
+th:hover {
+  background-color: var(--bg-color-tertiary);
 }
 
 th, td {
