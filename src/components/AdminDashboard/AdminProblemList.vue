@@ -32,22 +32,38 @@
     <table>
       <thead>
       <tr>
-        <th @click="toggleSort('title')">
+        <SortableTableHeader
+            :currentSortField="sortField"
+            :currentSortOrder="sortOrder"
+            field="title"
+            @sort="toggleSort"
+        >
           Title
-          <span v-if="sortField === 'title'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-        </th>
-        <th @click="toggleSort('difficulty')">
+        </SortableTableHeader>
+        <SortableTableHeader
+            :currentSortField="sortField"
+            :currentSortOrder="sortOrder"
+            field="difficulty"
+            @sort="toggleSort"
+        >
           Difficulty
-          <span v-if="sortField === 'difficulty'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-        </th>
-        <th @click="toggleSort('problem_type')">
+        </SortableTableHeader>
+        <SortableTableHeader
+            :currentSortField="sortField"
+            :currentSortOrder="sortOrder"
+            field="problem_type"
+            @sort="toggleSort"
+        >
           Type
-          <span v-if="sortField === 'problem_type'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-        </th>
-        <th @click="toggleSort('problem_date')">
+        </SortableTableHeader>
+        <SortableTableHeader
+            :currentSortField="sortField"
+            :currentSortOrder="sortOrder"
+            field="problem_date"
+            @sort="toggleSort"
+        >
           Date/Week
-          <span v-if="sortField === 'problem_date'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-        </th>
+        </SortableTableHeader>
         <th>Actions</th>
       </tr>
       </thead>
@@ -105,6 +121,7 @@ import {formatDate} from '@/utils/dateFormatters'
 import CustomDatePicker from "@/components/CustomDatePicker.vue"
 import {useConfirm} from "@/composables/useConfirm";
 import {ChevronLeft, ChevronRight, Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
+import SortableTableHeader from "@/components/SortableTableHeader.vue";
 
 interface Problem {
   id: number
@@ -192,12 +209,15 @@ const confirmDelete = async (problem: Problem) => {
   }
 }
 
-const toggleSort = (field: keyof Problem) => {
-  if (sortField.value === field) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortField.value = field
-    sortOrder.value = 'asc'
+const toggleSort = (field: string) => {
+  if (field in props.problems[0]) {
+    const typedField = field as keyof Problem;
+    if (sortField.value === typedField) {
+      sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    } else {
+      sortField.value = typedField
+      sortOrder.value = 'asc'
+    }
   }
 }
 
