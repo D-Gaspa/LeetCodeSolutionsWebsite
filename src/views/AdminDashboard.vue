@@ -22,13 +22,15 @@
 </template>
 
 <script>
-import {inject, onMounted, reactive, ref} from 'vue'
+import {onMounted, reactive, ref} from 'vue'
 import {supabase} from '../services/supabase'
 import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
 import ProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue";
-import {useProblemStore} from "@/stores/problemsStore.js";
+import {useProblemStore} from "@/stores/problemsStore";
+import {useNotification} from "@/composables/useNotification";
+import {useConfirm} from "@/composables/useConfirm";
 
 export default {
   name: 'AdminDashboard',
@@ -39,9 +41,8 @@ export default {
     MdEditor
   },
   setup() {
-    const showNotification = inject('showNotification')
-    const updateNotification = inject('updateNotification')
-    const showConfirm = inject('showConfirm')
+    const {showNotification, updateNotification} = useNotification()
+    const {showConfirm} = useConfirm()
     const problemStore = useProblemStore()
     const problems = ref([])
     const showProblemForm = ref(false)
@@ -64,10 +65,7 @@ export default {
       try {
         problems.value = await problemStore.fetchProblems(filters)
       } catch (error) {
-        showNotification({
-          message: 'Error fetching problems: ' + error.message,
-          type: 'error',
-        })
+        showNotification('Error fetching problems: ' + error.message, 'error')
       }
     }
 
@@ -198,13 +196,6 @@ export default {
   align-items: center;
 }
 
-.modal-content {
-  padding: 20px;
-  border-radius: 5px;
-  max-width: 500px;
-  width: 100%;
-}
-
 form {
   display: flex;
   flex-direction: column;
@@ -219,12 +210,6 @@ input, select, textarea {
   box-sizing: border-box;
   width: 100%;
   padding: 5px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
 }
 
 </style>
