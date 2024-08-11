@@ -26,7 +26,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {onMounted, provide, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from './services/supabase'
@@ -34,89 +34,75 @@ import NotificationContainer from './components/NotificationContainer.vue'
 import ConfirmDialog from "@/components/ConfirmDialog.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import {useTheme} from "@/composables/useTheme"
+import type {User} from '@supabase/supabase-js'
+import type {NewNotification, NotificationOptions, NotificationType} from '@/types/notification'
 
-export default {
-  name: 'App',
-  components: {
-    ThemeToggle,
-    ConfirmDialog,
-    NotificationContainer
-  },
-  setup() {
-    const {theme} = useTheme()
-    const router = useRouter()
-    const user = ref(null)
-    const notificationContainer = ref(null)
-    const showConfirmDialog = ref(false)
-    const confirmDialog = ref(null)
-    let confirmResolve = null
+const {theme} = useTheme()
+const router = useRouter()
+const user = ref<User | null>(null)
+const notificationContainer = ref<InstanceType<typeof NotificationContainer> | null>(null)
+const showConfirmDialog = ref(false)
+const confirmDialog = ref<InstanceType<typeof ConfirmDialog> | null>(null)
+let confirmResolve: ((value: boolean) => void) | null = null
 
-    onMounted(() => {
-      user.value = supabase.auth.getUserIdentities()?.[0]?.user ?? null
+onMounted(async () => {
+  const {data: {user: currentUser}} = await supabase.auth.getUser()
+  user.value = currentUser
 
-      supabase.auth.onAuthStateChange((_, session) => {
-        user.value = session?.user ?? null
-      })
+  supabase.auth.onAuthStateChange((_, session) => {
+    user.value = session?.user ?? null
+  })
 
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      if (prefersDark && !localStorage.getItem('theme')) {
-        theme.value = 'dark'
-      }
-    })
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  if (prefersDark && !localStorage.getItem('theme')) {
+    theme.value = 'dark'
+  }
+})
 
-    const handleLogout = async () => {
-      await supabase.auth.signOut()
-      user.value = null
-      await router.push('/login')
-    }
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+  user.value = null
+  await router.push('/login')
+}
 
-    const showNotification = (message, type = 'info', options = {}) => {
-      if (type === 'loading') {
-        options.isLoading = true
-      }
-      return notificationContainer.value.addNotification({message, type, ...options})
-    }
+const showNotification = (message: string, type: NotificationType = 'info', options: NotificationOptions = {}): number | undefined => {
+  const notification: NewNotification = {
+    message,
+    type,
+    duration: options.duration ?? 3000, // default duration
+    isLoading: type === 'loading' || options.isLoading || false
+  };
+  return notificationContainer.value?.addNotification(notification)
+}
 
-    const updateNotification = (id, updates) => {
-      notificationContainer.value.updateNotification(id, updates)
-    }
+const updateNotification = (id: number, updates: Partial<NewNotification>) => {
+  notificationContainer.value?.updateNotification(id, updates)
+}
 
-    const showConfirm = (title, message) => {
-      return new Promise((resolve) => {
-        confirmResolve = resolve
-        confirmDialog.value.open(title, message)
-      })
-    }
+const showConfirm = (title: string, message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    confirmResolve = resolve
+    confirmDialog.value?.open(title, message)
+  })
+}
 
-    const handleConfirm = () => {
-      if (confirmResolve) {
-        confirmResolve(true)
-        confirmResolve = null
-      }
-    }
-
-    const handleDismiss = () => {
-      if (confirmResolve) {
-        confirmResolve(false)
-        confirmResolve = null
-      }
-    }
-
-    provide('showNotification', showNotification)
-    provide('updateNotification', updateNotification)
-    provide('showConfirm', showConfirm)
-
-    return {
-      user,
-      notificationContainer,
-      showConfirmDialog,
-      confirmDialog,
-      handleLogout,
-      handleConfirm,
-      handleDismiss
-    }
+const handleConfirm = () => {
+  if (confirmResolve) {
+    confirmResolve(true)
+    confirmResolve = null
   }
 }
+
+const handleDismiss = () => {
+  if (confirmResolve) {
+    confirmResolve(false)
+    confirmResolve = null
+  }
+}
+
+provide('showNotification', showNotification)
+provide('updateNotification', updateNotification)
+provide('showConfirm', showConfirm)
 </script>
 
 <style>
