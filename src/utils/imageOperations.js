@@ -1,4 +1,4 @@
-import {supabase} from "@/services/supabase.js"
+import {supabase} from "@/services/supabase"
 
 export const deleteImageFromStorage = async (imageName) => {
     try {

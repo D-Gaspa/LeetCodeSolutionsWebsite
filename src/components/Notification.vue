@@ -8,104 +8,84 @@
         <div class="notification-message">{{ message }}</div>
       </div>
       <button v-if="!isLoading" class="close-button" @click="closeNotification">
-        <X size="14"/>
+        <X :size="14"/>
       </button>
     </div>
   </transition>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {AlertCircle, AlertTriangle, CheckCircle, Info, Loader, X} from 'lucide-vue-next'
+import type {NotificationType} from '@/types/notification'
 
-export default {
-  name: 'Notification',
-  components: {Info, CheckCircle, AlertCircle, AlertTriangle, Loader, X},
-  props: {
-    message: {
-      type: String,
-      required: true
-    },
-    type: {
-      type: String,
-      default: 'info',
-      validator: (value) => ['info', 'success', 'error', 'warning', 'loading'].includes(value)
-    },
-    duration: {
-      type: Number,
-      default: 3000
-    },
-    isLoading: {
-      type: Boolean,
-      default: false
-    }
-  },
-  emits: ['close', 'hide-complete'],
-  setup(props, {emit}) {
-    const show = ref(false)
-    const timeoutId = ref(0)
+const props = defineProps<{
+  message: string
+  type: NotificationType
+  duration: number
+  isLoading: boolean
+}>()
 
-    const iconComponent = computed(() => {
-      const iconMap = {
-        info: Info,
-        success: CheckCircle,
-        error: AlertCircle,
-        warning: AlertTriangle,
-        loading: Loader
-      }
-      return iconMap[props.type]
-    })
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'hide-complete'): void
+}>()
 
-    const setHideTimeout = () => {
-      if (timeoutId.value) {
-        clearTimeout(timeoutId.value)
-      }
-      timeoutId.value = setTimeout(() => {
-        show.value = false
-      }, props.duration)
-    }
+const show = ref(false)
+const timeoutId = ref<number>(0)
 
-    const closeNotification = () => {
-      show.value = false
-    }
-
-    const onAfterLeave = () => {
-      emit('hide-complete')
-    }
-
-    watch(() => props.isLoading, (newVal) => {
-      if (!newVal && props.duration > 0) {
-        setHideTimeout()
-      }
-    })
-
-    watch(() => props.duration, (newVal) => {
-      if (!props.isLoading && newVal > 0) {
-        setHideTimeout()
-      }
-    })
-
-    onMounted(() => {
-      show.value = true
-      if (!props.isLoading && props.duration > 0) {
-        setHideTimeout()
-      }
-    })
-
-    onBeforeUnmount(() => {
-      if (timeoutId.value) {
-        clearTimeout(timeoutId.value)
-      }
-    })
-
-    return {
-      show,
-      iconComponent,
-      closeNotification,
-      onAfterLeave
-    }
+const iconComponent = computed(() => {
+  const iconMap = {
+    info: Info,
+    success: CheckCircle,
+    error: AlertCircle,
+    warning: AlertTriangle,
+    loading: Loader
   }
+  return iconMap[props.type]
+})
+
+const setHideTimeout = (): void => {
+  if (timeoutId.value) {
+    clearTimeout(timeoutId.value)
+  }
+  timeoutId.value = window.setTimeout(() => {
+    show.value = false
+  }, props.duration)
 }
+
+const closeNotification = (): void => {
+  show.value = false
+}
+
+const onAfterLeave = (): void => {
+  emit('hide-complete')
+}
+
+watch(() => props.isLoading, (newVal: boolean) => {
+  if (!newVal && props.duration > 0) {
+    setHideTimeout()
+  }
+})
+
+watch(() => props.duration, (newVal: number) => {
+  if (!props.isLoading && newVal > 0) {
+    setHideTimeout()
+  }
+})
+
+onMounted(() => {
+  show.value = true
+  if (!props.isLoading && props.duration > 0) {
+    setHideTimeout()
+  }
+})
+
+onBeforeUnmount(() => {
+  if (timeoutId.value) {
+    clearTimeout(timeoutId.value)
+  }
+})
 </script>
 
 <style scoped>

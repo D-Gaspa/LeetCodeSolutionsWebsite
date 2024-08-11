@@ -33,7 +33,7 @@ import {supabase} from './services/supabase'
 import NotificationContainer from './components/NotificationContainer.vue'
 import ConfirmDialog from "@/components/ConfirmDialog.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
-import {useTheme} from "@/composables/useTheme.js"
+import {useTheme} from "@/composables/useTheme"
 
 export default {
   name: 'App',
