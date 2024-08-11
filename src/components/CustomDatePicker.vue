@@ -30,105 +30,100 @@
   </Datepicker>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
 import Datepicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import {useTheme} from '@/composables/useTheme'
 import {CalendarIcon} from 'lucide-vue-next'
 
-export default {
-  components: {
-    Datepicker,
-    CalendarIcon
-  },
-  props: {
-    modelValue: {
-      type: [Date, String],
-      default: null
-    },
-    placeholder: {
-      type: String,
-      default: 'Select date'
-    }
-  },
-  emits: ['update:modelValue'],
-  setup(props, {emit}) {
-    const {theme} = useTheme()
-    const date = ref(props.modelValue ? new Date(props.modelValue) : null)
-    const isOpen = ref(false)
-
-    const isDarkMode = computed(() => theme.value === 'dark')
-
-    const formatDateForEmit = (date) => {
-      if (!date) return null
-      const day = date.getDate().toString().padStart(2, '0')
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const year = date.getFullYear()
-      return `${year}-${month}-${day}`
-    }
-
-    const formatDateForDisplay = (date) => {
-      if (!date) return ''
-      return date.toLocaleDateString()
-    }
-
-    const formattedDate = computed(() => formatDateForDisplay(date.value))
-
-    watch(() => props.modelValue, (newValue) => {
-      if (newValue !== formatDateForEmit(date.value)) {
-        date.value = newValue ? new Date(newValue) : null
-      }
-    })
-
-    watch(date, (newValue) => {
-      const formattedDate = formatDateForEmit(newValue)
-      if (formattedDate !== props.modelValue) {
-        emit('update:modelValue', formattedDate)
-      }
-    })
-
-    const menuClass = computed(() => [
-      'custom-datepicker-menu',
-      {'dark-theme': isDarkMode.value}
-    ])
-
-    const inputClass = computed(() => [
-      'custom-datepicker-input',
-      {'dark-theme': isDarkMode.value}
-    ])
-
-    const calendarClass = computed(() => [
-      'custom-datepicker-calendar',
-      {'dark-theme': isDarkMode.value}
-    ])
-
-    const calendarCellClassName = ({isSelected}) => {
-      return [
-        'custom-calendar-cell',
-        {'is-selected': isSelected},
-        {'dark-theme': isDarkMode.value}
-      ]
-    }
-
-    const weekdayClassName = computed(() => [
-      'custom-weekday',
-      {'dark-theme': isDarkMode.value}
-    ])
-
-    return {
-      date,
-      formattedDate,
-      menuClass,
-      inputClass,
-      calendarClass,
-      weekdayClassName,
-      isDarkMode,
-      isOpen,
-      calendarCellClassName
-    }
-  }
+interface Props {
+  modelValue: Date | string | null
+  placeholder?: string
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: null,
+  placeholder: 'Select date'
+})
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string | null): void
+}>()
+
+const {theme} = useTheme()
+const date = ref<Date | null>(props.modelValue ? new Date(props.modelValue) : null)
+const isOpen = ref(false)
+
+const isDarkMode = computed(() => theme.value === 'dark')
+
+const formatDateForEmit = (date: Date | null): string | null => {
+  if (!date) return null
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const year = date.getFullYear()
+  return `${year}-${month}-${day}`
+}
+
+const formatDateForDisplay = (date: Date | null): string => {
+  if (!date) return ''
+  return date.toLocaleDateString()
+}
+
+const formattedDate = computed(() => formatDateForDisplay(date.value))
+
+watch(() => props.modelValue, (newValue) => {
+  if (newValue !== formatDateForEmit(date.value)) {
+    date.value = newValue ? new Date(newValue) : null
+  }
+})
+
+watch(date, (newValue) => {
+  const formattedDate = formatDateForEmit(newValue)
+  if (formattedDate !== props.modelValue) {
+    emit('update:modelValue', formattedDate)
+  }
+})
+
+const menuClass = computed(() => [
+  'custom-datepicker-menu',
+  {'dark-theme': isDarkMode.value}
+])
+
+const inputClass = computed(() => [
+  'custom-datepicker-input',
+  {'dark-theme': isDarkMode.value}
+])
+
+const calendarClass = computed(() => [
+  'custom-datepicker-calendar',
+  {'dark-theme': isDarkMode.value}
+])
+
+const calendarCellClassName = ({isSelected}: { isSelected: boolean }) => {
+  return [
+    'custom-calendar-cell',
+    {'is-selected': isSelected},
+    {'dark-theme': isDarkMode.value}
+  ]
+}
+
+const weekdayClassName = computed(() => [
+  'custom-weekday',
+  {'dark-theme': isDarkMode.value}
+])
+
+defineExpose({
+  date,
+  formattedDate,
+  menuClass,
+  inputClass,
+  calendarClass,
+  weekdayClassName,
+  isDarkMode,
+  isOpen,
+  calendarCellClassName
+})
 </script>
 
 <style scoped>

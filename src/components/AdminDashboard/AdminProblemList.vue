@@ -57,7 +57,7 @@
               <Edit2 class="icon"/>
               Edit
             </button>
-            <button class="btn-danger btn-icon-transparent" title="Delete" @click="$emit('delete', problem)">
+            <button class="btn-danger btn-icon-transparent" title="Delete" @click="confirmDelete(problem)">
               <Trash2 class="icon"/>
               Delete
             </button>
@@ -86,80 +86,80 @@
   </div>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {computed, ref, watch} from 'vue'
 import debounce from 'lodash/debounce'
-import {formatDate} from '@/utils/dateFormatters.js'
-import CustomDatePicker from "@/components/CustomDatePicker.vue";
+import {formatDate} from '@/utils/dateFormatters'
+import CustomDatePicker from "@/components/CustomDatePicker.vue"
+import {useConfirm} from "@/composables/useConfirm";
 import {ChevronLeft, ChevronRight, Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
 
-export default {
-  name: 'ProblemList',
-  components: {
-    CustomDatePicker,
-    PlusCircle,
-    Edit2,
-    Trash2,
-    FileText,
-    ChevronLeft,
-    ChevronRight
-  },
-  props: {
-    problems: {
-      type: Array,
-      required: true
-    }
-  },
-  emits: ['search', 'edit', 'delete', 'add-solution', 'add'],
-  setup(props, {emit}) {
-    const searchQuery = ref('')
-    const difficultyFilter = ref('')
-    const typeFilter = ref('')
-    const dateFilter = ref('')
-    const currentPage = ref(1)
-    const itemsPerPage = 10
+interface Problem {
+  id: number
+  title: string
+  difficulty: string
+  problem_type: string
+  problem_date?: string
+  problem_week?: number
+  problem_year?: number
+}
 
-    const filteredProblems = computed(() => {
-      return props.problems.filter(problem =>
-          problem.title.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-          (difficultyFilter.value === '' || problem.difficulty === difficultyFilter.value) &&
-          (typeFilter.value === '' || problem.problem_type === typeFilter.value) &&
-          (dateFilter.value === '' || problem.problem_date === dateFilter.value)
-      )
-    })
+interface Props {
+  problems: Problem[]
+}
 
-    const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+const props = defineProps<Props>()
 
-    const paginatedProblems = computed(() => {
-      const start = (currentPage.value - 1) * itemsPerPage
-      const end = start + itemsPerPage
-      return filteredProblems.value.slice(start, end)
-    })
+const emit = defineEmits<{
+  (e: 'search', filters: { query: string, difficulty: string, type: string, date: string }): void
+  (e: 'edit', problem: Problem): void
+  (e: 'delete', problem: Problem): void
+  (e: 'add-solution', problem: Problem): void
+  (e: 'add'): void
+}>()
 
-    const debouncedSearch = debounce(() => {
-      emit('search', {
-        query: searchQuery.value,
-        difficulty: difficultyFilter.value,
-        type: typeFilter.value,
-        date: dateFilter.value
-      })
-    }, 300)
+const {showConfirm} = useConfirm()
+const searchQuery = ref('')
+const difficultyFilter = ref('')
+const typeFilter = ref('')
+const dateFilter = ref('')
+const currentPage = ref(1)
+const itemsPerPage = 10
 
-    watch([searchQuery, difficultyFilter, typeFilter, dateFilter], debouncedSearch)
+const filteredProblems = computed(() => {
+  return props.problems.filter(problem =>
+      problem.title.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
+      (difficultyFilter.value === '' || problem.difficulty === difficultyFilter.value) &&
+      (typeFilter.value === '' || problem.problem_type === typeFilter.value) &&
+      (dateFilter.value === '' || problem.problem_date === dateFilter.value)
+  )
+})
 
-    return {
-      searchQuery,
-      difficultyFilter,
-      typeFilter,
-      dateFilter,
-      currentPage,
-      totalPages,
-      paginatedProblems,
-      debouncedSearch,
-      formatDate
-    }
+const totalPages = computed(() => Math.ceil(filteredProblems.value.length / itemsPerPage))
+
+const paginatedProblems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredProblems.value.slice(start, end)
+})
+
+const debouncedSearch = debounce(() => {
+  emit('search', {
+    query: searchQuery.value,
+    difficulty: difficultyFilter.value,
+    type: typeFilter.value,
+    date: dateFilter.value
+  })
+}, 300)
+
+const confirmDelete = async (problem: Problem) => {
+  const isConfirmed = await showConfirm('Delete Problem', 'Are you sure you want to delete this problem?')
+  if (isConfirmed) {
+    emit('delete', problem)
   }
 }
+
+watch([searchQuery, difficultyFilter, typeFilter, dateFilter], debouncedSearch)
 </script>
 
 <style scoped>
@@ -212,6 +212,6 @@ input, select, textarea {
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 5px;
 }
 </style>
