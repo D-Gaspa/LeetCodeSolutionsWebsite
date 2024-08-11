@@ -23,7 +23,10 @@
                           placeholder="Filter by date"
         />
       </div>
-      <button class="btn-primary" @click="$emit('add')">Add Problem</button>
+      <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
+        <PlusCircle class="icon"/>
+        Add Problem
+      </button>
     </div>
 
     <table>
@@ -49,18 +52,36 @@
           }}
         </td>
         <td>
-          <button class="btn-neutral" @click="$emit('edit', problem)">Edit</button>
-          <button class="btn-neutral" @click="$emit('delete', problem)">Delete</button>
-          <button class="btn-neutral" @click="$emit('add-solution', problem)">Add Solution</button>
+          <div class="actions">
+            <button class="btn-neutral btn-icon-transparent" title="Edit" @click="$emit('edit', problem)">
+              <Edit2 class="icon"/>
+              Edit
+            </button>
+            <button class="btn-danger btn-icon-transparent" title="Delete" @click="$emit('delete', problem)">
+              <Trash2 class="icon"/>
+              Delete
+            </button>
+            <button class="btn-neutral btn-icon-transparent" title="Add Solution"
+                    @click="$emit('add-solution', problem)">
+              <FileText class="icon"/>
+              Add Solution
+            </button>
+          </div>
         </td>
       </tr>
       </tbody>
     </table>
 
     <div class="pagination">
-      <button :disabled="currentPage === 1" class="btn-neutral" @click="currentPage--">Previous</button>
+      <button :disabled="currentPage === 1" class="btn-neutral" @click="currentPage--">
+        <ChevronLeft class="icon"/>
+        Previous
+      </button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button :disabled="currentPage === totalPages" class="btn-neutral" @click="currentPage++">Next</button>
+      <button :disabled="currentPage === totalPages" class="btn-neutral" @click="currentPage++">
+        Next
+        <ChevronRight class="icon"/>
+      </button>
     </div>
   </div>
 </template>
@@ -70,10 +91,19 @@ import {computed, ref, watch} from 'vue'
 import debounce from 'lodash/debounce'
 import {formatDate} from '@/utils/dateFormatters.js'
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
+import {ChevronLeft, ChevronRight, Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
 
 export default {
   name: 'ProblemList',
-  components: {CustomDatePicker},
+  components: {
+    CustomDatePicker,
+    PlusCircle,
+    Edit2,
+    Trash2,
+    FileText,
+    ChevronLeft,
+    ChevronRight
+  },
   props: {
     problems: {
       type: Array,
@@ -178,5 +208,10 @@ input, select, textarea {
   resize: none;
   box-sizing: border-box;
   width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
 }
 </style>

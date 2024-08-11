@@ -18,39 +18,6 @@
           @problem-saved="fetchProblems"
       />
     </div>
-
-    <!-- Solution Form Modal -->
-    <div v-if="showSolutionForm" class="modal" @click.self="showSolutionForm = false">
-      <div class="modal-content">
-        <h2>{{ editingSolution ? 'Edit' : 'Add' }} Solution</h2>
-        <form @submit.prevent="saveSolution">
-          <label>
-            Approach Name:
-            <input v-model="solutionForm.approach_name" required>
-          </label>
-          <label>
-            Code:
-            <textarea v-model="solutionForm.code" required></textarea>
-          </label>
-          <label>
-            Explanation:
-            <!--<md-editor v-model="solutionForm.explanation"></md-editor>-->
-          </label>
-          <label>
-            Time Complexity:
-            <input v-model="solutionForm.time_complexity">
-          </label>
-          <label>
-            Space Complexity:
-            <input v-model="solutionForm.space_complexity">
-          </label>
-          <div class="form-actions">
-            <button class="btn-neutral" type="submit">Save Solution</button>
-            <button class="btn-neutral" type="button" @click="showSolutionForm = false">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 

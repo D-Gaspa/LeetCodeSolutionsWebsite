@@ -4,7 +4,7 @@ import {supabase} from '@/services/supabase'
 // Import components
 import Home from '@/views/Home.vue'
 import ProblemList from '@/views/ProblemList.vue'
-import ProblemDetail from '../views/ProblemDetail.vue'
+import ProblemDetail from '@/views/ProblemDetail.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import Login from '@/views/Login.vue'
 
