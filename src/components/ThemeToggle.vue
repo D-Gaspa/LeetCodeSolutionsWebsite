@@ -30,8 +30,8 @@
   </button>
 </template>
 
-<script setup>
-import {useTheme} from '../composables/useTheme'
+<script lang="ts" setup>
+import {useTheme} from '@/composables/useTheme'
 
 const {theme, toggleTheme} = useTheme()
 </script>

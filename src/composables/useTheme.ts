@@ -1,9 +1,11 @@
 import {ref, watch} from 'vue'
 
-const theme = ref(localStorage.getItem('theme') || 'light')
+type Theme = 'light' | 'dark'
+
+const theme = ref<Theme>(localStorage.getItem('theme') as Theme || 'light')
 
 export function useTheme() {
-    const applyTheme = (newTheme) => {
+    const applyTheme = (newTheme: Theme): void => {
         document.documentElement.setAttribute('data-theme', newTheme)
         localStorage.setItem('theme', newTheme)
     }
@@ -12,9 +14,12 @@ export function useTheme() {
         applyTheme(newTheme)
     }, {immediate: true})
 
-    function toggleTheme() {
+    const toggleTheme = (): void => {
         theme.value = theme.value === 'light' ? 'dark' : 'light'
     }
 
-    return {theme, toggleTheme}
+    return {
+        theme,
+        toggleTheme
+    }
 }

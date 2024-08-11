@@ -15,57 +15,52 @@
   </Transition>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {ref, watch} from 'vue'
 
-export default {
-  name: 'ConfirmDialog',
-  props: {
-    show: Boolean,
-  },
-  emits: ['update:show', 'confirm', 'dismiss'],
-  setup(props, {emit}) {
-    const isVisible = ref(false)
-    const title = ref('')
-    const message = ref('')
+const props = defineProps<{
+  show: boolean
+}>()
 
-    watch(() => props.show, (newValue) => {
-      isVisible.value = newValue;
-    })
+const emit = defineEmits<{
+  (e: 'update:show', value: boolean): void
+  (e: 'confirm'): void
+  (e: 'dismiss'): void
+}>()
 
-    const open = (newTitle, newMessage) => {
-      title.value = newTitle
-      message.value = newMessage
-      emit('update:show', true)
-    }
+const isVisible = ref(false)
+const title = ref('')
+const message = ref('')
 
-    const onConfirm = () => {
-      emit('confirm')
-      emit('update:show', false)
-    }
+watch(() => props.show, (newValue) => {
+  isVisible.value = newValue
+})
 
-    const onDismiss = () => {
-      emit('dismiss')
-      emit('update:show', false)
-    }
+const open = (newTitle: string, newMessage: string) => {
+  title.value = newTitle
+  message.value = newMessage
+  emit('update:show', true)
+}
 
-    const onBackdropClick = (event) => {
-      if (event.target === event.currentTarget) {
-        onDismiss()
-      }
-    }
+const onConfirm = () => {
+  emit('confirm')
+  emit('update:show', false)
+}
 
-    return {
-      isVisible,
-      title,
-      message,
-      open,
-      onConfirm,
-      onDismiss,
-      onBackdropClick,
-    }
+const onDismiss = () => {
+  emit('dismiss')
+  emit('update:show', false)
+}
+
+const onBackdropClick = (event: MouseEvent) => {
+  if (event.target === event.currentTarget) {
+    onDismiss()
   }
 }
+
+defineExpose({
+  open
+})
 </script>
 
 <style scoped>
