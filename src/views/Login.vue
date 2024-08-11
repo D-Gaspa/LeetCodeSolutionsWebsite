@@ -4,11 +4,11 @@
     <form @submit.prevent="handleLogin">
       <div>
         <label for="email">Email:</label>
-        <input type="email" id="email" v-model="email" required>
+        <input id="email" v-model="email" autocomplete="email" required type="email">
       </div>
       <div>
         <label for="password">Password:</label>
-        <input type="password" id="password" v-model="password" required>
+        <input id="password" v-model="password" required type="password">
       </div>
       <button type="submit">Login</button>
     </form>
@@ -16,42 +16,34 @@
   </div>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
-import {supabase} from '../services/supabase'
+import {supabase} from '@/services/supabase'
 
-export default {
-  name: 'Login',
-  setup() {
-    const router = useRouter()
-    const email = ref('')
-    const password = ref('')
-    const error = ref('')
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+const error = ref('')
 
-    const handleLogin = async () => {
-      try {
-        const {error: signInError} = await supabase.auth.signInWithPassword({
-          email: email.value,
-          password: password.value,
-        })
+const handleLogin = async () => {
+  try {
+    const {error: signInError} = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    })
 
-        if (signInError) {
-          error.value = signInError.message
-          return
-        }
-
-        await router.push('/admin')
-      } catch (e) {
-        error.value = e.message
-      }
+    if (signInError) {
+      error.value = signInError.message
+      return
     }
 
-    return {
-      email,
-      password,
-      error,
-      handleLogin
+    await router.push('/admin')
+  } catch (e) {
+    if (e instanceof Error) {
+      error.value = e.message
+    } else {
+      error.value = 'An unknown error occurred'
     }
   }
 }
