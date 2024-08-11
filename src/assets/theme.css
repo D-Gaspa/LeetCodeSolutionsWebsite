@@ -150,6 +150,9 @@ button {
     font-size: var(--font-size-small);
     transition: all var(--transition-base);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-primary {
@@ -175,7 +178,12 @@ button {
     color: var(--button-text-neutral);
 }
 
-.btn-neutral:hover {
+.btn-transparent {
+    background: transparent;
+    color: var(--button-text-neutral);
+}
+
+.btn-neutral:hover, .btn-transparent:hover {
     background: var(--button-hover-neutral);
 }
 
@@ -193,6 +201,33 @@ button {
     background: var(--button-bg-special);
     color: var(--button-text-special);
     font-size: var(--font-size-base);
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    padding-left: var(--spacing-small);
+}
+
+.btn-icon-transparent {
+    background: transparent;
+    color: var(--button-text-neutral);
+}
+
+.btn-icon .icon, .btn-icon-transparent .icon {
+    height: 1.2em;
+    width: 1.2em;
+    margin-right: var(--spacing-small);
+    flex-shrink: 0;
+    color: inherit;
+}
+
+.btn-icon-transparent:hover {
+    background-color: var(--bg-color-tertiary);
+}
+
+.btn-danger .icon {
+    color: var(--color-accent);
 }
 
 button:disabled, .btn-special:disabled {
