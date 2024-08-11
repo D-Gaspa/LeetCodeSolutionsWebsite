@@ -13,7 +13,7 @@
       <template v-if="user">
         <router-link class="nav-link" to="/admin">Admin</router-link>
         |
-        <a href="#" @click.prevent="handleLogout">Logout</a>
+        <a href="#" @click.prevent="confirmLogout">Logout</a>
       </template>
       <template v-else>
         <router-link class="nav-link" to="/login">Login</router-link>
@@ -58,6 +58,13 @@ onMounted(async () => {
     theme.value = 'dark'
   }
 })
+
+const confirmLogout = async () => {
+  const confirmed = await showConfirm('Logout', 'Are you sure you want to logout?')
+  if (confirmed) {
+    await handleLogout()
+  }
+}
 
 const handleLogout = async () => {
   await supabase.auth.signOut()

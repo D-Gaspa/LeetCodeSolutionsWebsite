@@ -3,8 +3,9 @@
     <div v-if="isVisible" class="confirm-dialog" @click="onBackdropClick">
       <Transition name="slide-fade">
         <div v-if="isVisible" class="confirm-dialog-content" @click.stop>
-          <h2>{{ title }}</h2>
+          <h5>{{ title }}</h5>
           <p>{{ message }}</p>
+          <div class="confirm-dialog-divider"></div>
           <div class="confirm-dialog-actions">
             <button class="btn-secondary" @click="onConfirm">Yes</button>
             <button class="btn-danger" @click="onDismiss">No</button>
@@ -79,20 +80,25 @@ defineExpose({
 }
 
 .confirm-dialog-content {
-  background-color: var(--bg-color-secondary);
-  border: var(--border-width) solid var(--border-color-secondary);
-  padding: 2rem;
+  background-color: var(--bg-color-primary);
+  border: var(--border-width) solid var(--border-color-primary);
+  padding: var(--spacing-large);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-medium);
   max-width: 400px;
-  width: 100%;
-  backdrop-filter: blur(10px);
+  width: fit-content;
   transition: all var(--transition-base);
 }
 
-h2 {
+h5 {
   margin-top: 0;
   color: var(--text-color-primary);
+}
+
+.confirm-dialog-divider {
+  height: 1px;
+  background-color: var(--border-color-secondary);
+  margin: var(--spacing-medium) 0;
 }
 
 p {
