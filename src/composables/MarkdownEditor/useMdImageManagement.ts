@@ -6,7 +6,7 @@ export interface MdImage {
     id: string
     name: string
     url: string
-    file?: File
+    file?: File | null
 }
 
 export function useMdImageManagement(
@@ -40,7 +40,7 @@ export function useMdImageManagement(
                 type: 'success',
                 isLoading: false
             })
-        } catch (error) {
+        } catch (error: any) {
             let message = files.length > 1 ? 'Error uploading images' : 'Error uploading image'
             updateNotification(notificationId, {
                 message: `${message}: ${error.message}`,
@@ -120,7 +120,7 @@ export function useMdImageManagement(
                 }
 
                 updateImageMap()
-            } catch (error) {
+            } catch (error: any) {
                 showNotification(`Error inserting image: ${error.message}`, 'error')
             }
         }

@@ -73,12 +73,12 @@ export function useMdEditor(props: {
                 id: img.id || img.url,
                 name: img.name,
                 url: img.url,
-                file: img.file || null // Preserve the file object for new images, null for existing ones
+                file: img.file ?? null // Preserve the file object for new images, null for existing ones
             }))
 
             updateImageMap()
             setupImageRenderer()
-        } catch (error) {
+        } catch (error: any) {
             showNotification(`Error initializing content: ${error.message}`, 'error')
         }
     }
