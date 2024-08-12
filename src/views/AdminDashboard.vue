@@ -15,7 +15,7 @@
       <ProblemForm
           :editingProblem="editingProblem"
           @close="closeProblemForm"
-          @problem-saved="fetchProblems"
+          @problem-saved="fetchAllProblems"
       />
     </div>
   </div>
@@ -51,10 +51,10 @@ export default {
     const problemToDelete = ref(null)
     const isLoading = ref(true)
 
-    const fetchProblems = async () => {
+    const fetchAllProblems = async () => {
       try {
         isLoading.value = true
-        problems.value = await problemStore.getFilteredProblems()
+        problems.value = await problemStore.fetchAllProblems()
       } catch (error) {
         showNotification('Error fetching problems: ' + error.message, 'error')
       } finally {
@@ -62,8 +62,16 @@ export default {
       }
     }
 
-    const handleSearch = () => {
-      fetchProblems()
+    const fetchFilteredProblems = async () => {
+      try {
+        problems.value = await problemStore.getFilteredProblems()
+      } catch (error) {
+        showNotification('Error fetching problems: ' + error.message, 'error')
+      }
+    }
+
+    const handleSearch = async () => {
+      await fetchFilteredProblems()
     }
 
     const openProblemForm = () => {
@@ -112,7 +120,7 @@ export default {
           isLoading: false,
         })
       } finally {
-        await fetchProblems()
+        await fetchAllProblems()
         problemToDelete.value = null
       }
     }
@@ -122,14 +130,14 @@ export default {
       console.log('Open solution form for problem:', problem)
     }
 
-    onMounted(fetchProblems)
+    onMounted(fetchAllProblems)
 
     return {
       problems,
       showProblemForm,
       editingProblem,
       isLoading,
-      fetchProblems,
+      fetchAllProblems,
       handleSearch,
       openProblemForm,
       editProblem,

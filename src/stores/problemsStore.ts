@@ -14,13 +14,6 @@ export interface Problem {
     created_at: string
 }
 
-interface ProblemFilters {
-    query?: string
-    difficulty?: Problem['difficulty']
-    type?: Problem['problem_type']
-    date?: string
-}
-
 export const useProblemStore = defineStore('problems', {
     state: () => ({
         problems: [] as Problem[],
@@ -73,8 +66,8 @@ export const useProblemStore = defineStore('problems', {
             })
         },
 
-        setFilter(filterName: keyof ProblemFilters, value: string) {
-            this.filters[filterName] = value
+        areDefaultFilters(): boolean {
+            return Object.values(this.filters).every(value => !value)
         },
 
         resetFilters() {

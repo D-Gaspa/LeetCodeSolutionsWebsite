@@ -1,6 +1,14 @@
 <template>
   <div class="admin-problem-list">
     <div class="dashboard-header">
+      <div>
+        <button
+            :disabled="problemStore.areDefaultFilters()"
+            class="btn-danger"
+            @click="resetFilters"
+        >Reset Filters
+        </button>
+      </div>
       <div class="search-filters">
         <input
             v-model="problemStore.filters.query"
@@ -106,6 +114,11 @@ const debouncedSearch = debounce(() => {
 }, 300)
 
 const handleFilterChange = () => {
+  emit('search')
+}
+
+const resetFilters = async () => {
+  problemStore.resetFilters()
   emit('search')
 }
 
