@@ -8,4 +8,7 @@
 </script>
 
 <style scoped>
+.problem-detail {
+  padding: 5px 20px 20px 20px;
+}
 </style>

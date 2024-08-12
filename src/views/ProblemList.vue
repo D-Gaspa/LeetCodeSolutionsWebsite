@@ -8,4 +8,7 @@
 </script>
 
 <style scoped>
+.problem-list {
+  padding: 5px 20px 20px 20px;
+}
 </style>

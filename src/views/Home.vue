@@ -15,5 +15,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 5px 20px 20px 20px;
 }
 </style>

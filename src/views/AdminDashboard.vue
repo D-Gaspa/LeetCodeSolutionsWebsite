@@ -1,8 +1,9 @@
 <template>
   <div class="admin-dashboard">
     <h2>Admin Dashboard</h2>
-
-    <ProblemList
+    <LoadingSpinner v-if="isLoading" message="Loading problems..."/>
+    <AdminProblemList
+        v-else
         :problems="problems"
         @add="openProblemForm"
         @delete="confirmDeleteProblem"
@@ -10,7 +11,6 @@
         @search="handleSearch"
         @add-solution="openSolutionForm"
     />
-
     <div v-if="showProblemForm" class="modal" @click.self="closeProblemForm">
       <ProblemForm
           :editingProblem="editingProblem"
@@ -24,19 +24,21 @@
 <script>
 import {onMounted, ref} from 'vue'
 import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
-import ProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue";
 import {useProblemStore} from "@/stores/problemsStore";
 import {useNotification} from "@/composables/useNotification";
 import {useConfirm} from "@/composables/useConfirm";
+import LoadingSpinner from "@/components/LoadingSpinner.vue";
 
 export default {
   name: 'AdminDashboard',
   components: {
+    LoadingSpinner,
+    AdminProblemList,
     ProblemForm,
     ConfirmDialog,
-    ProblemList,
     MdEditor
   },
   setup() {
@@ -47,12 +49,16 @@ export default {
     const showProblemForm = ref(false)
     const editingProblem = ref(null)
     const problemToDelete = ref(null)
+    const isLoading = ref(true)
 
     const fetchProblems = async (filters = {}) => {
       try {
+        isLoading.value = true
         problems.value = await problemStore.fetchProblems(filters)
       } catch (error) {
         showNotification('Error fetching problems: ' + error.message, 'error')
+      } finally {
+        isLoading.value = false
       }
     }
 
@@ -122,6 +128,7 @@ export default {
       problems,
       showProblemForm,
       editingProblem,
+      isLoading,
       fetchProblems,
       handleSearch,
       openProblemForm,
@@ -137,7 +144,7 @@ export default {
 
 <style>
 .admin-dashboard {
-  padding: 20px;
+  padding: 5px 20px 20px 20px;
 }
 
 .modal {
