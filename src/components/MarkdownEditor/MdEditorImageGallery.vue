@@ -55,7 +55,7 @@ export default defineComponent({
         try {
           emit('upload', input.files)
           input.value = '' // Reset the input
-        } catch (error) {
+        } catch (error: any) {
           showNotification(`Error processing images: ${error.message}`, 'error')
         }
       }
