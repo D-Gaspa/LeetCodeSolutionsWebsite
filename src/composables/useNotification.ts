@@ -1,5 +1,5 @@
 import {inject} from 'vue'
-import type {NewNotification, NotificationOptions, NotificationType} from '@/types/notification'
+import type {NewNotification, NotificationOptions, NotificationType} from '@/types/Notification'
 
 type ShowNotificationFunction = (message: string, type?: NotificationType, options?: NotificationOptions) => number | undefined
 type UpdateNotificationFunction = (id: number, updates: Partial<NewNotification>) => void

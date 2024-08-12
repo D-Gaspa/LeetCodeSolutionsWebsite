@@ -30,12 +30,12 @@
 import {onMounted, provide, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from './services/supabase'
-import NotificationContainer from './components/NotificationContainer.vue'
+import NotificationContainer from './components/Notifications/NotificationContainer.vue'
 import ConfirmDialog from "@/components/ConfirmDialog.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import {useTheme} from "@/composables/useTheme"
 import type {User} from '@supabase/supabase-js'
-import type {NewNotification, NotificationOptions, NotificationType} from '@/types/notification'
+import type {NewNotification, NotificationOptions, NotificationType} from '@/types/Notification'
 
 const {theme} = useTheme()
 const router = useRouter()

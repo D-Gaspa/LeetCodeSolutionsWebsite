@@ -22,8 +22,7 @@
 </template>
 
 <script>
-import {onMounted, reactive, ref} from 'vue'
-import {supabase} from '../services/supabase'
+import {onMounted, ref} from 'vue'
 import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
 import ProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -46,20 +45,8 @@ export default {
     const problemStore = useProblemStore()
     const problems = ref([])
     const showProblemForm = ref(false)
-    const showSolutionForm = ref(false)
-    const showContentEditor = ref(false)
     const editingProblem = ref(null)
-    const editingSolution = ref(null)
     const problemToDelete = ref(null)
-
-    const solutionForm = reactive({
-      problem_id: null,
-      approach_name: '',
-      code: '',
-      explanation: {},
-      time_complexity: '',
-      space_complexity: ''
-    })
 
     const fetchProblems = async (filters = {}) => {
       try {
@@ -124,36 +111,9 @@ export default {
       }
     }
 
-    const saveSolution = async () => {
-      const {error} = editingSolution.value
-          ? await supabase
-              .from('solutions')
-              .update(solutionForm)
-              .eq('id', editingSolution.value.id)
-          : await supabase
-              .from('solutions')
-              .insert([solutionForm])
-
-      if (error) console.error('Error saving solution:', error)
-      else {
-        showSolutionForm.value = false
-        editingSolution.value = null
-        clearSolutionForm()
-      }
-    }
-
     const openSolutionForm = (problem) => {
-      solutionForm.problem_id = problem.id
-      showSolutionForm.value = true
-    }
-
-    const clearSolutionForm = () => {
-      solutionForm.problem_id = null
-      solutionForm.approach_name = ''
-      solutionForm.code = ''
-      solutionForm.explanation = {}
-      solutionForm.time_complexity = ''
-      solutionForm.space_complexity = ''
+      // To be implemented
+      console.log('Open solution form for problem:', problem)
     }
 
     onMounted(fetchProblems)
@@ -161,11 +121,7 @@ export default {
     return {
       problems,
       showProblemForm,
-      showSolutionForm,
-      showContentEditor,
       editingProblem,
-      editingSolution,
-      solutionForm,
       fetchProblems,
       handleSearch,
       openProblemForm,
@@ -173,8 +129,7 @@ export default {
       confirmDeleteProblem,
       deleteProblem,
       closeProblemForm,
-      openSolutionForm,
-      saveSolution,
+      openSolutionForm
     }
   }
 }

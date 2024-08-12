@@ -62,7 +62,7 @@
             field="problem_date"
             @sort="toggleSort"
         >
-          Date/Week
+          Date
         </SortableTableHeader>
         <th>Actions</th>
       </tr>
@@ -72,13 +72,7 @@
         <td>{{ problem.title }}</td>
         <td>{{ problem.difficulty }}</td>
         <td>{{ problem.problem_type }}</td>
-        <td>
-          {{
-            problem.problem_type === 'daily'
-                ? formatDate(problem.problem_date)
-                : `Week ${problem.problem_week}, ${problem.problem_year}`
-          }}
-        </td>
+        <td>{{ formatDate(problem) }}</td>
         <td>
           <div class="actions">
             <button class="btn-neutral btn-icon-transparent" title="Edit" @click="$emit('edit', problem)">
@@ -99,18 +93,11 @@
       </tr>
       </tbody>
     </table>
-
-    <div class="pagination">
-      <button :disabled="currentPage === 1" class="btn-neutral" @click="currentPage--">
-        <ChevronLeft class="icon"/>
-        Previous
-      </button>
-      <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button :disabled="currentPage === totalPages" class="btn-neutral" @click="currentPage++">
-        Next
-        <ChevronRight class="icon"/>
-      </button>
-    </div>
+    <Pagination
+        v-if="totalPages > 0"
+        v-model:currentPage="currentPage"
+        :totalPages="totalPages"
+    />
   </div>
 </template>
 
@@ -120,18 +107,10 @@ import debounce from 'lodash/debounce'
 import {formatDate} from '@/utils/dateFormatters'
 import CustomDatePicker from "@/components/CustomDatePicker.vue"
 import {useConfirm} from "@/composables/useConfirm";
-import {ChevronLeft, ChevronRight, Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
+import {Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
 import SortableTableHeader from "@/components/SortableTableHeader.vue";
-
-interface Problem {
-  id: number
-  title: string
-  difficulty: string
-  problem_type: string
-  problem_date?: string
-  problem_week?: number
-  problem_year?: number
-}
+import Pagination from "@/components/Pagination.vue";
+import type {Problem} from '@/types/Problem'
 
 interface Props {
   problems: Problem[]
@@ -179,11 +158,41 @@ const sortedProblems = computed(() => {
       bValue = difficultyOrder[bValue as "Easy" | "Medium" | "Hard"] || 0
     }
 
+    // Special handling for problem_date
+    if (sortField.value === 'problem_date') {
+      return compareDates(a, b)
+    }
+
     if (aValue < bValue) return sortOrder.value === 'asc' ? -1 : 1
     if (aValue > bValue) return sortOrder.value === 'asc' ? 1 : -1
     return 0
   })
 })
+
+const compareDates = (a: Problem, b: Problem): number => {
+  const aDate = getComparableDate(a)
+  const bDate = getComparableDate(b)
+
+  if (aDate < bDate) return sortOrder.value === 'asc' ? -1 : 1
+  if (aDate > bDate) return sortOrder.value === 'asc' ? 1 : -1
+  return 0
+}
+
+const getComparableDate = (problem: Problem): number => {
+  const [year, month, dayOrWeek] = problem.problem_date.split('-').map(Number)
+
+  if (problem.problem_type === 'daily') {
+    return new Date(year, month - 1, dayOrWeek).getTime()
+  } else {
+    // For weekly problems, we consider the first day of the week as the date,
+    // and prioritize it over a normal daily problem with the same date
+    // i.e.: January 7, 2024 → January W2, 2024 → January 8, 2024
+    const firstDayOfWeek = new Date(year, month - 1, dayOrWeek * 7 - 6)
+    firstDayOfWeek.setHours(-12)
+    return firstDayOfWeek.getTime()
+  }
+}
+
 
 const totalPages = computed(() => Math.ceil(sortedProblems.value.length / itemsPerPage))
 
@@ -262,17 +271,6 @@ th:hover {
 th, td {
   padding: 8px;
   text-align: left;
-}
-
-.pagination button {
-  margin: 0 10px;
-}
-
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .date-picker {

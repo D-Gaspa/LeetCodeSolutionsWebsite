@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {AlertCircle, AlertTriangle, CheckCircle, Info, Loader, X} from 'lucide-vue-next'
-import type {NotificationType} from '@/types/notification'
+import type {NotificationType} from '@/types/Notification'
 
 const props = defineProps<{
   message: string

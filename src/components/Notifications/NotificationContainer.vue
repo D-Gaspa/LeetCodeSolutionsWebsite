@@ -16,7 +16,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue'
 import Notification from './Notification.vue'
-import type {NewNotification, Notification as NotificationType} from '@/types/notification'
+import type {NewNotification, Notification as NotificationType} from '@/types/Notification'
 
 const notifications = ref<NotificationType[]>([])
 
