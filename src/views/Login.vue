@@ -55,9 +55,9 @@ const handleLogin = async () => {
 <style scoped>
 .login-page {
   display: flex;
-  padding-top: var(--spacing-large);
   justify-content: center;
   align-items: center;
+  padding: 5px 20px 20px 20px;
 }
 
 .form-input {

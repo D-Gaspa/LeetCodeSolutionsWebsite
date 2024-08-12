@@ -72,14 +72,19 @@ const handleLogout = async () => {
   await router.push('/login')
 }
 
-const showNotification = (message: string, type: NotificationType = 'info', options: NotificationOptions = {}): number | undefined => {
+const showNotification = (message: string, type: NotificationType = 'info', options: NotificationOptions = {}): number => {
   const notification: NewNotification = {
     message,
     type,
     duration: options.duration ?? 3000, // default duration
     isLoading: type === 'loading' || options.isLoading || false
   };
-  return notificationContainer.value?.addNotification(notification)
+
+  if (notificationContainer.value === null) {
+    throw new Error('Notification container not found')
+  }
+
+  return notificationContainer.value.addNotification(notification)
 }
 
 const updateNotification = (id: number, updates: Partial<NewNotification>) => {
