@@ -1,15 +1,17 @@
 <template>
   <Datepicker
-      v-model="date"
+      v-model="internalDate"
       :auto-apply="true"
       :calendar-cell-class-name="calendarCellClassName"
       :calendar-class="calendarClass"
       :clearable="true"
       :dark="isDarkMode"
       :enable-time-picker="false"
+      :format="dateFormat"
       :input-class="inputClass"
       :menu-class="menuClass"
       :month-change-on-scroll="false"
+      :month-picker="type === 'monthly'"
       :placeholder="placeholder"
       :teleport="true"
       :weekday-class-name="weekdayClassName"
@@ -31,20 +33,22 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref, watch} from 'vue'
+import {computed, ref} from 'vue'
 import Datepicker from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import {useTheme} from '@/composables/useTheme'
 import {CalendarIcon} from 'lucide-vue-next'
 
 interface Props {
-  modelValue: Date | string | null
+  modelValue: string | null
   placeholder?: string
+  type: 'daily' | 'monthly'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
-  placeholder: 'Select date'
+  placeholder: 'Select date',
+  type: 'daily'
 })
 
 const emit = defineEmits<{
@@ -52,38 +56,64 @@ const emit = defineEmits<{
 }>()
 
 const {theme} = useTheme()
-const date = ref<Date | null>(props.modelValue ? new Date(props.modelValue) : null)
 const isOpen = ref(false)
-
 const isDarkMode = computed(() => theme.value === 'dark')
 
-const formatDateForEmit = (date: Date | null): string | null => {
-  if (!date) return null
-  const day = date.getDate().toString().padStart(2, '0')
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const year = date.getFullYear()
-  return `${year}-${month}-${day}`
+const parseDate = (value: string | null): Date | { month: number; year: number } | null => {
+  if (!value) return null
+
+  const [year, month, day] = value.split('-').map(Number)
+
+  if (props.type === 'monthly') {
+    return {year, month: month - 1}
+  } else {
+    return new Date(year, month - 1, day)
+  }
 }
 
-const formatDateForDisplay = (date: Date | null): string => {
-  if (!date) return ''
-  return date.toLocaleDateString()
+const formatDateForEmit = (value: Date | { month: number; year: number } | null): string | null => {
+  if (!value) return null
+
+  if (props.type === 'monthly') {
+    if ('month' in value && 'year' in value) {
+      const month = (value.month + 1).toString().padStart(2, '0')
+      return `${value.year}-${month}`
+    }
+  } else if (value instanceof Date) {
+    const year = value.getFullYear()
+    const month = (value.getMonth() + 1).toString().padStart(2, '0')
+    const day = value.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  return null
 }
 
-const formattedDate = computed(() => formatDateForDisplay(date.value))
+const formatDateForDisplay = (value: Date | { month: number; year: number } | null): string => {
+  if (!value) return ''
 
-watch(() => props.modelValue, (newValue) => {
-  if (newValue !== formatDateForEmit(date.value)) {
-    date.value = newValue ? new Date(newValue) : null
+  if (props.type === 'monthly') {
+    if ('month' in value && 'year' in value) {
+      const date = new Date(value.year, value.month)
+      return date.toLocaleString('default', {month: 'long', year: 'numeric'})
+    }
+  } else if (value instanceof Date) {
+    return value.toLocaleDateString(undefined, {year: 'numeric', month: 'long', day: 'numeric'})
+  }
+
+  return ''
+}
+
+const internalDate = computed({
+  get: () => parseDate(props.modelValue),
+  set: (value: Date | { month: number; year: number } | null) => {
+    emit('update:modelValue', formatDateForEmit(value))
   }
 })
 
-watch(date, (newValue) => {
-  const formattedDate = formatDateForEmit(newValue)
-  if (formattedDate !== props.modelValue) {
-    emit('update:modelValue', formattedDate)
-  }
-})
+const formattedDate = computed(() => formatDateForDisplay(internalDate.value))
+
+const dateFormat = computed(() => props.type === 'monthly' ? 'MMMM yyyy' : 'dd/MM/yyyy')
 
 const menuClass = computed(() => [
   'custom-datepicker-menu',
@@ -114,7 +144,6 @@ const weekdayClassName = computed(() => [
 ])
 
 defineExpose({
-  date,
   formattedDate,
   menuClass,
   inputClass,

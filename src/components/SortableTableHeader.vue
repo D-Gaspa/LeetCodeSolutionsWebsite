@@ -34,11 +34,14 @@ const sortDirection = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: pointer;
   user-select: none;
 }
 
-th:hover {
+th {
+  cursor: pointer;
+}
+
+th:hover, th.active:hover {
   background-color: var(--bg-color-tertiary);
 }
 
