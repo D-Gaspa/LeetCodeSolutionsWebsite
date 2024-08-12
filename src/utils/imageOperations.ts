@@ -1,6 +1,12 @@
 import {supabase} from "@/services/supabase"
 
-export const deleteImageFromStorage = async (imageName) => {
+interface OperationResult {
+    success: boolean
+    error?: string
+    url?: string
+}
+
+export const deleteImageFromStorage = async (imageName: string): Promise<OperationResult> => {
     try {
         const {error} = await supabase.storage
             .from('problem-images')
@@ -13,11 +19,11 @@ export const deleteImageFromStorage = async (imageName) => {
         return {success: true}
     } catch (error) {
         console.error(`Unexpected error deleting image ${imageName}:`, error)
-        return {success: false, error: error.message}
+        return {success: false, error: (error as Error).message}
     }
 }
 
-export const uploadNewImage = async (file, fileName) => {
+export const uploadNewImage = async (file: File, fileName: string): Promise<OperationResult> => {
     try {
         const arrayBuffer = await file.arrayBuffer()
         const {error} = await supabase.storage
@@ -33,11 +39,11 @@ export const uploadNewImage = async (file, fileName) => {
         }
         return {success: true}
     } catch (error) {
-        return {success: false, error: `Error uploading image ${fileName}: ${error.message}`}
+        return {success: false, error: `Error uploading image ${fileName}: ${(error as Error).message}`}
     }
 }
 
-export const renameExistingImage = async (oldName, newName) => {
+export const renameExistingImage = async (oldName: string, newName: string): Promise<OperationResult> => {
     try {
         const {error} = await supabase.storage
             .from('problem-images')
@@ -52,15 +58,16 @@ export const renameExistingImage = async (oldName, newName) => {
     }
 }
 
-export const getPublicUrl = async (fileName) => {
+export const getPublicUrl = async (fileName: string): Promise<OperationResult> => {
     try {
-        const {data: urlData, error} = supabase.storage
+        const {data} = supabase.storage
             .from('problem-images')
             .getPublicUrl(fileName)
-        if (error) {
+
+        if (!data || !data.publicUrl) {
             return {success: false, error: 'Error getting public URL'}
         }
-        return {success: true, url: urlData.publicUrl}
+        return {success: true, url: data.publicUrl}
     } catch (error) {
         return {success: false, error: 'Error getting public URL'}
     }

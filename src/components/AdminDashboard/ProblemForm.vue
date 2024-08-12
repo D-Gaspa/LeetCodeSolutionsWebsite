@@ -93,7 +93,7 @@ import {inject, onMounted, reactive, ref} from 'vue'
 
 import ContentEditor from './ContentEditor.vue'
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement.js'
-import {useProblemStore} from "@/stores/problemsStore.js";
+import {useProblemStore} from "@/stores/problemsStore";
 import CustomDatePicker from "@/components/CustomDatePicker.vue";
 
 export default {
@@ -126,15 +126,15 @@ export default {
 
     const initializeForm = () => {
       if (props.editingProblem) {
-        problemForm.id = props.editingProblem.id;
-        const [_, ...nameParts] = props.editingProblem.title.split('.');
-        problemForm.name = nameParts.join('.').trim();
-        problemForm.difficulty = props.editingProblem.difficulty;
-        problemForm.problem_type = props.editingProblem.problem_type;
-        problemForm.problem_date = props.editingProblem.problem_date;
-        problemForm.content = props.editingProblem.content;
-        originalImages.value = props.editingProblem.content.images || [];
-        weekNumber.value = parseInt(props.editingProblem.problem_date.split('-')[2]);
+        problemForm.id = props.editingProblem.id
+        const [_, ...nameParts] = props.editingProblem.title.split('.')
+        problemForm.name = nameParts.join('.').trim()
+        problemForm.difficulty = props.editingProblem.difficulty
+        problemForm.problem_type = props.editingProblem.problem_type
+        problemForm.problem_date = props.editingProblem.problem_date
+        problemForm.content = props.editingProblem.content
+        originalImages.value = props.editingProblem.content.images || []
+        weekNumber.value = parseInt(props.editingProblem.problem_date.split('-')[2])
       }
     }
 
@@ -143,19 +143,19 @@ export default {
     }
 
     const closeContentEditor = async () => {
-      let shouldClose = true;
+      let shouldClose = true
 
       if (contentEditorRef.value && contentEditorRef.value.hasUnsavedChanges()) {
         shouldClose = await showConfirm(
             'Unsaved Changes',
             'Are you sure you want to close? Any unsaved changes will be lost.'
-        );
+        )
       }
 
       if (shouldClose) {
-        showContentEditor.value = false;
+        showContentEditor.value = false
       }
-    };
+    }
 
     const saveContent = () => {
       if (contentEditorRef.value) {
@@ -164,12 +164,12 @@ export default {
         const hasChanges = contentEditorRef.value.hasUnsavedChanges()
 
         if (hasChanges) {
-          problemForm.content = newContent;
-          showNotification('Content saved successfully', 'success');
+          problemForm.content = newContent
+          showNotification('Content saved successfully', 'success')
         } else {
-          showNotification('No changes to save', 'info');
+          showNotification('No changes to save', 'info')
         }
-        showContentEditor.value = false;
+        showContentEditor.value = false
       } else {
         showNotification('Error saving content. Please try again.', 'error')
       }
