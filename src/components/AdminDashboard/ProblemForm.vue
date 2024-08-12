@@ -1,7 +1,7 @@
 <template>
   <div class="problem-form">
-    <h2>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h2>
-    <form @submit.prevent="validateAndSaveProblem">
+    <h4>{{ editingProblem ? 'Edit' : 'Add' }} Problem</h4>
+    <form class="form-container" @submit.prevent="validateAndSaveProblem">
       <label>
         Problem Number:
         <input v-model.number="problemForm.id" min="1" required step="1" type="number">
@@ -30,18 +30,25 @@
         <CustomDatePicker v-model="problemForm.problem_date"
                           class="date-picker"
                           placeholder="mm/dd/yyyy"
+                          type="daily"
         />
       </label>
-      <label v-else>
-        Week:
-        <select v-model="problemForm.problem_week" required>
-          <option v-for="week in 5" :key="week" :value="week">Week {{ week }}</option>
-        </select>
-      </label>
-      <label v-if="problemForm.problem_type === 'weekly'">
-        Year:
-        <input v-model="problemForm.problem_year" required type="number">
-      </label>
+      <div v-else class="weekly-form-options">
+        <label>
+          Month/Year:
+          <CustomDatePicker v-model="problemForm.problem_date"
+                            class="date-picker"
+                            placeholder="mm/yyyy"
+                            type="monthly"
+          />
+        </label>
+        <label>
+          Week:
+          <select v-model="week" required>
+            <option v-for="week in 5" :key="week" :value="week">Week {{ week }}</option>
+          </select>
+        </label>
+      </div>
       <div>
         <div class="content-actions">
           <button class="btn-primary" type="button" @click="openContentEditor">
@@ -106,6 +113,7 @@ export default {
     const contentEditorRef = ref(null)
     const editingProblem = ref(props.editingProblem)
     const originalImages = ref([])
+    const weekNumber = ref(1)
 
     const problemForm = reactive({
       id: 1,
@@ -113,18 +121,20 @@ export default {
       difficulty: 'Easy',
       problem_type: 'daily',
       problem_date: new Date().toISOString().split('T')[0],
-      problem_week: 1,
-      problem_year: new Date().getFullYear(),
       content: {}
     })
 
     const initializeForm = () => {
       if (props.editingProblem) {
-        Object.assign(problemForm, props.editingProblem)
-        const [id, ...nameParts] = props.editingProblem.title.split('.')
-        problemForm.id = parseInt(id)
-        problemForm.name = nameParts.join('.').trim()
-        originalImages.value = props.editingProblem.content.images || []
+        problemForm.id = props.editingProblem.id;
+        const [_, ...nameParts] = props.editingProblem.title.split('.');
+        problemForm.name = nameParts.join('.').trim();
+        problemForm.difficulty = props.editingProblem.difficulty;
+        problemForm.problem_type = props.editingProblem.problem_type;
+        problemForm.problem_date = props.editingProblem.problem_date;
+        problemForm.content = props.editingProblem.content;
+        originalImages.value = props.editingProblem.content.images || [];
+        weekNumber.value = parseInt(props.editingProblem.problem_date.split('-')[2]);
       }
     }
 
@@ -240,10 +250,12 @@ export default {
         const formData = {...problemForm}
 
         if (formData.problem_type === 'daily') {
-          formData.problem_year = new Date(formData.problem_date).getFullYear()
-          formData.problem_week = null
+          // Ensure the date is in the correct format (YYYY-MM-DD)
+          formData.problem_date = new Date(formData.problem_date).toISOString().split('T')[0]
         } else {
-          formData.problem_date = null
+          // For weekly problems, format the date as YYYY-MM-W
+          const [year, month] = formData.problem_date.split('-')
+          formData.problem_date = `${year}-${month}-${weekNumber.value}`
         }
 
         formData.title = `${formData.id}. ${formData.name}`
@@ -291,6 +303,7 @@ export default {
       showContentEditor,
       contentEditorRef,
       editingProblem,
+      week: weekNumber,
       openContentEditor,
       closeContentEditor,
       saveContent,
@@ -312,6 +325,12 @@ export default {
 
 h4 {
   margin: 5px;
+}
+
+.form-container, .weekly-form-options {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .content-actions {

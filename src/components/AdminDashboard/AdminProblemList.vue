@@ -21,6 +21,7 @@
         <CustomDatePicker v-model="dateFilter"
                           class="date-picker"
                           placeholder="Filter by date"
+                          type="daily"
         />
       </div>
       <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
@@ -257,15 +258,6 @@ watch([sortField, sortOrder, ...Object.values({searchQuery, difficultyFilter, ty
 table {
   width: 100%;
   border-collapse: collapse;
-}
-
-th {
-  cursor: pointer;
-  user-select: none;
-}
-
-th:hover {
-  background-color: var(--bg-color-tertiary);
 }
 
 th, td {
