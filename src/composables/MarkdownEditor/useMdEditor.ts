@@ -7,6 +7,7 @@ import MarkdownItKatex from '@vscode/markdown-it-katex'
 import {MdImage} from "./useMdImageManagement"
 import {oneDark} from "@codemirror/theme-one-dark"
 import {isEqual} from "lodash"
+import type {NotificationOptions, NotificationType} from "@/types/Notification";
 
 export interface EditorContent {
     text: string
@@ -16,7 +17,7 @@ export interface EditorContent {
 export function useMdEditor(props: {
     initialContent: EditorContent
     modelValue: EditorContent
-}, emit: (event: "update:modelValue", value: EditorContent) => void, theme: Ref<string>, showNotification: (message: string, type: string, options?: object) => number) {
+}, emit: (event: "update:modelValue", value: EditorContent) => void, theme: Ref<string>, showNotification: (message: string, type?: NotificationType, options?: NotificationOptions) => number) {
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref<MdImage[]>([])
     const imageMap = ref(new Map())

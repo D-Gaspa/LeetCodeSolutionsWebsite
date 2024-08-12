@@ -3,26 +3,27 @@
     <div class="dashboard-header">
       <div class="search-filters">
         <input
-            v-model="searchQuery"
+            v-model="problemStore.filters.query"
             placeholder="Search problems..."
             @input="debouncedSearch"
         >
-        <select v-model="difficultyFilter">
+        <select v-model="problemStore.filters.difficulty" @change="handleFilterChange">
           <option value="">All Difficulties</option>
           <option value="Easy">Easy</option>
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>
         </select>
-        <select v-model="typeFilter">
+        <select v-model="problemStore.filters.type" @change="handleFilterChange">
           <option value="">All Types</option>
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
         </select>
         <CustomDatePicker
-            v-model="dateFilter"
+            v-model="problemStore.filters.date"
             class="date-picker"
             placeholder="Filter by date"
             type="daily"
+            @update:modelValue="handleFilterChange"
         />
       </div>
       <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
@@ -32,7 +33,6 @@
     </div>
 
     <ProblemTable
-        v-if="paginatedProblems.length > 0"
         :problems="paginatedProblems"
         :sortField="sortField"
         :sortOrder="sortOrder"
@@ -41,7 +41,6 @@
         @sort="toggleSort"
         @add-solution="$emit('add-solution', $event)"
     />
-    <p v-else>No problems found.</p>
 
     <Pagination
         v-if="totalPages > 0"
@@ -61,6 +60,7 @@ import Pagination from "@/components/Pagination.vue"
 import ProblemTable from "@/components/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/useProblemsFilter'
 import type {Problem} from '@/types/Problem'
+import {useProblemStore} from "@/stores/problemsStore";
 
 interface Props {
   problems: Problem[]
@@ -69,7 +69,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'search', filters: { query: string, difficulty: string, type: string, date: string }): void
+  (e: 'search'): void
   (e: 'edit', problem: Problem): void
   (e: 'delete', problem: Problem): void
   (e: 'add-solution', problem: Problem): void
@@ -77,6 +77,7 @@ const emit = defineEmits<{
 }>()
 
 const {showConfirm} = useConfirm()
+const problemStore = useProblemStore()
 const problemsRef = toRef(props, 'problems')
 const currentPage = ref(1)
 const itemsPerPage = 10
@@ -101,13 +102,12 @@ const paginatedProblems = computed(() => {
 })
 
 const debouncedSearch = debounce(() => {
-  emit('search', {
-    query: searchQuery.value,
-    difficulty: difficultyFilter.value,
-    type: typeFilter.value,
-    date: dateFilter.value
-  })
+  handleFilterChange()
 }, 300)
+
+const handleFilterChange = () => {
+  emit('search')
+}
 
 const confirmDelete = async (problem: Problem) => {
   const isConfirmed = await showConfirm('Delete Problem', 'Are you sure you want to delete this problem?')

@@ -1,5 +1,5 @@
 import {inject} from 'vue'
-import {deleteImageFromStorage, getPublicUrl, renameExistingImage, uploadNewImage} from '@/utils/imageOperations.js'
+import {deleteImageFromStorage, getPublicUrl, renameExistingImage, uploadNewImage} from '@/utils/imageOperations'
 
 export function useImageManagement() {
     const updateNotification = inject('updateNotification')

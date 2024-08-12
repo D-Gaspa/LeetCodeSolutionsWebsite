@@ -24,13 +24,13 @@
 <script>
 import {onMounted, ref} from 'vue'
 import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
-import ConfirmDialog from "@/components/ConfirmDialog.vue";
-import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue";
-import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue";
-import {useProblemStore} from "@/stores/problemsStore";
-import {useNotification} from "@/composables/useNotification";
-import {useConfirm} from "@/composables/useConfirm";
-import LoadingSpinner from "@/components/LoadingSpinner.vue";
+import ConfirmDialog from "@/components/ConfirmDialog.vue"
+import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue"
+import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue"
+import {useProblemStore} from "@/stores/problemsStore"
+import {useNotification} from "@/composables/useNotification"
+import {useConfirm} from "@/composables/useConfirm"
+import LoadingSpinner from "@/components/LoadingSpinner.vue"
 
 export default {
   name: 'AdminDashboard',
@@ -51,10 +51,10 @@ export default {
     const problemToDelete = ref(null)
     const isLoading = ref(true)
 
-    const fetchProblems = async (filters = {}) => {
+    const fetchProblems = async () => {
       try {
         isLoading.value = true
-        problems.value = await problemStore.fetchProblems(filters)
+        problems.value = await problemStore.getFilteredProblems()
       } catch (error) {
         showNotification('Error fetching problems: ' + error.message, 'error')
       } finally {
@@ -62,8 +62,8 @@ export default {
       }
     }
 
-    const handleSearch = (filters) => {
-      fetchProblems(filters)
+    const handleSearch = () => {
+      fetchProblems()
     }
 
     const openProblemForm = () => {
