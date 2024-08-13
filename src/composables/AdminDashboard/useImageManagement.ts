@@ -1,10 +1,24 @@
 import {deleteImageFromStorage, getPublicUrl, renameExistingImage, uploadNewImage} from '@/utils/imageOperations'
-import {useNotification} from "@/composables/useNotification.js";
+import {useNotification} from "@/composables/useNotification"
+import type {MdImage} from '@/types/Problem'
+
+interface PreparedImage extends MdImage {
+    tempName: string
+    tempUrl: string
+    originalName: string
+}
+
+interface ImageManagementResult {
+    success: boolean
+    error?: string
+    renamedImages?: MdImage[]
+    updatedContent?: string
+}
 
 export function useImageManagement() {
     const {updateNotification} = useNotification()
 
-    const areImagesChanged = (newImages, originalImages) => {
+    const areImagesChanged = (newImages: MdImage[], originalImages: MdImage[]): boolean => {
         if (newImages.length !== originalImages.length) return true
         return newImages.some((newImg, index) => {
             const origImg = originalImages[index]
@@ -12,10 +26,10 @@ export function useImageManagement() {
         })
     }
 
-    const getOrderedImages = (content, images) => {
+    const getOrderedImages = (content: string, images: MdImage[]): MdImage[] => {
         const imageRegex = /!\[([^\]]*)]\(([^)]+)\)/g
-        const orderedImages = []
-        let match
+        const orderedImages: MdImage[] = []
+        let match: RegExpExecArray | null
 
         while ((match = imageRegex.exec(content)) !== null) {
             const [, , src] = match
@@ -27,7 +41,13 @@ export function useImageManagement() {
         return orderedImages
     }
 
-    const handleImageManagement = async (currentImages, originalImages, problemNumber, content, notificationId) => {
+    const handleImageManagement = async (
+        currentImages: MdImage[],
+        originalImages: MdImage[],
+        problemNumber: number,
+        content: string,
+        notificationId: number
+    ): Promise<ImageManagementResult> => {
         // Order the current images based on their appearance in the content
         const orderedCurrentImages = getOrderedImages(content, currentImages)
 
@@ -62,7 +82,7 @@ export function useImageManagement() {
 
         // Second pass: Rename all images to their final names
         updateNotification(notificationId, {message: 'Finalizing images...'})
-        const renameResult = await renameAndUploadImages(firstPassResult.preparedImages, firstPassResult.updatedContent, problemNumber, notificationId)
+        const renameResult = await renameAndUploadImages(firstPassResult.preparedImages!, firstPassResult.updatedContent!, problemNumber, notificationId)
         if (!renameResult.success) {
             return {success: false, error: renameResult.error}
         }
@@ -78,13 +98,17 @@ export function useImageManagement() {
         }
     }
 
-    const prepareImages = async (orderedImages, content, notificationId) => {
-        const preparedImages = []
+    const prepareImages = async (
+        orderedImages: MdImage[],
+        content: string,
+        notificationId: number
+    ): Promise<{ success: boolean; error?: string; preparedImages?: PreparedImage[]; updatedContent?: string }> => {
+        const preparedImages: PreparedImage[] = []
         let updatedContent = content
         let imageCounter = 1
 
         for (const image of orderedImages) {
-            let tempName, tempUrl
+            let tempName: string, tempUrl: string
             if (image.file instanceof File) {
                 // New image: upload with temporary name
                 tempName = `new_${imageCounter++}_${image.name}`
@@ -99,8 +123,8 @@ export function useImageManagement() {
                     return {success: false, error: uploadResult.error}
                 }
                 const urlResult = await getPublicUrl(tempName)
-                if (!urlResult.success) {
-                    return {success: false, error: urlResult.error}
+                if (!urlResult.success || !urlResult.url) {
+                    return {success: false, error: urlResult.error || 'Failed to get public URL'}
                 }
                 tempUrl = urlResult.url
             } else {
@@ -117,8 +141,8 @@ export function useImageManagement() {
                     return {success: false, error: renameResult.error}
                 }
                 const urlResult = await getPublicUrl(tempName)
-                if (!urlResult.success) {
-                    return {success: false, error: urlResult.error}
+                if (!urlResult.success || !urlResult.url) {
+                    return {success: false, error: urlResult.error || 'Failed to get public URL'}
                 }
                 tempUrl = urlResult.url
             }
@@ -137,8 +161,13 @@ export function useImageManagement() {
         return {success: true, preparedImages, updatedContent}
     }
 
-    const renameAndUploadImages = async (preparedImages, content, problemNumber, notificationId) => {
-        const renamedImages = []
+    const renameAndUploadImages = async (
+        preparedImages: PreparedImage[],
+        content: string,
+        problemNumber: number,
+        notificationId: number
+    ): Promise<{ success: boolean; error?: string; renamedImages?: MdImage[]; updatedContent?: string }> => {
+        const renamedImages: MdImage[] = []
         let imageCounter = 1
         let updatedContent = content
 
@@ -160,14 +189,14 @@ export function useImageManagement() {
 
             // Get the public URL for the renamed image
             const urlResult = await getPublicUrl(newFileName)
-            if (!urlResult.success) {
+            if (!urlResult.success || !urlResult.url) {
                 updateNotification(notificationId, {
-                    message: urlResult.error,
+                    message: urlResult.error || 'Failed to get public URL',
                     type: 'error',
                     isLoading: false,
                     duration: 3000
                 })
-                return {success: false, error: urlResult.error}
+                return {success: false, error: urlResult.error || 'Failed to get public URL'}
             }
             const newUrl = urlResult.url
 
@@ -189,7 +218,7 @@ export function useImageManagement() {
                 id: newFileName,
                 name: newFileName,
                 url: newUrl,
-                file: image.file // Preserve the file object for new images
+                file: image.file
             })
 
             imageCounter++
@@ -198,12 +227,12 @@ export function useImageManagement() {
         return {success: true, renamedImages, updatedContent}
     }
 
-    function escapeRegExp(string) {
+    function escapeRegExp(string: string): string {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     }
 
     return {
         areImagesChanged,
-        handleImageManagement
+        handleImageManagement,
     }
 }
