@@ -1,23 +1,18 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isVisible" class="confirm-dialog" @click="onBackdropClick">
-      <Transition name="slide-fade">
-        <div v-if="isVisible" class="confirm-dialog-content" @click.stop>
-          <h5>{{ title }}</h5>
-          <p>{{ message }}</p>
-          <div class="confirm-dialog-divider"></div>
-          <div class="confirm-dialog-actions">
-            <button class="btn-secondary" @click="onConfirm">Yes</button>
-            <button class="btn-danger" @click="onDismiss">No</button>
-          </div>
-        </div>
-      </Transition>
+  <BaseModal v-model="isVisible" class="confirm-dialog">
+    <h5>{{ title }}</h5>
+    <p>{{ message }}</p>
+    <div class="confirm-dialog-divider"></div>
+    <div class="confirm-dialog-actions">
+      <button class="btn-secondary" @click="onConfirm">Yes</button>
+      <button class="btn-danger" @click="onDismiss">No</button>
     </div>
-  </Transition>
+  </BaseModal>
 </template>
 
 <script lang="ts" setup>
 import {ref, watch} from 'vue'
+import BaseModal from './BaseModal.vue'
 
 const props = defineProps<{
   show: boolean
@@ -53,41 +48,15 @@ const onDismiss = () => {
   emit('update:show', false)
 }
 
-const onBackdropClick = (event: MouseEvent) => {
-  if (event.target === event.currentTarget) {
-    onDismiss()
-  }
-}
-
 defineExpose({
   open
 })
 </script>
 
 <style scoped>
-.confirm-dialog {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  transition: all var(--transition-base);
-}
-
-.confirm-dialog-content {
-  background-color: var(--bg-color-primary);
-  border: var(--border-width) solid var(--border-color-primary);
-  padding: var(--spacing-large);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-medium);
+.confirm-dialog :deep(.base-modal-content) {
   max-width: 400px;
   width: fit-content;
-  transition: all var(--transition-base);
 }
 
 h5 {
@@ -110,26 +79,5 @@ p {
   justify-content: flex-end;
   margin-top: 1.5rem;
   gap: 1rem;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.2s ease;
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateY(-20px);
-  opacity: 0;
 }
 </style>

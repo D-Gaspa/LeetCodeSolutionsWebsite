@@ -232,6 +232,7 @@ export default defineComponent({
 <style scoped>
 .md-editor {
   border: var(--border-width) solid var(--border-color-secondary);
+  border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;
   height: 70vh;
