@@ -29,8 +29,8 @@
 
 <script lang="ts">
 import {defineComponent, PropType, ref} from 'vue'
-import {MdImage} from '@/composables/MarkdownEditor/useMdImageManagement'
 import {useNotification} from "@/composables/useNotification"
+import {MdImage} from "@/types/Problem";
 
 export default defineComponent({
   name: 'MdEditorImageGallery',
@@ -55,8 +55,8 @@ export default defineComponent({
         try {
           emit('upload', input.files)
           input.value = '' // Reset the input
-        } catch (error: any) {
-          showNotification(`Error processing images: ${error.message}`, 'error')
+        } catch (error) {
+          showNotification(`Error processing images: ${(error as Error).message}`, 'error')
         }
       }
     }

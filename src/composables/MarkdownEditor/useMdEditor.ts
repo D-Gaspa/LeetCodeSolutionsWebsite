@@ -4,20 +4,16 @@ import {EditorView} from '@codemirror/view'
 import {Extension} from '@codemirror/state'
 import MarkdownIt from 'markdown-it'
 import MarkdownItKatex from '@vscode/markdown-it-katex'
-import {MdImage} from "./useMdImageManagement"
 import {oneDark} from "@codemirror/theme-one-dark"
 import {isEqual} from "lodash"
 import type {NotificationOptions, NotificationType} from "@/types/Notification";
-
-export interface EditorContent {
-    text: string
-    images: MdImage[]
-}
+import {MdImage, ProblemContent} from "@/types/Problem";
 
 export function useMdEditor(props: {
-    initialContent: EditorContent
-    modelValue: EditorContent
-}, emit: (event: "update:modelValue", value: EditorContent) => void, theme: Ref<string>, showNotification: (message: string, type?: NotificationType, options?: NotificationOptions) => number) {
+    initialContent: ProblemContent
+    modelValue: ProblemContent
+}, emit: (event: "update:modelValue", value: ProblemContent)
+    => void, theme: Ref<string>, showNotification: (message: string, type?: NotificationType, options?: NotificationOptions) => number) {
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref<MdImage[]>([])
     const imageMap = ref(new Map())
@@ -78,8 +74,8 @@ export function useMdEditor(props: {
 
             updateImageMap()
             setupImageRenderer()
-        } catch (error: any) {
-            showNotification(`Error initializing content: ${error.message}`, 'error')
+        } catch (error) {
+            showNotification(`Error initializing content: ${(error as Error).message}`, 'error')
         }
     }
 

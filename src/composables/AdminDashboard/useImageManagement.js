@@ -1,8 +1,8 @@
-import {inject} from 'vue'
 import {deleteImageFromStorage, getPublicUrl, renameExistingImage, uploadNewImage} from '@/utils/imageOperations'
+import {useNotification} from "@/composables/useNotification.js";
 
 export function useImageManagement() {
-    const updateNotification = inject('updateNotification')
+    const {updateNotification} = useNotification()
 
     const areImagesChanged = (newImages, originalImages) => {
         if (newImages.length !== originalImages.length) return true
