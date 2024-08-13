@@ -11,13 +11,13 @@
         @search="handleSearch"
         @add-solution="openSolutionForm"
     />
-    <div v-if="showProblemForm" class="modal" @click.self="closeProblemForm">
+    <BaseModal v-model="showProblemForm" class="problem-form-modal">
       <ProblemForm
           :editingProblem="editingProblem"
           @close="closeProblemForm"
           @problem-saved="fetchAllProblems"
       />
-    </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -30,6 +30,7 @@ import {useNotification} from "@/composables/useNotification"
 import {useConfirm} from "@/composables/useConfirm"
 import {useProblemStore} from "@/stores/problemsStore"
 import type {Problem} from '@/types/Problem'
+import BaseModal from "@/components/BaseModal.vue";
 
 const {showNotification, updateNotification} = useNotification()
 const {showConfirm} = useConfirm()
@@ -126,17 +127,5 @@ onMounted(fetchAllProblems)
 <style scoped>
 .admin-dashboard {
   padding: 5px 20px 20px 20px;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 </style>

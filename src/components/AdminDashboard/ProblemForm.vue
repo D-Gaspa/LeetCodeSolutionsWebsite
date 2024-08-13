@@ -68,23 +68,20 @@
       </div>
     </form>
 
-    <!-- Content Editor Modal -->
-    <div v-if="showContentEditor" class="modal" @click.self="closeContentEditor">
-      <div class="modal-content large">
-        <h4>Edit Problem Content</h4>
-        <ContentEditor
-            ref="contentEditorRef"
-            v-model="problemForm.content"
-            :initial-content="problemForm.content"
-        />
-        <div class="form-actions-container">
-          <div class="form-actions">
-            <button class="btn-secondary" @click="saveContent">Save Content</button>
-            <button class="btn-danger" @click="closeContentEditor">Close</button>
-          </div>
+    <BaseModal v-model="showContentEditor" class="content-editor-modal">
+      <h4>Edit Problem Content</h4>
+      <ContentEditor
+          ref="contentEditorRef"
+          v-model="problemForm.content"
+          :initial-content="problemForm.content"
+      />
+      <div class="form-actions-container">
+        <div class="form-actions">
+          <button class="btn-secondary" @click="saveContent">Save Content</button>
+          <button class="btn-danger" @click="closeContentEditor">Close</button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -92,13 +89,14 @@
 import {inject, onMounted, reactive, ref} from 'vue'
 
 import ContentEditor from './ContentEditor.vue'
+import CustomDatePicker from "@/components/CustomDatePicker.vue";
+import BaseModal from "@/components/BaseModal.vue";
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement.js'
 import {useProblemStore} from "@/stores/problemsStore";
-import CustomDatePicker from "@/components/CustomDatePicker.vue";
 
 export default {
   name: 'ProblemForm',
-  components: {CustomDatePicker, ContentEditor},
+  components: {BaseModal, CustomDatePicker, ContentEditor},
   props: {
     editingProblem: Object,
   },
@@ -315,14 +313,6 @@ export default {
 </script>
 
 <style scoped>
-.problem-form {
-  background-color: var(--bg-color-secondary);
-  border: var(--border-width) solid var(--border-color-primary);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-small);
-  padding: 1rem;
-}
-
 input, select {
   width: 100%;
   box-sizing: border-box;
@@ -346,15 +336,12 @@ h4 {
   gap: 10px;
 }
 
-.modal-content.large {
+.content-editor-modal :deep(.base-modal-content) {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-color: var(--bg-color-secondary);
-  border: var(--border-width) solid var(--border-color-primary);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-small);
-  padding: 1rem;
+  padding: var(--spacing-medium);
   width: 80%;
   max-width: 90vw;
   max-height: 90vh;
