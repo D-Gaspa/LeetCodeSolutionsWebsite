@@ -21,136 +21,109 @@
   </div>
 </template>
 
-<script>
+<script lang="ts" setup>
 import {onMounted, ref} from 'vue'
-import MdEditor from '../components/MarkdownEditor/MdEditor.vue'
-import ConfirmDialog from "@/components/ConfirmDialog.vue"
 import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue"
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue"
-import {useProblemStore} from "@/stores/problemsStore"
+import LoadingSpinner from "@/components/LoadingSpinner.vue"
 import {useNotification} from "@/composables/useNotification"
 import {useConfirm} from "@/composables/useConfirm"
-import LoadingSpinner from "@/components/LoadingSpinner.vue"
+import {useProblemStore} from "@/stores/problemsStore"
+import type {Problem} from '@/types/Problem'
 
-export default {
-  name: 'AdminDashboard',
-  components: {
-    LoadingSpinner,
-    AdminProblemList,
-    ProblemForm,
-    ConfirmDialog,
-    MdEditor
-  },
-  setup() {
-    const {showNotification, updateNotification} = useNotification()
-    const {showConfirm} = useConfirm()
-    const problemStore = useProblemStore()
-    const problems = ref([])
-    const showProblemForm = ref(false)
-    const editingProblem = ref(null)
-    const problemToDelete = ref(null)
-    const isLoading = ref(true)
+const {showNotification, updateNotification} = useNotification()
+const {showConfirm} = useConfirm()
+const problemStore = useProblemStore()
 
-    const fetchAllProblems = async () => {
-      try {
-        isLoading.value = true
-        problems.value = await problemStore.fetchAllProblems()
-      } catch (error) {
-        showNotification('Error fetching problems: ' + error.message, 'error')
-      } finally {
-        isLoading.value = false
-      }
-    }
+const problems = ref<Problem[]>([])
+const showProblemForm = ref(false)
+const editingProblem = ref<Problem | null>(null)
+const problemToDelete = ref<Problem | null>(null)
+const isLoading = ref(true)
 
-    const fetchFilteredProblems = async () => {
-      try {
-        problems.value = await problemStore.getFilteredProblems()
-      } catch (error) {
-        showNotification('Error fetching problems: ' + error.message, 'error')
-      }
-    }
-
-    const handleSearch = async () => {
-      await fetchFilteredProblems()
-    }
-
-    const openProblemForm = () => {
-      editingProblem.value = null
-      showProblemForm.value = true
-    }
-
-    const closeProblemForm = () => {
-      showProblemForm.value = false
-      editingProblem.value = null
-    }
-
-    const editProblem = (problem) => {
-      editingProblem.value = problem
-      showProblemForm.value = true
-    }
-
-    const confirmDeleteProblem = async (problem) => {
-      problemToDelete.value = problem
-      const confirmed = await showConfirm(
-          "Confirm Delete",
-          `Are you sure you want to delete the problem "${problem.title}"?`
-      )
-      if (confirmed) {
-        await deleteProblem()
-      }
-    }
-
-    const deleteProblem = async () => {
-      if (!problemToDelete.value) return
-
-      const notificationId = showNotification('Deleting problem...', 'loading', {isLoading: true})
-
-      try {
-        await problemStore.deleteProblem(problemToDelete.value.id)
-
-        updateNotification(notificationId, {
-          message: 'Problem and associated images deleted successfully',
-          type: 'success',
-          isLoading: false,
-        })
-      } catch (error) {
-        updateNotification(notificationId, {
-          message: error.message,
-          type: 'error',
-          isLoading: false,
-        })
-      } finally {
-        await fetchAllProblems()
-        problemToDelete.value = null
-      }
-    }
-
-    const openSolutionForm = (problem) => {
-      // To be implemented
-      console.log('Open solution form for problem:', problem)
-    }
-
-    onMounted(fetchAllProblems)
-
-    return {
-      problems,
-      showProblemForm,
-      editingProblem,
-      isLoading,
-      fetchAllProblems,
-      handleSearch,
-      openProblemForm,
-      editProblem,
-      confirmDeleteProblem,
-      deleteProblem,
-      closeProblemForm,
-      openSolutionForm
-    }
+const fetchAllProblems = async () => {
+  try {
+    isLoading.value = true
+    problems.value = await problemStore.fetchAllProblems()
+  } catch (error) {
+    showNotification(`Error fetching problems: ${(error as Error).message}`, 'error')
+  } finally {
+    isLoading.value = false
   }
 }
+
+const fetchFilteredProblems = async () => {
+  try {
+    problems.value = await problemStore.getFilteredProblems()
+  } catch (error) {
+    showNotification(`Error fetching problems: ${(error as Error).message}`, 'error')
+  }
+}
+
+const handleSearch = async () => {
+  await fetchFilteredProblems()
+}
+
+const openProblemForm = () => {
+  editingProblem.value = null
+  showProblemForm.value = true
+}
+
+const closeProblemForm = () => {
+  showProblemForm.value = false
+  editingProblem.value = null
+}
+
+const editProblem = (problem: Problem) => {
+  editingProblem.value = problem
+  showProblemForm.value = true
+}
+
+const confirmDeleteProblem = async (problem: Problem) => {
+  problemToDelete.value = problem
+  const confirmed = await showConfirm(
+      "Confirm Delete",
+      `Are you sure you want to delete the problem "${problem.title}"?`
+  )
+  if (confirmed) {
+    await deleteProblem()
+  }
+}
+
+const deleteProblem = async () => {
+  if (!problemToDelete.value) return
+
+  const notificationId = showNotification('Deleting problem...', 'loading', {isLoading: true})
+
+  try {
+    await problemStore.deleteProblem(problemToDelete.value.id)
+
+    updateNotification(notificationId, {
+      message: 'Problem and associated images deleted successfully',
+      type: 'success',
+      isLoading: false,
+    })
+  } catch (error) {
+    updateNotification(notificationId, {
+      message: (error as Error).message,
+      type: 'error',
+      isLoading: false,
+    })
+  } finally {
+    await fetchAllProblems()
+    problemToDelete.value = null
+  }
+}
+
+const openSolutionForm = (problem: Problem) => {
+  // To be implemented
+  console.log('Open solution form for problem:', problem)
+}
+
+onMounted(fetchAllProblems)
 </script>
 
-<style>
+<style scoped>
 .admin-dashboard {
   padding: 5px 20px 20px 20px;
 }
@@ -161,25 +134,9 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
-form {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  margin-bottom: 10px;
-}
-
-input, select, textarea {
-  resize: none;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 5px;
-}
-
 </style>

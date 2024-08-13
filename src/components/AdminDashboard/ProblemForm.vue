@@ -323,6 +323,11 @@ export default {
   padding: 1rem;
 }
 
+input, select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 h4 {
   margin: 5px;
 }

@@ -36,13 +36,13 @@
 import {computed, watch} from 'vue'
 import debounce from 'lodash/debounce'
 import DashboardHeader from "@/components/ProblemList/DashboardHeader.vue"
-import {useConfirm} from "@/composables/useConfirm"
 import Pagination from "@/components/ProblemList/Pagination.vue"
 import ProblemTable from "@/components/ProblemList/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/ProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/ProblemList/usePagination'
-import {useProblemStore} from "@/stores/problemsStore"
+import {useConfirm} from "@/composables/useConfirm"
 import {useNotification} from "@/composables/useNotification";
+import {useProblemStore} from "@/stores/problemsStore"
 import type {Problem} from '@/types/Problem'
 
 const props = defineProps<{
@@ -105,9 +105,4 @@ watch([() => problemStore.filters, sortField, sortOrder], () => {
 </script>
 
 <style scoped>
-input, select, textarea {
-  resize: none;
-  box-sizing: border-box;
-  width: 100%;
-}
 </style>

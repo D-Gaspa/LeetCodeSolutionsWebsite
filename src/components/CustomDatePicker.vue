@@ -158,14 +158,13 @@ defineExpose({
 <style scoped>
 .custom-trigger {
   position: relative;
-  display: inline-block;
+  display: flex;
   box-sizing: border-box;
-  width: 100%;
 }
 
 .calendar-icon {
   position: absolute;
-  right: 10px;
+  right: 0.7em;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-color-secondary);
@@ -178,7 +177,7 @@ defineExpose({
   border: var(--border-width) solid var(--input-border);
   border-radius: var(--border-radius);
   padding: var(--spacing-small);
-  padding-right: calc(var(--spacing-small) * 2 + 20px);
+  padding-right: 2.5em;
   color: var(--text-color-primary);
   font-size: var(--font-size-small);
   width: 100%;
