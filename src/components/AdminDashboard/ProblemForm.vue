@@ -94,7 +94,7 @@ import {useImageManagement} from '@/composables/AdminDashboard/useImageManagemen
 import {useNotification} from "@/composables/useNotification"
 import {useProblemStore} from "@/stores/problemsStore"
 import {useConfirm} from "@/composables/useConfirm"
-import type {MdImage, PartialProblemContent, Problem, ProblemContent} from '@/types/Problem'
+import type {MdImage, Problem, ProblemContent} from '@/types/Problem'
 
 interface Props {
   editingProblem?: Problem
@@ -127,7 +127,7 @@ interface ProblemForm {
   difficulty: 'Easy' | 'Medium' | 'Hard'
   problem_type: 'daily' | 'weekly'
   problem_date: string
-  content: PartialProblemContent
+  content: ProblemContent
 }
 
 const problemForm = reactive<ProblemForm>({
@@ -136,7 +136,10 @@ const problemForm = reactive<ProblemForm>({
   difficulty: 'Easy',
   problem_type: 'daily',
   problem_date: new Date().toISOString().split('T')[0],
-  content: {}
+  content: {
+    text: '',
+    images: []
+  }
 })
 
 const initializeForm = () => {
@@ -147,7 +150,10 @@ const initializeForm = () => {
     problemForm.difficulty = props.editingProblem.difficulty
     problemForm.problem_type = props.editingProblem.problem_type
     problemForm.problem_date = props.editingProblem.problem_date
-    problemForm.content = props.editingProblem.content
+    problemForm.content = {
+      text: props.editingProblem.content.text || '',
+      images: props.editingProblem.content.images || []
+    }
     originalImages.value = props.editingProblem.content.images || []
     weekNumber.value = parseInt(props.editingProblem.problem_date.split('-')[2])
   }
@@ -254,7 +260,7 @@ const saveProblem = async () => {
       }
 
       // Update the problem form with the new content and images
-      problemForm.content.text = result.updatedContent
+      problemForm.content.text = result.updatedContent || problemForm.content.text
       problemForm.content.images = result.renamedImages as MdImage[]
 
       updateNotification(notificationId, {message: 'Image processing complete. Preparing to save problem...'})
