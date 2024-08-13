@@ -15,14 +15,19 @@
           placeholder="Search problems..."
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       >
-      <select :value="difficultyFilter"
-              @change="$emit('update:difficultyFilter', ($event.target as HTMLSelectElement).value)">
+      <select
+          :value="difficultyFilter"
+          @change="$emit('update:difficultyFilter', ($event.target as HTMLSelectElement).value)"
+      >
         <option value="">All Difficulties</option>
         <option value="Easy">Easy</option>
         <option value="Medium">Medium</option>
         <option value="Hard">Hard</option>
       </select>
-      <select :value="typeFilter" @change="$emit('update:typeFilter', ($event.target as HTMLSelectElement).value)">
+      <select
+          :value="typeFilter"
+          @change="$emit('update:typeFilter', ($event.target as HTMLSelectElement).value)"
+      >
         <option value="">All Types</option>
         <option value="daily">Daily</option>
         <option value="weekly">Weekly</option>
@@ -35,10 +40,12 @@
           @update:modelValue="$emit('update:dateFilter', $event)"
       />
     </div>
-    <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
-      <PlusCircle class="icon"/>
-      Add Problem
-    </button>
+    <div>
+      <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
+        <PlusCircle class="icon"/>
+        Add Problem
+      </button>
+    </div>
   </div>
 </template>
 
@@ -67,7 +74,6 @@ defineEmits<{
 <style scoped>
 .dashboard-header {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
@@ -80,8 +86,8 @@ defineEmits<{
   flex: 1;
 }
 
-.date-picker {
-  box-sizing: border-box;
+input, select {
   width: 100%;
+  box-sizing: border-box;
 }
 </style>
