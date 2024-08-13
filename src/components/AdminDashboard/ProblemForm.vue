@@ -94,7 +94,7 @@ import {useImageManagement} from '@/composables/AdminDashboard/useImageManagemen
 import {useNotification} from "@/composables/useNotification"
 import {useProblemStore} from "@/stores/problemsStore"
 import {useConfirm} from "@/composables/useConfirm"
-import type {Problem, ProblemContent} from '@/types/Problem'
+import type {MdImage, PartialProblemContent, Problem, ProblemContent} from '@/types/Problem'
 
 interface Props {
   editingProblem?: Problem
@@ -120,7 +120,17 @@ const contentEditorRef = ref<InstanceType<typeof ContentEditor> | null>(null)
 const originalImages = ref<ProblemContent['images']>([])
 const weekNumber = ref(1)
 
-const problemForm = reactive<Problem>({
+interface ProblemForm {
+  id: number
+  name?: string
+  title?: string
+  difficulty: 'Easy' | 'Medium' | 'Hard'
+  problem_type: 'daily' | 'weekly'
+  problem_date: string
+  content: PartialProblemContent
+}
+
+const problemForm = reactive<ProblemForm>({
   id: 1,
   name: 'Test Problem',
   difficulty: 'Easy',
@@ -164,7 +174,7 @@ const closeContentEditor = async () => {
 
 const saveContent = () => {
   if (contentEditorRef.value) {
-    const newContent = contentEditorRef.value.getContent()
+    const newContent = contentEditorRef.value.getContent() as ProblemContent
 
     const hasChanges = contentEditorRef.value.hasUnsavedChanges()
 
@@ -245,7 +255,7 @@ const saveProblem = async () => {
 
       // Update the problem form with the new content and images
       problemForm.content.text = result.updatedContent
-      problemForm.content.images = result.renamedImages
+      problemForm.content.images = result.renamedImages as MdImage[]
 
       updateNotification(notificationId, {message: 'Image processing complete. Preparing to save problem...'})
     } else {

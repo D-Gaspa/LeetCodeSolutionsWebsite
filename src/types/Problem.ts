@@ -7,12 +7,17 @@ export interface Problem {
     content: ProblemContent;
 }
 
-export interface ProblemContent {
-    text?: string
-    images?: Array<{
-        id: string
-        name: string
-        url: string
-        file?: File
-    }>
+export interface MdImage {
+    id: string
+    name: string
+    url: string
+    file?: File | null
 }
+
+export interface ProblemContent {
+    text: string
+    images: MdImage[]
+}
+
+// This type allows for partial content, which is useful when updating
+export type PartialProblemContent = Partial<ProblemContent>

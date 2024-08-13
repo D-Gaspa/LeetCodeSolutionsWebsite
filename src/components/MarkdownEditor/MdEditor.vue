@@ -45,17 +45,13 @@ import MdEditorContent from './MdEditorContent.vue'
 import MdEditorPreview from './MdEditorPreview.vue'
 import MdEditorImageGallery from './MdEditorImageGallery.vue'
 import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
-import {MdImage, useMdImageManagement} from '@/composables/MarkdownEditor/useMdImageManagement'
+import {useMdImageManagement} from '@/composables/MarkdownEditor/useMdImageManagement'
 import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
 import {useTheme} from '@/composables/useTheme'
 import {EditorView} from "@codemirror/view"
 import {isEqual} from "lodash"
 import {useNotification} from "@/composables/useNotification"
-
-export interface EditorContent {
-  text: string
-  images: MdImage[]
-}
+import {ProblemContent} from "@/types/Problem";
 
 export default defineComponent({
   name: 'MdEditor',
@@ -67,11 +63,11 @@ export default defineComponent({
   },
   props: {
     initialContent: {
-      type: Object as () => EditorContent,
+      type: Object as () => ProblemContent,
       required: true,
     },
     modelValue: {
-      type: Object as () => EditorContent,
+      type: Object as () => ProblemContent,
       required: true,
     },
     enableImages: {

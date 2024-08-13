@@ -1,13 +1,7 @@
 import {Ref, ref} from 'vue'
 import {EditorView} from '@codemirror/view'
 import {useNotification} from "../useNotification"
-
-export interface MdImage {
-    id: string
-    name: string
-    url: string
-    file?: File | null
-}
+import {MdImage} from "@/types/Problem";
 
 export function useMdImageManagement(
     enableImages: boolean,
@@ -40,10 +34,10 @@ export function useMdImageManagement(
                 type: 'success',
                 isLoading: false
             })
-        } catch (error: any) {
+        } catch (error) {
             let message = files.length > 1 ? 'Error uploading images' : 'Error uploading image'
             updateNotification(notificationId, {
-                message: `${message}: ${error.message}`,
+                message: `${message}: ${(error as Error).message}`,
                 type: 'error',
                 isLoading: false
             })
@@ -120,8 +114,8 @@ export function useMdImageManagement(
                 }
 
                 updateImageMap()
-            } catch (error: any) {
-                showNotification(`Error inserting image: ${error.message}`, 'error')
+            } catch (error) {
+                showNotification(`Error inserting image: ${(error as Error).message}`, 'error')
             }
         }
     }
