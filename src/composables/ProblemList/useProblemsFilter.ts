@@ -25,6 +25,16 @@ export function useProblemsFilter(problems: Ref<Problem[]>) {
             let aValue = a[sortField.value] as string | number
             let bValue = b[sortField.value] as string | number
 
+            // Special handling for title
+            if (sortField.value === 'title') {
+                if (typeof aValue !== "number") {
+                    aValue = Number(aValue.split('. ')[0])
+                }
+                if (typeof bValue !== "number") {
+                    bValue = Number(bValue.split('. ')[0])
+                }
+            }
+
             // Special handling for difficulty
             if (sortField.value === 'difficulty') {
                 const difficultyOrder = {'Easy': 1, 'Medium': 2, 'Hard': 3}

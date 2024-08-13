@@ -13,25 +13,25 @@
 <script lang="ts" setup>
 import {PropType, ref, watch} from 'vue'
 import MdEditor from "@/components/MarkdownEditor/MdEditor.vue";
-import {EditorContent} from "@/composables/MarkdownEditor/useMdEditor";
+import {ProblemContent} from "@/types/Problem";
 
 const props = defineProps({
   initialContent: {
-    type: Object as PropType<EditorContent>,
+    type: Object as PropType<ProblemContent>,
     required: false,
   },
   modelValue: {
-    type: Object as PropType<EditorContent>,
+    type: Object as PropType<ProblemContent>,
     required: true,
   },
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: EditorContent): void
+  (e: 'update:modelValue', value: ProblemContent): void
 }>()
 
 const markdownEditorRef = ref<InstanceType<typeof MdEditor> | null>(null)
-const localContent = ref<EditorContent>(props.initialContent || props.modelValue || {text: '', images: []})
+const localContent = ref<ProblemContent>(props.initialContent || props.modelValue || {text: '', images: []})
 
 watch(() => props.modelValue, (newValue) => {
   if (newValue !== localContent.value) {
@@ -39,7 +39,7 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, {deep: true})
 
-const handleContentUpdate = (newContent: EditorContent) => {
+const handleContentUpdate = (newContent: ProblemContent) => {
   localContent.value = newContent
   emit('update:modelValue', newContent)
 }
@@ -51,10 +51,10 @@ const hasUnsavedChanges = (): boolean => {
   const originalContent = props.initialContent || props.modelValue
 
   return currentContent.text !== originalContent.text ||
-      currentContent.images.length !== originalContent.images.length
+      currentContent.images.length !== originalContent.images?.length
 }
 
-const getContent = (): EditorContent => {
+const getContent = (): ProblemContent => {
   return markdownEditorRef.value ? markdownEditorRef.value.getContent() : localContent.value
 }
 
