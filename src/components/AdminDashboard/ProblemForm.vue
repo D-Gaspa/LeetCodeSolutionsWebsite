@@ -112,7 +112,7 @@ import {MdImage, Problem, ProblemContent, ProblemDifficulty, ProblemType} from '
 import {Edit, Save, Trash2, X} from 'lucide-vue-next'
 
 interface Props {
-  editingProblem?: Problem
+  editingProblem: Problem | null
 }
 
 const props = withDefaults(defineProps<Props>(), {

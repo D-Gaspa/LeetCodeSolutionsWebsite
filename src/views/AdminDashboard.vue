@@ -13,7 +13,7 @@
     />
     <BaseModal v-model="showProblemForm" class="problem-form-modal">
       <ProblemForm
-          :editingProblem="editingProblem"
+          :editingProblem="editingProblemComputed"
           @close="closeProblemForm"
           @problem-saved="fetchAllProblems"
       />
@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue"
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue"
 import LoadingSpinner from "@/components/LoadingSpinner.vue"
@@ -41,6 +41,10 @@ const showProblemForm = ref(false)
 const editingProblem = ref<Problem | null>(null)
 const problemToDelete = ref<Problem | null>(null)
 const isLoading = ref(true)
+
+const editingProblemComputed = computed(() =>
+    editingProblem.value === null ? undefined : editingProblem.value
+)
 
 const fetchAllProblems = async () => {
   try {

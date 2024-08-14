@@ -1,18 +1,7 @@
 import {defineStore} from 'pinia'
 import {supabase} from '@/services/supabase'
 import {deleteImageFromStorage} from '@/utils/imageOperations'
-
-export interface Problem {
-    id: number
-    title: string
-    difficulty: 'Easy' | 'Medium' | 'Hard'
-    problem_type: 'daily' | 'weekly'
-    problem_date: string
-    content: {
-        images?: Array<{ name: string }>
-    }
-    created_at: string
-}
+import {Problem} from "@/types/Problem";
 
 export const useProblemStore = defineStore('problems', {
     state: () => ({
@@ -42,7 +31,7 @@ export const useProblemStore = defineStore('problems', {
             return this.problems
         },
 
-        async getFilteredProblems() {
+        async getFilteredProblems(): Promise<Problem[]> {
             // Check if the cache is expired or empty
             if (this.isCacheExpired() || this.problems.length === 0) {
                 await this.fetchAllProblems()

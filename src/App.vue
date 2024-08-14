@@ -6,17 +6,17 @@
       </div>
     </header>
     <nav>
-      <router-link class="nav-link" to="/">Home</router-link>
+      <RouterLinkComponent class="nav-link" to="/">Home</RouterLinkComponent>
       |
-      <router-link class="nav-link" to="/problems">Problems</router-link>
+      <RouterLinkComponent class="nav-link" to="/problems">Problems</RouterLinkComponent>
       |
       <template v-if="user">
-        <router-link class="nav-link" to="/admin">Admin</router-link>
+        <RouterLinkComponent class="nav-link" to="/admin">Admin</RouterLinkComponent>
         |
         <a href="#" @click.prevent="confirmLogout">Logout</a>
       </template>
       <template v-else>
-        <router-link class="nav-link" to="/login">Login</router-link>
+        <RouterLinkComponent class="nav-link" to="/login">Login</RouterLinkComponent>
       </template>
     </nav>
     <router-view/>
@@ -28,15 +28,16 @@
 
 <script lang="ts" setup>
 import {onMounted, provide, ref} from 'vue'
-import {useRouter} from 'vue-router'
-import {supabase} from './services/supabase'
-import NotificationContainer from './components/Notifications/NotificationContainer.vue'
+import {RouterLink, useRouter} from 'vue-router'
+import NotificationContainer from '@/components/Notifications/NotificationContainer.vue'
 import ConfirmDialog from "@/components/ConfirmDialog.vue"
 import ThemeToggle from "@/components/ThemeToggle.vue"
 import {useTheme} from "@/composables/useTheme"
+import {supabase} from '@/services/supabase'
 import type {User} from '@supabase/supabase-js'
 import type {NewNotification, NotificationOptions, NotificationType} from '@/types/Notification'
 
+const RouterLinkComponent = RouterLink
 const {theme} = useTheme()
 const router = useRouter()
 const user = ref<User | null>(null)
