@@ -51,7 +51,7 @@
 
 <script lang="ts" setup>
 import {PlusCircle} from 'lucide-vue-next'
-import CustomDatePicker from "@/components/CustomDatePicker.vue"
+import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 
 defineProps<{
   searchQuery: string

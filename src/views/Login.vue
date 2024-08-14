@@ -20,7 +20,7 @@
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {supabase} from '@/services/supabase'
-import {useNotification} from "@/composables/useNotification";
+import {useNotification} from "@/composables/Common/useNotification";
 
 const router = useRouter()
 const email = ref('')

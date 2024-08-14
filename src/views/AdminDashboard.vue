@@ -25,12 +25,12 @@
 import {computed, onMounted, ref} from 'vue'
 import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue"
 import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue"
-import LoadingSpinner from "@/components/LoadingSpinner.vue"
-import {useNotification} from "@/composables/useNotification"
-import {useConfirm} from "@/composables/useConfirm"
+import LoadingSpinner from "@/components/Common/LoadingSpinner.vue"
+import {useNotification} from "@/composables/Common/useNotification"
+import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemsStore"
 import type {Problem} from '@/types/Problem'
-import BaseModal from "@/components/BaseModal.vue";
+import BaseModal from "@/components/Common/BaseModal.vue";
 
 const {showNotification, updateNotification} = useNotification()
 const {showConfirm} = useConfirm()

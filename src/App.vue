@@ -30,9 +30,9 @@
 import {onMounted, provide, ref} from 'vue'
 import {RouterLink, useRouter} from 'vue-router'
 import NotificationContainer from '@/components/Notifications/NotificationContainer.vue'
-import ConfirmDialog from "@/components/ConfirmDialog.vue"
-import ThemeToggle from "@/components/ThemeToggle.vue"
-import {useTheme} from "@/composables/useTheme"
+import ConfirmDialog from "@/components/Common/ConfirmDialog.vue"
+import ThemeToggle from "@/components/Common/ThemeToggle.vue"
+import {useTheme} from "@/composables/Common/useTheme"
 import {supabase} from '@/services/supabase'
 import type {User} from '@supabase/supabase-js'
 import type {NewNotification, NotificationOptions, NotificationType} from '@/types/Notification'

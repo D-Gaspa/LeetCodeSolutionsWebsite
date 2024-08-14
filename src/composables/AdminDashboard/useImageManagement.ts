@@ -1,5 +1,5 @@
 import {deleteImageFromStorage, getPublicUrl, renameExistingImage, uploadNewImage} from '@/utils/imageOperations'
-import {useNotification} from "@/composables/useNotification"
+import {useNotification} from "@/composables/Common/useNotification"
 import type {MdImage} from '@/types/Problem'
 
 interface PreparedImage extends MdImage {

@@ -40,8 +40,8 @@ import Pagination from "@/components/ProblemList/Pagination.vue"
 import ProblemTable from "@/components/ProblemList/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/ProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/ProblemList/usePagination'
-import {useConfirm} from "@/composables/useConfirm"
-import {useNotification} from "@/composables/useNotification";
+import {useConfirm} from "@/composables/Common/useConfirm"
+import {useNotification} from "@/composables/Common/useNotification";
 import {useProblemStore} from "@/stores/problemsStore"
 import type {Problem} from '@/types/Problem'
 

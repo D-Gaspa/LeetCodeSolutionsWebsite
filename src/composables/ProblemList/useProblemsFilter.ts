@@ -1,5 +1,5 @@
 import {computed, ref, Ref} from 'vue'
-import {useNotification} from "@/composables/useNotification"
+import {useNotification} from "@/composables/Common/useNotification"
 import type {Problem} from '@/types/Problem'
 
 export function useProblemsFilter(problems: Ref<Problem[]>) {

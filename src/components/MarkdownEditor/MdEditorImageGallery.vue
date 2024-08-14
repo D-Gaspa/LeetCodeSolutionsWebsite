@@ -29,7 +29,7 @@
 
 <script lang="ts" setup>
 import {ref} from 'vue'
-import {useNotification} from "@/composables/useNotification"
+import {useNotification} from "@/composables/Common/useNotification"
 import type {MdImage} from "@/types/Problem"
 
 const props = defineProps<{

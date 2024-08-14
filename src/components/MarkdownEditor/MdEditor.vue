@@ -47,8 +47,8 @@ import MdEditorPreview from './MdEditorPreview.vue'
 import {useMdImageManagement} from '@/composables/MarkdownEditor/useMdImageManagement'
 import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
 import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
-import {useNotification} from "@/composables/useNotification"
-import {useTheme} from '@/composables/useTheme'
+import {useNotification} from "@/composables/Common/useNotification"
+import {useTheme} from '@/composables/Common/useTheme'
 import type {ProblemContent} from "@/types/Problem"
 import {isEqual} from "lodash"
 

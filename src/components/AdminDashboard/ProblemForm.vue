@@ -102,11 +102,11 @@
 <script lang="ts" setup>
 import {onMounted, reactive, ref} from 'vue'
 import ContentEditor from '@/components/AdminDashboard/ContentEditor.vue'
-import CustomDatePicker from "@/components/CustomDatePicker.vue"
-import BaseModal from "@/components/BaseModal.vue"
+import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
+import BaseModal from "@/components/Common/BaseModal.vue"
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement'
-import {useNotification} from "@/composables/useNotification"
-import {useConfirm} from "@/composables/useConfirm"
+import {useNotification} from "@/composables/Common/useNotification"
+import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemsStore"
 import {MdImage, Problem, ProblemContent, ProblemDifficulty, ProblemType} from '@/types/Problem'
 import {Edit, Save, Trash2, X} from 'lucide-vue-next'

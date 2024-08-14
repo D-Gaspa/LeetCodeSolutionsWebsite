@@ -44,7 +44,7 @@
 
 <script lang="ts" setup>
 import {Edit2, FileText, Trash2} from 'lucide-vue-next'
-import SortableTableHeader from "@/components/SortableTableHeader.vue"
+import SortableTableHeader from "@/components/Common/SortableTableHeader.vue"
 import {formatDate} from '@/utils/dateFormatters'
 import type {Problem} from '@/types/Problem'
 
