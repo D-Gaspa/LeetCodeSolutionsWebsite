@@ -51,19 +51,27 @@
       </div>
       <div>
         <div class="content-actions">
-          <button class="btn-primary" type="button" @click="openContentEditor">
+          <button class="btn-primary btn-icon" type="button" @click="openContentEditor">
+            <Edit class="icon"/>
             {{ problemForm.content && problemForm.content.text ? 'Edit' : 'Add' }} Content
           </button>
-          <button v-if="problemForm.content && problemForm.content.text" class="btn-danger" type="button"
+          <button v-if="problemForm.content && problemForm.content.text" class="btn-danger btn-icon" type="button"
                   @click="deleteContent">
+            <Trash2 class="icon"/>
             Delete Content
           </button>
         </div>
       </div>
       <div class="form-actions-container">
         <div class="form-actions">
-          <button class="btn-secondary" type="submit">Save Problem</button>
-          <button class="btn-danger" type="button" @click="$emit('close')">Cancel</button>
+          <button class="btn-secondary btn-icon" type="submit">
+            <Save class="icon"/>
+            Save Problem
+          </button>
+          <button class="btn-danger btn-icon" type="button" @click="$emit('close')">
+            <X class="icon"/>
+            Cancel
+          </button>
         </div>
       </div>
     </form>
@@ -77,8 +85,14 @@
       />
       <div class="form-actions-container">
         <div class="form-actions">
-          <button class="btn-secondary" @click="saveContent">Save Content</button>
-          <button class="btn-danger" @click="closeContentEditor">Close</button>
+          <button class="btn-secondary btn-icon" @click="saveContent">
+            <Save class="icon"/>
+            Save Content
+          </button>
+          <button class="btn-danger btn-icon" @click="closeContentEditor">
+            <X class="icon"/>
+            Close
+          </button>
         </div>
       </div>
     </BaseModal>
@@ -87,14 +101,15 @@
 
 <script lang="ts" setup>
 import {onMounted, reactive, ref} from 'vue'
-import ContentEditor from './ContentEditor.vue'
+import ContentEditor from '@/components/AdminDashboard/ContentEditor.vue'
 import CustomDatePicker from "@/components/CustomDatePicker.vue"
 import BaseModal from "@/components/BaseModal.vue"
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement'
 import {useNotification} from "@/composables/useNotification"
-import {useProblemStore} from "@/stores/problemsStore"
 import {useConfirm} from "@/composables/useConfirm"
-import type {MdImage, Problem, ProblemContent} from '@/types/Problem'
+import {useProblemStore} from "@/stores/problemsStore"
+import {MdImage, Problem, ProblemContent, ProblemDifficulty, ProblemType} from '@/types/Problem'
+import {Edit, Save, Trash2, X} from 'lucide-vue-next'
 
 interface Props {
   editingProblem?: Problem
@@ -124,8 +139,8 @@ interface ProblemForm {
   id: number
   name?: string
   title?: string
-  difficulty: 'Easy' | 'Medium' | 'Hard'
-  problem_type: 'daily' | 'weekly'
+  difficulty: ProblemDifficulty
+  problem_type: ProblemType
   problem_date: string
   content: ProblemContent
 }
@@ -133,8 +148,8 @@ interface ProblemForm {
 const problemForm = reactive<ProblemForm>({
   id: 1,
   name: 'Test Problem',
-  difficulty: 'Easy',
-  problem_type: 'daily',
+  difficulty: ProblemDifficulty.Easy,
+  problem_type: ProblemType.Daily,
   problem_date: new Date().toISOString().split('T')[0],
   content: {
     text: '',
@@ -338,8 +353,7 @@ h4 {
 }
 
 .content-actions {
-  margin-top: 5px;
-  margin-bottom: 10px;
+  margin: 10px 0;
   display: flex;
   justify-content: center;
   gap: 10px;

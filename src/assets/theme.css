@@ -228,7 +228,7 @@ button {
     background-color: var(--bg-color-tertiary);
 }
 
-.btn-danger .icon {
+.btn-icon-transparent.btn-danger .icon {
     color: var(--color-accent);
 }
 
