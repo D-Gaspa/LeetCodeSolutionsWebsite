@@ -1,8 +1,19 @@
+export enum ProblemType {
+    Daily = 'daily',
+    Weekly = 'weekly'
+}
+
+export enum ProblemDifficulty {
+    Easy = 'Easy',
+    Medium = 'Medium',
+    Hard = 'Hard'
+}
+
 export interface Problem {
     id: number;
     title: string;
-    difficulty: 'Easy' | 'Medium' | 'Hard';
-    problem_type: 'daily' | 'weekly';
+    difficulty: ProblemDifficulty;
+    problem_type: ProblemType;
     problem_date: string;
     content: ProblemContent;
 }

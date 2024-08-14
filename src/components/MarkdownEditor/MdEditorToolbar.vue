@@ -31,37 +31,23 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, PropType} from 'vue'
+<script lang="ts" setup>
 import {EyeIcon, EyeOffIcon, ImageIcon, MoonIcon, SunIcon, TrashIcon} from 'lucide-vue-next'
-import {ToolbarAction} from '@/composables/MarkdownEditor/useMdToolbar'
+import type {ToolbarAction} from '@/composables/MarkdownEditor/useMdToolbar'
 
-export default defineComponent({
-  name: 'MdEditorToolbar',
-  components: {
-    ImageIcon, TrashIcon, EyeIcon, EyeOffIcon,
-    MoonIcon, SunIcon
-  },
-  props: {
-    actions: {
-      type: Array as PropType<ToolbarAction[]>,
-      required: true,
-    },
-    showPreview: {
-      type: Boolean,
-      required: true,
-    },
-    theme: {
-      type: String,
-      required: true,
-    },
-    enableImages: {
-      type: Boolean,
-      required: true,
-    },
-  },
-  emits: ['toggle-preview', 'toggle-image-gallery', 'toggle-theme', 'clear-content'],
-})
+defineProps<{
+  actions: ToolbarAction[]
+  showPreview: boolean
+  theme: string
+  enableImages: boolean
+}>()
+
+defineEmits<{
+  (e: 'toggle-preview'): void
+  (e: 'toggle-image-gallery'): void
+  (e: 'toggle-theme'): void
+  (e: 'clear-content'): void
+}>()
 </script>
 
 <style scoped>

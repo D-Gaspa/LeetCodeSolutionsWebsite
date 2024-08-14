@@ -38,190 +38,150 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, onMounted, onUnmounted, ref, watch} from 'vue'
+<script lang="ts" setup>
+import {onMounted, onUnmounted, ref, watch} from 'vue'
+import MdEditorImageGallery from './MdEditorImageGallery.vue'
 import MdEditorToolbar from './MdEditorToolbar.vue'
 import MdEditorContent from './MdEditorContent.vue'
 import MdEditorPreview from './MdEditorPreview.vue'
-import MdEditorImageGallery from './MdEditorImageGallery.vue'
-import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
 import {useMdImageManagement} from '@/composables/MarkdownEditor/useMdImageManagement'
 import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
-import {useTheme} from '@/composables/useTheme'
-import {EditorView} from "@codemirror/view"
-import {isEqual} from "lodash"
+import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
 import {useNotification} from "@/composables/useNotification"
-import {ProblemContent} from "@/types/Problem";
+import {useTheme} from '@/composables/useTheme'
+import type {ProblemContent} from "@/types/Problem"
+import {isEqual} from "lodash"
 
-export default defineComponent({
-  name: 'MdEditor',
-  components: {
-    MdEditorToolbar,
-    MdEditorContent,
-    MdEditorPreview,
-    MdEditorImageGallery,
-  },
-  props: {
-    initialContent: {
-      type: Object as () => ProblemContent,
-      required: true,
-    },
-    modelValue: {
-      type: Object as () => ProblemContent,
-      required: true,
-    },
-    enableImages: {
-      type: Boolean,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, {emit}) {
-    const {theme, toggleTheme} = useTheme()
-    const {showNotification, updateNotification} = useNotification()
+const props = defineProps<{
+  initialContent: ProblemContent
+  modelValue: ProblemContent
+  enableImages: boolean
+}>()
 
-    const {
-      localContent,
-      tempImages,
-      renderedContent,
-      extensions,
-      editorView,
-      handleReady,
-      clearContent,
-      initializeContent,
-      updateImageMap,
-    } = useMdEditor(props, emit, theme, showNotification)
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: ProblemContent): void
+}>()
 
-    const {
-      showImageGallery,
-      toggleImageGallery,
-      handleImageUpload,
-      addTempImage,
-      insertImageToEditor,
-      removeImage,
-    } = useMdImageManagement(props.enableImages, editorView, tempImages, updateImageMap, {
-      showNotification,
-      updateNotification
-    })
+const {theme, toggleTheme} = useTheme()
+const {showNotification, updateNotification} = useNotification()
 
-    const {toolbarActions, insertText} = useMdToolbar(editorView)
+const {
+  localContent,
+  tempImages,
+  renderedContent,
+  extensions,
+  editorView,
+  handleReady,
+  clearContent,
+  initializeContent,
+  updateImageMap,
+} = useMdEditor(props, emit, theme, showNotification)
 
-    const showPreview = ref(true)
-    const togglePreview = () => {
-      showPreview.value = !showPreview.value
+const {
+  showImageGallery,
+  toggleImageGallery,
+  handleImageUpload,
+  addTempImage,
+  insertImageToEditor,
+  removeImage,
+} = useMdImageManagement(props.enableImages, editorView, tempImages, updateImageMap, {
+  showNotification,
+  updateNotification
+})
+
+const {toolbarActions, insertText} = useMdToolbar(editorView)
+
+const showPreview = ref(true)
+const togglePreview = () => {
+  showPreview.value = !showPreview.value
+}
+
+const getContent = (): ProblemContent => {
+  return {text: localContent.value, images: tempImages.value}
+}
+
+const handleImage = async (file: File, source: string) => {
+  if (file && file.type.startsWith('image/')) {
+    const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading')
+    try {
+      const insertToEditor = true
+      await addTempImage(file, insertToEditor)
+      updateNotification(notificationId, {
+        message: 'Image added successfully',
+        type: 'success',
+        isLoading: false
+      })
+    } catch (error) {
+      updateNotification(notificationId, {
+        message: `Error adding image: ${(error as Error).message}`,
+        type: 'error',
+        isLoading: false,
+      })
     }
+  } else {
+    showNotification('Please provide a valid image file', 'error')
+  }
+}
 
-    const getContent = () => {
-      return {text: localContent.value, images: tempImages.value}
+const handleDropImage = (file: File) => handleImage(file, 'dropped')
+const handlePasteImage = (file: File) => handleImage(file, 'pasted')
+
+const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+  if (event.ctrlKey || event.metaKey) {
+    switch (event.key.toLowerCase()) {
+      case 'b':
+        event.preventDefault()
+        insertText('**', '**')
+        break
+      case 'i':
+        event.preventDefault()
+        insertText('*', '*')
+        break
+      case 'k':
+        event.preventDefault()
+        insertText('[', '](url)')
+        break
+      case '`':
+        event.preventDefault()
+        insertText('`', '`')
+        break
+      case 'e':
+        event.preventDefault()
+        insertText('$', '$')
+        break
+      case 'q':
+        event.preventDefault()
+        insertText('$$\n', '\n$$')
+        break
+      case 'g':
+        event.preventDefault()
+        toggleImageGallery()
+        break
     }
+  }
+}
 
-    const handleEditorReady = (payload: { view: EditorView; state: any }) => {
-      handleReady(payload)
-    }
+watch(() => props.modelValue, (newValue) => {
+  if (newValue.text !== localContent.value) {
+    localContent.value = newValue.text
+  }
+  if (!isEqual(newValue.images, tempImages.value)) {
+    tempImages.value = newValue.images
+    updateImageMap()
+  }
+}, {deep: true})
 
-    const handleImage = async (file: File, source: string) => {
-      if (file && file.type.startsWith('image/')) {
-        const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading')
-        try {
-          const insertToEditor = true
-          await addTempImage(file, insertToEditor)
-          updateNotification(notificationId, {
-            message: 'Image added successfully',
-            type: 'success',
-            isLoading: false
-          })
-        } catch (error) {
-          updateNotification(notificationId, {
-            message: `Error adding image: ${(error as Error).message}`,
-            type: 'error',
-            isLoading: false,
-          })
-        }
-      } else {
-        showNotification('Please provide a valid image file', 'error')
-      }
-    }
+onMounted(() => {
+  initializeContent()
+  document.addEventListener('keydown', handleKeyboardShortcuts)
+})
 
-    const handleDropImage = (file: File) => handleImage(file, 'dropped')
-    const handlePasteImage = (file: File) => handleImage(file, 'pasted')
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyboardShortcuts)
+})
 
-    const handleKeyboardShortcuts = (event: KeyboardEvent) => {
-      if (event.ctrlKey || event.metaKey) {
-        switch (event.key.toLowerCase()) {
-          case 'b':
-            event.preventDefault()
-            insertText('**', '**')
-            break
-          case 'i':
-            event.preventDefault()
-            insertText('*', '*')
-            break
-          case 'k':
-            event.preventDefault()
-            insertText('[', '](url)')
-            break
-          case '`':
-            event.preventDefault()
-            insertText('`', '`')
-            break
-          case 'e':
-            event.preventDefault()
-            insertText('$', '$')
-            break
-          case 'q':
-            event.preventDefault()
-            insertText('$$\n', '\n$$')
-            break
-          case 'g':
-            event.preventDefault()
-            toggleImageGallery()
-            break
-        }
-      }
-    }
-
-    watch(() => props.modelValue, (newValue) => {
-      if (newValue.text !== localContent.value) {
-        localContent.value = newValue.text
-      }
-      if (!isEqual(newValue.images, tempImages.value)) {
-        tempImages.value = newValue.images
-        updateImageMap()
-      }
-    }, {deep: true})
-
-    onMounted(() => {
-      initializeContent()
-      document.addEventListener('keydown', handleKeyboardShortcuts)
-    })
-
-    onUnmounted(() => {
-      document.removeEventListener('keydown', handleKeyboardShortcuts)
-    })
-
-    return {
-      theme,
-      localContent,
-      renderedContent,
-      extensions,
-      tempImages,
-      showImageGallery,
-      showPreview,
-      toolbarActions,
-      getContent,
-      handleReady,
-      handleEditorReady,
-      clearContent,
-      toggleImageGallery,
-      handleImageUpload,
-      insertImageToEditor,
-      removeImage,
-      toggleTheme,
-      togglePreview,
-      handleDropImage,
-      handlePasteImage,
-    }
-  },
+defineExpose({
+  getContent,
 })
 </script>
 

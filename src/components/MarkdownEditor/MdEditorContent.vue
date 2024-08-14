@@ -17,94 +17,77 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, onBeforeUnmount, PropType, ref, watch} from 'vue'
+<script lang="ts" setup>
+import {onBeforeUnmount, ref, watch} from 'vue'
 import {Codemirror} from 'vue-codemirror'
-import {EditorView} from '@codemirror/view'
-import {Extension} from '@codemirror/state'
+import type {EditorView} from '@codemirror/view'
+import type {Extension} from '@codemirror/state'
 
-export default defineComponent({
-  name: 'MdEditorContent',
-  components: {
-    Codemirror,
-  },
-  props: {
-    modelValue: {
-      type: String,
-      required: true,
-    },
-    extensions: {
-      type: Array as PropType<Extension[]>,
-      required: true,
-    },
-    enableImages: {
-      type: Boolean,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue', 'ready', 'drop-image', 'paste-image'],
-  setup(props, {emit}) {
-    const localContent = ref(props.modelValue)
-    const editorView = ref<EditorView | null>(null)
+const props = defineProps<{
+  modelValue: string
+  extensions: Extension[]
+  enableImages: boolean
+}>()
 
-    watch(() => props.modelValue, (newValue) => {
-      if (newValue !== localContent.value) {
-        localContent.value = newValue
-      }
-    })
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+  (e: 'ready', payload: { view: EditorView }): void
+  (e: 'drop-image', file: File): void
+  (e: 'paste-image', file: File): void
+}>()
 
-    const handleReady = (payload: { view: EditorView }) => {
-      editorView.value = payload.view
-      emit('ready', payload)
+const localContent = ref(props.modelValue)
+const editorView = ref<EditorView | null>(null)
 
-      if (props.enableImages) {
-        editorView.value.dom.addEventListener('paste', handlePaste)
-      }
+watch(() => props.modelValue, (newValue) => {
+  if (newValue !== localContent.value) {
+    localContent.value = newValue
+  }
+})
+
+const handleReady = (payload: { view: EditorView }) => {
+  editorView.value = payload.view
+  emit('ready', payload)
+
+  if (props.enableImages) {
+    editorView.value.dom.addEventListener('paste', handlePaste)
+  }
+}
+
+const handleChange = (value: string) => {
+  localContent.value = value
+  emit('update:modelValue', value)
+}
+
+const handleDrop = (event: DragEvent) => {
+  if (props.enableImages && event.dataTransfer?.files.length) {
+    const file = event.dataTransfer.files[0]
+    if (file.type.startsWith('image/')) {
+      emit('drop-image', file)
     }
+  }
+}
 
-    const handleChange = (value: string) => {
-      localContent.value = value
-      emit('update:modelValue', value)
-    }
-
-    const handleDrop = (event: DragEvent) => {
-      if (props.enableImages && event.dataTransfer?.files.length) {
-        const file = event.dataTransfer.files[0]
-        if (file.type.startsWith('image/')) {
-          emit('drop-image', file)
+const handlePaste = (event: ClipboardEvent) => {
+  if (props.enableImages && event.clipboardData) {
+    const items = event.clipboardData.items
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile()
+        if (file) {
+          emit('paste-image', file)
+          event.preventDefault() // Prevent default paste behavior
+          break
         }
       }
     }
+  }
+}
 
-    const handlePaste = (event: ClipboardEvent) => {
-      if (props.enableImages && event.clipboardData) {
-        const items = event.clipboardData.items
-        for (let i = 0; i < items.length; i++) {
-          if (items[i].type.indexOf('image') !== -1) {
-            const file = items[i].getAsFile()
-            if (file) {
-              emit('paste-image', file)
-              event.preventDefault() // Prevent default paste behavior
-              break
-            }
-          }
-        }
-      }
-    }
-
-    onBeforeUnmount(() => {
-      if (editorView.value) {
-        editorView.value.dom.removeEventListener('paste', handlePaste)
-      }
-    })
-
-    return {
-      localContent,
-      handleReady,
-      handleChange,
-      handleDrop,
-    }
-  },
+onBeforeUnmount(() => {
+  if (editorView.value) {
+    editorView.value.dom.removeEventListener('paste', handlePaste)
+  }
 })
 </script>
 

@@ -5,18 +5,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent} from 'vue'
-
-export default defineComponent({
-  name: 'MdEditorPreview',
-  props: {
-    content: {
-      type: String,
-      required: true,
-    },
-  },
-})
+<script lang="ts" setup>
+defineProps<{
+  content: string
+}>()
 </script>
 
 <style scoped>

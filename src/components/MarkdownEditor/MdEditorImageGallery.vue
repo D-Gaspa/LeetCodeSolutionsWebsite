@@ -12,7 +12,7 @@
       Upload Images
     </button>
     <div class="gallery-content">
-      <div v-for="(image, index) in images" :key="image.id" class="image-item">
+      <div v-for="(image, index) in props.images" :key="image.id" class="image-item">
         <img
             :alt="image.name"
             :src="image.url"
@@ -27,47 +27,39 @@
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, PropType, ref} from 'vue'
+<script lang="ts" setup>
+import {ref} from 'vue'
 import {useNotification} from "@/composables/useNotification"
-import {MdImage} from "@/types/Problem";
+import type {MdImage} from "@/types/Problem"
 
-export default defineComponent({
-  name: 'MdEditorImageGallery',
-  props: {
-    images: {
-      type: Array as PropType<MdImage[]>,
-      required: true,
-    },
-  },
-  emits: ['upload', 'insert', 'remove'],
-  setup(_, {emit}) {
-    const {showNotification} = useNotification()
-    const fileInput = ref<HTMLInputElement | null>(null)
+const props = defineProps<{
+  images: MdImage[]
+}>()
 
-    const triggerFileInput = () => {
-      fileInput.value?.click()
+const emit = defineEmits<{
+  (e: 'upload', files: FileList): void
+  (e: 'insert', image: MdImage): void
+  (e: 'remove', index: number): void
+}>()
+
+const {showNotification} = useNotification()
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileInputChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input.files) {
+    try {
+      emit('upload', input.files)
+      input.value = '' // Reset the input
+    } catch (error) {
+      showNotification(`Error processing images: ${(error as Error).message}`, 'error')
     }
-
-    const handleFileInputChange = (event: Event) => {
-      const input = event.target as HTMLInputElement
-      if (input.files) {
-        try {
-          emit('upload', input.files)
-          input.value = '' // Reset the input
-        } catch (error) {
-          showNotification(`Error processing images: ${(error as Error).message}`, 'error')
-        }
-      }
-    }
-
-    return {
-      fileInput,
-      triggerFileInput,
-      handleFileInputChange,
-    }
-  },
-})
+  }
+}
 </script>
 
 <style scoped>
