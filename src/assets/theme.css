@@ -1,6 +1,4 @@
 :root {
-
-
     /* Basic Colors */
     --color-primary: #3498db;
     --color-primary-light: #5dade2;
@@ -66,7 +64,7 @@
     --font-weight-bold: 700;
 
     /* Spacing */
-    --spacing-base: 16px;
+    --spacing-base: 1rem;
     --spacing-small: calc(var(--spacing-base) * 0.5);
     --spacing-medium: var(--spacing-base);
     --spacing-large: calc(var(--spacing-base) * 2);

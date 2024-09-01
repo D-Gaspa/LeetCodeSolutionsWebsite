@@ -33,7 +33,7 @@ import NotificationContainer from '@/components/Notifications/NotificationContai
 import ConfirmDialog from "@/components/Common/ConfirmDialog.vue"
 import ThemeToggle from "@/components/Common/ThemeToggle.vue"
 import {useTheme} from "@/composables/Common/useTheme"
-import {supabase} from '@/services/supabase'
+import {checkSupabaseConnection, supabase} from '@/services/supabase'
 import type {User} from '@supabase/supabase-js'
 import type {NewNotification, NotificationOptions, NotificationType} from '@/types/Notification'
 
@@ -47,12 +47,18 @@ const confirmDialog = ref<InstanceType<typeof ConfirmDialog> | null>(null)
 let confirmResolve: ((value: boolean) => void) | null = null
 
 onMounted(async () => {
-  const {data: {user: currentUser}} = await supabase.auth.getUser()
-  user.value = currentUser
+  const isConnected = await checkSupabaseConnection()
+  if (isConnected) {
+    const {data: {user: currentUser}} = await supabase.auth.getUser()
+    user.value = currentUser
 
-  supabase.auth.onAuthStateChange((_, session) => {
-    user.value = session?.user ?? null
-  })
+    supabase.auth.onAuthStateChange((_, session) => {
+      user.value = session?.user ?? null
+    })
+  } else {
+    // Handle the case when Supabase fails to connect
+    showNotification('Unable to connect to the database. Some features may be unavailable.', 'error')
+  }
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   if (prefersDark && !localStorage.getItem('theme')) {

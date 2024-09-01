@@ -122,7 +122,6 @@ const {theme, toggleTheme} = useTheme()
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Accessibility */
 .theme-toggle:focus-visible {
   outline: 2px solid var(--toggle-icon-color);
   outline-offset: 2px;
