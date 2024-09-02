@@ -49,17 +49,17 @@ import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
 import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
 import {useNotification} from "@/composables/Common/useNotification"
 import {useTheme} from '@/composables/Common/useTheme'
-import type {MdContent} from "@/types/Problem"
+import type {MdContent, MdContentNoImages} from "@/types/Problem"
 import {isEqual} from "lodash"
 
 const props = defineProps<{
-  initialContent: MdContent
-  modelValue: MdContent
+  initialContent: MdContent | MdContentNoImages
+  modelValue: MdContent | MdContentNoImages
   enableImages: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: MdContent): void
+  (e: 'update:modelValue', value: MdContent | MdContentNoImages): void
 }>()
 
 const {theme, toggleTheme} = useTheme()
@@ -96,11 +96,18 @@ const togglePreview = () => {
   showPreview.value = !showPreview.value
 }
 
-const getContent = (): MdContent => {
-  return {text: localContent.value, images: tempImages.value}
+const getContent = (): MdContent | MdContentNoImages => {
+  return props.enableImages
+      ? {text: localContent.value, images: tempImages.value}
+      : {text: localContent.value}
 }
 
 const handleImage = async (file: File, source: string) => {
+  if (!props.enableImages) {
+    showNotification('Images are not enabled for this content', 'error')
+    return
+  }
+
   if (file && file.type.startsWith('image/')) {
     const notificationId = showNotification(`Adding ${source} image to gallery...`, 'loading')
     try {
@@ -165,7 +172,7 @@ watch(() => props.modelValue, (newValue) => {
   if (newValue.text !== localContent.value) {
     localContent.value = newValue.text
   }
-  if (!isEqual(newValue.images, tempImages.value)) {
+  if (props.enableImages && 'images' in newValue && !isEqual(newValue.images, tempImages.value)) {
     tempImages.value = newValue.images || []
     updateImageMap()
   }

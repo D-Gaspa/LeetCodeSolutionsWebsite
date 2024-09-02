@@ -7,14 +7,14 @@ import MarkdownItKatex from '@vscode/markdown-it-katex'
 import {oneDark} from "@codemirror/theme-one-dark"
 import {isEqual} from "lodash"
 import type {NotificationOptions, NotificationType} from "@/types/Notification";
-import {MdContent, MdImage} from "@/types/Problem";
+import {MdContent, MdContentNoImages, MdImage} from "@/types/Problem";
 
 export function useMdEditor(
     props: {
-        initialContent: MdContent
-        modelValue: MdContent
+        initialContent: MdContent | MdContentNoImages
+        modelValue: MdContent | MdContentNoImages
     },
-    emit: (event: "update:modelValue", value: MdContent) => void,
+    emit: (event: "update:modelValue", value: MdContent | MdContentNoImages) => void,
     theme: Ref<string>,
     showNotification: (
         message: string,
