@@ -49,17 +49,17 @@ import {useMdToolbar} from '@/composables/MarkdownEditor/useMdToolbar'
 import {useMdEditor} from '@/composables/MarkdownEditor/useMdEditor'
 import {useNotification} from "@/composables/Common/useNotification"
 import {useTheme} from '@/composables/Common/useTheme'
-import type {ProblemContent} from "@/types/Problem"
+import type {MdContent} from "@/types/Problem"
 import {isEqual} from "lodash"
 
 const props = defineProps<{
-  initialContent: ProblemContent
-  modelValue: ProblemContent
+  initialContent: MdContent
+  modelValue: MdContent
   enableImages: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: ProblemContent): void
+  (e: 'update:modelValue', value: MdContent): void
 }>()
 
 const {theme, toggleTheme} = useTheme()
@@ -96,7 +96,7 @@ const togglePreview = () => {
   showPreview.value = !showPreview.value
 }
 
-const getContent = (): ProblemContent => {
+const getContent = (): MdContent => {
   return {text: localContent.value, images: tempImages.value}
 }
 
@@ -166,7 +166,7 @@ watch(() => props.modelValue, (newValue) => {
     localContent.value = newValue.text
   }
   if (!isEqual(newValue.images, tempImages.value)) {
-    tempImages.value = newValue.images
+    tempImages.value = newValue.images || []
     updateImageMap()
   }
 }, {deep: true})

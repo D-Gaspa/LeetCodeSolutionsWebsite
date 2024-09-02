@@ -7,13 +7,21 @@ import MarkdownItKatex from '@vscode/markdown-it-katex'
 import {oneDark} from "@codemirror/theme-one-dark"
 import {isEqual} from "lodash"
 import type {NotificationOptions, NotificationType} from "@/types/Notification";
-import {MdImage, ProblemContent} from "@/types/Problem";
+import {MdContent, MdImage} from "@/types/Problem";
 
-export function useMdEditor(props: {
-    initialContent: ProblemContent
-    modelValue: ProblemContent
-}, emit: (event: "update:modelValue", value: ProblemContent)
-    => void, theme: Ref<string>, showNotification: (message: string, type?: NotificationType, options?: NotificationOptions) => number) {
+export function useMdEditor(
+    props: {
+        initialContent: MdContent
+        modelValue: MdContent
+    },
+    emit: (event: "update:modelValue", value: MdContent) => void,
+    theme: Ref<string>,
+    showNotification: (
+        message: string,
+        type?: NotificationType,
+        options?: NotificationOptions
+    ) => number
+) {
     const localContent = ref(props.initialContent.text || props.modelValue.text || '')
     const tempImages = ref<MdImage[]>([])
     const imageMap = ref(new Map())
@@ -85,7 +93,7 @@ export function useMdEditor(props: {
         theme.value === 'dark' ? oneDark : [],
     ])
 
-    const handleReady = (payload: { view: EditorView; state: any }) => {
+    const handleReady = (payload: { view: EditorView }) => {
         editorView.value = payload.view
     }
 

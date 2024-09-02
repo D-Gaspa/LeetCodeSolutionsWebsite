@@ -42,7 +42,7 @@ import {useProblemsFilter} from '@/composables/ProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/ProblemList/usePagination'
 import {useConfirm} from "@/composables/Common/useConfirm"
 import {useNotification} from "@/composables/Common/useNotification";
-import {useProblemStore} from "@/stores/problemsStore"
+import {useProblemStore} from "@/stores/problemStore"
 import type {Problem} from '@/types/Problem'
 
 const props = defineProps<{
