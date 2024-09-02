@@ -23,27 +23,24 @@
       {{ form.code ? 'Edit Code' : 'Add Code' }}
     </button>
 
-    <!-- Markdown Editors -->
     <div class="form-group">
       <label>Code Idea:</label>
-      <SolutionContentEditor ref="codeIdeaRef" v-model="form.code_idea" :enable-images="false"/>
+      <SolutionContentEditor ref="codeIdeaRef" v-model="form.code_idea"/>
     </div>
 
     <div class="form-group">
       <label>Code Breakdown:</label>
-      <SolutionContentEditor ref="codeBreakdownRef" v-model="form.code_breakdown" :enable-images="false"/>
+      <SolutionContentEditor ref="codeBreakdownRef" v-model="form.code_breakdown"/>
     </div>
 
     <div class="form-group">
       <label>Time Complexity Explanation:</label>
-      <SolutionContentEditor ref="timeComplexityExplanationRef" v-model="form.time_complexity_explanation"
-                             :enable-images="false"/>
+      <SolutionContentEditor ref="timeComplexityExplanationRef" v-model="form.time_complexity_explanation"/>
     </div>
 
     <div class="form-group">
       <label>Space Complexity Explanation:</label>
-      <SolutionContentEditor ref="spaceComplexityExplanationRef" v-model="form.space_complexity_explanation"
-                             :enable-images="false"/>
+      <SolutionContentEditor ref="spaceComplexityExplanationRef" v-model="form.space_complexity_explanation"/>
     </div>
 
     <!-- Examples Placeholder -->
@@ -56,7 +53,7 @@
 
   <!-- Code Editor Modal (placeholder) -->
   <BaseModal v-model="showCodeEditor">
-    <!-- Integrate your code editor here -->
+    <!-- TODO: Add Code Editor component here -->
   </BaseModal>
 </template>
 
@@ -65,7 +62,7 @@ import {computed, ref} from 'vue'
 import SolutionContentEditor from './SolutionContentEditor.vue'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import {useSolutionStore} from '@/stores/solutionStore'
-import type {Solution} from '@/types/Problem'
+import type {MdContentNoImages, Solution} from '@/types/Problem'
 
 const props = defineProps<{
   problemId: number
@@ -86,12 +83,12 @@ const form = ref({
   problem_id: props.problemId,
   approach_name: '',
   code: '',
-  code_idea: '',
-  code_breakdown: '',
+  code_idea: {text: ''} as MdContentNoImages,
+  code_breakdown: {text: ''} as MdContentNoImages,
   time_complexity: 'O(n)',
   space_complexity: 'O(n)',
-  time_complexity_explanation: '',
-  space_complexity_explanation: ''
+  time_complexity_explanation: {text: ''} as MdContentNoImages,
+  space_complexity_explanation: {text: ''} as MdContentNoImages
 })
 
 const codeIdeaRef = ref<InstanceType<typeof SolutionContentEditor> | null>(null)
@@ -129,16 +126,26 @@ const handleSubmit = async () => {
   try {
     const solutionData = {
       ...form.value,
-      code_idea: codeIdeaRef.value?.getContent() || '',
-      code_breakdown: codeBreakdownRef.value?.getContent() || '',
-      time_complexity_explanation: timeComplexityExplanationRef.value?.getContent() || '',
-      space_complexity_explanation: spaceComplexityExplanationRef.value?.getContent() || '',
+      code_idea: ensureMdContentNoImages(codeIdeaRef.value?.getContent()),
+      code_breakdown: ensureMdContentNoImages(codeBreakdownRef.value?.getContent()),
+      time_complexity_explanation: ensureMdContentNoImages(timeComplexityExplanationRef.value?.getContent()),
+      space_complexity_explanation: ensureMdContentNoImages(spaceComplexityExplanationRef.value?.getContent()),
     }
     await solutionStore.saveSolution(solutionData, isEditing.value)
     emit('solution-saved')
   } catch (error) {
     console.error('Error saving solution:', error)
     // Handle error (e.g., show notification)
+  }
+}
+
+const ensureMdContentNoImages = (content: any): MdContentNoImages => {
+  if (typeof content === 'string') {
+    return {text: content}
+  } else if (content && typeof content === 'object' && 'text' in content) {
+    return {text: content.text}
+  } else {
+    return {text: ''}
   }
 }
 

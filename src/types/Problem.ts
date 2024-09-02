@@ -21,6 +21,8 @@ export interface MdContent {
     images?: MdImage[]
 }
 
+export type MdContentNoImages = Omit<MdContent, 'images'> & { images?: never }
+
 export interface Problem {
     id: number
     title: string
@@ -36,12 +38,12 @@ export interface Solution {
     problem_id: number
     approach_name: string
     code: string
-    code_idea: string
-    code_breakdown: string
+    code_idea: MdContentNoImages
+    code_breakdown: MdContentNoImages
     time_complexity: string
     space_complexity: string
-    time_complexity_explanation: string
-    space_complexity_explanation: string
+    time_complexity_explanation: MdContentNoImages
+    space_complexity_explanation: MdContentNoImages
 }
 
 export interface Example {
