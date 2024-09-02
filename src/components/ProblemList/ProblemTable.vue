@@ -12,6 +12,7 @@
       >
         {{ header.label }}
       </SortableTableHeader>
+      <th>Solutions</th>
       <th>Actions</th>
     </tr>
     </thead>
@@ -21,19 +22,20 @@
       <td>{{ problem.difficulty }}</td>
       <td>{{ problem.problem_type }}</td>
       <td>{{ formatDate(problem) }}</td>
+      <td>{{ problem.solution_count }}</td>
       <td>
         <div class="actions">
-          <button class="btn-neutral btn-icon-transparent" title="Edit" @click="$emit('edit', problem)">
+          <button class="btn-neutral btn-icon-transparent" @click="$emit('edit', problem)">
             <Edit2 class="icon"/>
             Edit
           </button>
-          <button class="btn-danger btn-icon-transparent" title="Delete" @click="$emit('delete', problem)">
+          <button class="btn-danger btn-icon-transparent" @click="$emit('delete', problem)">
             <Trash2 class="icon"/>
             Delete
           </button>
-          <button class="btn-neutral btn-icon-transparent" title="Add Solution" @click="$emit('add-solution', problem)">
+          <button class="btn-neutral btn-icon-transparent" @click="$emit('show-solutions', problem)">
             <FileText class="icon"/>
-            Add Solution
+            Show Solutions
           </button>
         </div>
       </td>
@@ -66,7 +68,7 @@ const headers = [
 defineEmits<{
   (e: 'edit', problem: Problem): void
   (e: 'delete', problem: Problem): void
-  (e: 'add-solution', problem: Problem): void
+  (e: 'show-solutions', problem: Problem): void
   (e: 'sort', field: keyof Problem): void
 }>()
 
