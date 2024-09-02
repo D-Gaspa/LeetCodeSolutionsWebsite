@@ -21,7 +21,7 @@
         @delete="confirmDelete"
         @edit="$emit('edit', $event)"
         @sort="toggleSort"
-        @add-solution="$emit('add-solution', $event)"
+        @show-solutions="$emit('show-solutions', $event)"
     />
 
     <Pagination
@@ -53,7 +53,7 @@ const emit = defineEmits<{
   (e: 'search'): void
   (e: 'edit', problem: Problem): void
   (e: 'delete', problem: Problem): void
-  (e: 'add-solution', problem: Problem): void
+  (e: 'show-solutions', problem: Problem): void
   (e: 'add'): void
 }>()
 

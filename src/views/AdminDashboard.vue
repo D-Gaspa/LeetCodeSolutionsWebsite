@@ -9,7 +9,7 @@
         @delete="confirmDeleteProblem"
         @edit="editProblem"
         @search="handleSearch"
-        @add-solution="openSolutionForm"
+        @show-solutions="showSolutions"
     />
     <BaseModal v-model="showProblemForm" class="problem-form-modal">
       <ProblemForm
@@ -18,6 +18,12 @@
           @problem-saved="fetchAllProblems"
       />
     </BaseModal>
+    <SolutionManager
+        v-if="selectedProblem"
+        v-model="showSolutionManager"
+        :problem="selectedProblem"
+        @solutions-updated="handleSolutionsUpdated"
+    />
   </div>
 </template>
 
@@ -31,6 +37,7 @@ import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemsStore"
 import type {Problem} from '@/types/Problem'
 import BaseModal from "@/components/Common/BaseModal.vue";
+import SolutionManager from "@/components/AdminSolutions/SolutionManager.vue";
 
 const {showNotification, updateNotification} = useNotification()
 const {showConfirm} = useConfirm()
@@ -38,8 +45,10 @@ const problemStore = useProblemStore()
 
 const problems = ref<Problem[]>([])
 const showProblemForm = ref(false)
+const showSolutionManager = ref(false)
 const editingProblem = ref<Problem | null>(null)
 const problemToDelete = ref<Problem | null>(null)
+const selectedProblem = ref<Problem | null>(null)
 const isLoading = ref(true)
 
 const editingProblemComputed = computed(() =>
@@ -120,9 +129,14 @@ const deleteProblem = async () => {
   }
 }
 
-const openSolutionForm = (problem: Problem) => {
-  // To be implemented
-  console.log('Open solution form for problem:', problem)
+const showSolutions = (problem: Problem) => {
+  selectedProblem.value = problem
+  showSolutionManager.value = true
+}
+
+const handleSolutionsUpdated = async () => {
+  // Refresh the problem list or update the solution count
+  await fetchAllProblems()
 }
 
 onMounted(fetchAllProblems)

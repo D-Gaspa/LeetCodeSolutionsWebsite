@@ -16,6 +16,18 @@ export interface Problem {
     problem_type: ProblemType;
     problem_date: string;
     content: ProblemContent;
+    solution_count: number;
+}
+
+export interface Solution {
+    id: number;
+    problem_id: number;
+    approach_name: string;
+    code: string;
+    code_idea: string;
+    code_breakdown: string;
+    space_complexity: string;
+    time_complexity: string;
 }
 
 export interface MdImage {

@@ -41,7 +41,7 @@
       />
     </div>
     <div>
-      <button class="btn-primary btn-icon" title="Add Problem" @click="$emit('add')">
+      <button class="btn-primary btn-icon" @click="$emit('add')">
         <PlusCircle class="icon"/>
         Add Problem
       </button>

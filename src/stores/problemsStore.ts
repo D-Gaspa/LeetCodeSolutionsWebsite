@@ -20,7 +20,6 @@ export const useProblemStore = defineStore('problems', {
             const {data, error} = await supabase
                 .from('problems')
                 .select('*')
-                .order('created_at', {ascending: false})
 
             if (error) {
                 throw new Error('Error fetching problems: ' + error.message)
