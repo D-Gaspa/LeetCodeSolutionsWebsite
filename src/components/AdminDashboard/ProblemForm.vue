@@ -101,14 +101,14 @@
 
 <script lang="ts" setup>
 import {onMounted, reactive, ref} from 'vue'
-import ContentEditor from '@/components/AdminDashboard/ContentEditor.vue'
+import ContentEditor from '@/components/AdminDashboard/ProblemContentEditor.vue'
 import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 import BaseModal from "@/components/Common/BaseModal.vue"
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement'
 import {useNotification} from "@/composables/Common/useNotification"
 import {useConfirm} from "@/composables/Common/useConfirm"
-import {useProblemStore} from "@/stores/problemsStore"
-import {MdImage, Problem, ProblemContent, ProblemDifficulty, ProblemType} from '@/types/Problem'
+import {useProblemStore} from "@/stores/problemStore"
+import {MdContent, MdImage, Problem, ProblemDifficulty, ProblemType} from '@/types/Problem'
 import {Edit, Save, Trash2, X} from 'lucide-vue-next'
 
 interface Props {
@@ -132,7 +132,7 @@ const {showConfirm} = useConfirm()
 const problemStore = useProblemStore()
 const showContentEditor = ref(false)
 const contentEditorRef = ref<InstanceType<typeof ContentEditor> | null>(null)
-const originalImages = ref<ProblemContent['images']>([])
+const originalImages = ref<MdContent['images']>([])
 const weekNumber = ref(1)
 
 interface ProblemForm {
@@ -142,7 +142,7 @@ interface ProblemForm {
   difficulty: ProblemDifficulty
   problem_type: ProblemType
   problem_date: string
-  content: ProblemContent
+  content: MdContent
 }
 
 const problemForm = reactive<ProblemForm>({
@@ -195,7 +195,7 @@ const closeContentEditor = async () => {
 
 const saveContent = () => {
   if (contentEditorRef.value) {
-    const newContent = contentEditorRef.value.getContent() as ProblemContent
+    const newContent = contentEditorRef.value.getContent() as MdContent
 
     const hasChanges = contentEditorRef.value.hasUnsavedChanges()
 
@@ -252,14 +252,14 @@ const saveProblem = async () => {
   const notificationId = showNotification('Initializing problem save...', 'loading')
 
   try {
-    const imagesChanged = areImagesChanged(problemForm.content.images || [], originalImages.value)
+    const imagesChanged = areImagesChanged(problemForm.content.images || [], originalImages.value || [])
 
     if (imagesChanged) {
       updateNotification(notificationId, {message: 'Processing image changes...'})
 
       const result = await handleImageManagement(
           problemForm.content.images || [],
-          originalImages.value,
+          originalImages.value || [],
           problemForm.id,
           problemForm.content.text || '',
           notificationId

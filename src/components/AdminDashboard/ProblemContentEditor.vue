@@ -3,8 +3,8 @@
     <MdEditor
         ref="markdownEditorRef"
         v-model="localContent"
-        :initial-content="modelValue"
         :enable-images="true"
+        :initial-content="modelValue"
         @update:modelValue="handleContentUpdate"
     />
   </div>
@@ -13,25 +13,25 @@
 <script lang="ts" setup>
 import {PropType, ref, watch} from 'vue'
 import MdEditor from "@/components/MarkdownEditor/MdEditor.vue";
-import {ProblemContent} from "@/types/Problem";
+import {MdContent} from "@/types/Problem";
 
 const props = defineProps({
   initialContent: {
-    type: Object as PropType<ProblemContent>,
+    type: Object as PropType<MdContent>,
     required: false,
   },
   modelValue: {
-    type: Object as PropType<ProblemContent>,
+    type: Object as PropType<MdContent>,
     required: true,
   },
 })
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: ProblemContent): void
+  (e: 'update:modelValue', value: MdContent): void
 }>()
 
 const markdownEditorRef = ref<InstanceType<typeof MdEditor> | null>(null)
-const localContent = ref<ProblemContent>(props.initialContent || props.modelValue || {text: '', images: []})
+const localContent = ref<MdContent>(props.initialContent || props.modelValue || {text: '', images: []})
 
 watch(() => props.modelValue, (newValue) => {
   if (newValue !== localContent.value) {
@@ -39,7 +39,7 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, {deep: true})
 
-const handleContentUpdate = (newContent: ProblemContent) => {
+const handleContentUpdate = (newContent: MdContent) => {
   localContent.value = newContent
   emit('update:modelValue', newContent)
 }
@@ -51,10 +51,10 @@ const hasUnsavedChanges = (): boolean => {
   const originalContent = props.initialContent || props.modelValue
 
   return currentContent.text !== originalContent.text ||
-      currentContent.images.length !== originalContent.images?.length
+      currentContent.images?.length !== originalContent.images?.length
 }
 
-const getContent = (): ProblemContent => {
+const getContent = (): MdContent => {
   return markdownEditorRef.value ? markdownEditorRef.value.getContent() : localContent.value
 }
 

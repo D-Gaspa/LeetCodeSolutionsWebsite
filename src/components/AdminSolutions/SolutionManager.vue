@@ -33,6 +33,8 @@ import {onMounted, ref, watch} from 'vue'
 import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import type {Problem, Solution} from '@/types/Problem'
+import {useSolutionStore} from '@/stores/solutionStore'
+import {useNotification} from '@/composables/Common/useNotification'
 
 const props = defineProps<{
   modelValue: boolean
@@ -44,7 +46,11 @@ const emit = defineEmits<{
   (e: 'solutions-updated'): void
 }>()
 
+const solutionStore = useSolutionStore()
+const {showNotification} = useNotification()
+
 const isVisible = ref(props.modelValue)
+const solutions = ref<Solution[]>([])
 
 watch(() => props.modelValue, (newValue) => {
   isVisible.value = newValue
@@ -54,30 +60,36 @@ watch(isVisible, (newValue) => {
   emit('update:modelValue', newValue)
 })
 
-const solutions = ref<Solution[]>([])
-
 onMounted(async () => {
-  // Fetch solutions for the problem
-  // This is a placeholder - implement actual fetching logic
-  // solutions.value = await fetchSolutionsForProblem(props.problem.id)
+  await fetchSolutions()
 })
 
+const fetchSolutions = async () => {
+  try {
+    solutions.value = await solutionStore.fetchSolutionsForProblem(props.problem.id)
+  } catch (error) {
+    showNotification(`Error fetching solutions: ${(error as Error).message}`, 'error')
+  }
+}
+
 const editSolution = (solution: Solution) => {
-  // Implement edit logic
+  // Implement edit logic (e.g., open a form to edit the solution)
   console.log('Edit solution:', solution)
 }
 
 const deleteSolution = async (solution: Solution) => {
-  // Implement delete logic
-  console.log('Delete solution:', solution)
-  // After successful deletion:
-  // await fetchSolutionsForProblem(props.problem.id)
-  emit('solutions-updated')
+  try {
+    await solutionStore.deleteSolution(solution.id, props.problem.id)
+    await solutionStore.updateSolutionCount(props.problem.id)
+    showNotification('Solution deleted successfully', 'success')
+    emit('solutions-updated')
+  } catch (error) {
+    showNotification(`Error deleting solution: ${(error as Error).message}`, 'error')
+  }
 }
 
 const addNewSolution = () => {
-  // Implement add new solution logic
-  console.log('Add new solution')
+
 }
 </script>
 
