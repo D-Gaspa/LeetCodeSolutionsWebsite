@@ -2,6 +2,7 @@
   <BaseModal v-model="isVisible" class="solution-content-editor-modal">
     <h4>Edit {{ contentLabel }}</h4>
     <SolutionContentEditor
+        class="solution-content-editor"
         ref="contentEditorRef"
         v-model="localContent"
         :initial-content="modelValue"
@@ -68,10 +69,15 @@ const close = () => {
 
 <style scoped>
 .solution-content-editor-modal :deep(.base-modal-content) {
-  max-width: 800px;
-  width: 90%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-medium);
+  width: 80%;
+  max-width: 90vw;
   max-height: 90vh;
-  overflow-y: auto;
+  transition: all var(--transition-base);
 }
 
 .form-actions-container {
