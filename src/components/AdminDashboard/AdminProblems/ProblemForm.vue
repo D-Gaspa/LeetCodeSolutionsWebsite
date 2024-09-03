@@ -101,7 +101,7 @@
 
 <script lang="ts" setup>
 import {onMounted, reactive, ref} from 'vue'
-import ContentEditor from '@/components/AdminDashboard/ProblemContentEditor.vue'
+import ContentEditor from '@/components/AdminDashboard/AdminProblems/ProblemContentEditor.vue'
 import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 import BaseModal from "@/components/Common/BaseModal.vue"
 import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement'

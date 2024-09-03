@@ -11,20 +11,27 @@
 </template>
 
 <script lang="ts" setup>
-import {ref, watch} from 'vue'
+import {PropType, ref, watch} from 'vue'
 import MdEditor from "@/components/MarkdownEditor/MdEditor.vue"
 import type {MdContent, MdContentNoImages} from "@/types/Problem"
 
-const props = defineProps<{
-  modelValue: MdContentNoImages
-}>()
+const props = defineProps({
+  initialContent: {
+    type: Object as PropType<MdContentNoImages>,
+    default: () => ({text: ''}),
+  },
+  modelValue: {
+    type: Object as PropType<MdContentNoImages>,
+    required: true,
+  },
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: MdContentNoImages): void
 }>()
 
 const markdownEditorRef = ref<InstanceType<typeof MdEditor> | null>(null)
-const localContent = ref<MdContentNoImages>(props.modelValue)
+const localContent = ref<MdContentNoImages>(props.initialContent || props.modelValue || {text: ''})
 
 watch(() => props.modelValue, (newValue) => {
   if (newValue.text !== localContent.value.text) {
