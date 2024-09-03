@@ -124,7 +124,6 @@ const emit = defineEmits<{
   (e: 'problem-saved'): void
 }>()
 
-
 const {showNotification, updateNotification} = useNotification()
 const {areImagesChanged, handleImageManagement} = useImageManagement()
 const {showConfirm} = useConfirm()

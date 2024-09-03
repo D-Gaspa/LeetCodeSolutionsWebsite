@@ -48,6 +48,7 @@ const handleContentUpdate = (newContent: MdContent | MdContentNoImages) => {
 const hasUnsavedChanges = (): boolean => {
   if (!markdownEditorRef.value) return false
   const currentContent = markdownEditorRef.value.getContent()
+  
   return currentContent.text !== props.modelValue.text
 }
 

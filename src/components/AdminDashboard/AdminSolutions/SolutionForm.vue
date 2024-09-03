@@ -57,8 +57,9 @@
   </form>
 
   <SolutionContentEditorModal
-      v-model="solutionContent"
-      :content-label="getContentLabel(currentEditingField)"
+      v-model="currentContent"
+      :content-label="currentContentLabel"
+      :initial-content="currentInitialContent"
       :show="showContentEditor"
       @save="handleContentSave"
       @update:show="showContentEditor = $event"
@@ -70,7 +71,7 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, ref} from 'vue'
+import {computed, reactive, ref} from 'vue'
 import {Box, Clock, Code2, Lightbulb, Save, Split, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
 import BaseModal from "@/components/Common/BaseModal.vue"
@@ -92,52 +93,68 @@ const showCodeEditor = ref(false)
 
 const isEditing = computed(() => !!props.editingSolution)
 
-const form = ref({
+type SolutionFormType = {
+  problem_id: number;
+  approach_name: string;
+  code: string;
+  code_idea: MdContentNoImages;
+  code_breakdown: MdContentNoImages;
+  time_complexity: string;
+  space_complexity: string;
+  time_complexity_explanation: MdContentNoImages;
+  space_complexity_explanation: MdContentNoImages;
+}
+
+const form = reactive<SolutionFormType>({
   problem_id: props.problemId,
   approach_name: '',
   code: '',
-  code_idea: {text: ''} as MdContentNoImages,
-  code_breakdown: {text: ''} as MdContentNoImages,
+  code_idea: {text: ''},
+  code_breakdown: {text: ''},
   time_complexity: 'O(n)',
   space_complexity: 'O(n)',
-  time_complexity_explanation: {text: ''} as MdContentNoImages,
-  space_complexity_explanation: {text: ''} as MdContentNoImages
+  time_complexity_explanation: {text: ''},
+  space_complexity_explanation: {text: ''}
 })
 
 const showContentEditor = ref(false)
-const currentEditingField = ref<string | null>(null)
-const solutionContent = ref<MdContentNoImages>({text: ''})
+const currentEditingField = ref<keyof SolutionFormType | null>(null)
 
 // If editing, populate form with existing data
 if (isEditing.value && props.editingSolution) {
-  Object.assign(form.value, props.editingSolution)
+  Object.assign(form, props.editingSolution)
 }
 
 const openCodeEditor = () => {
   showCodeEditor.value = true
 }
 
-const openContentEditor = (field: string) => {
+const openContentEditor = (field: keyof SolutionFormType) => {
   currentEditingField.value = field
   showContentEditor.value = true
 }
 
-const handleContentSave = () => {
-  showContentEditor.value = false
-}
-
-const handleSubmit = async () => {
-  try {
-    await solutionStore.saveSolution(form.value, isEditing.value)
-    emit('solution-saved')
-  } catch (error) {
-    console.error('Error saving solution:', error)
-    // Handle error (e.g., show notification)
+const currentContent = computed({
+  get: () => currentEditingField.value ? form[currentEditingField.value] as MdContentNoImages : {text: ''},
+  set: (value: MdContentNoImages) => {
+    if (currentEditingField.value) {
+      const field = currentEditingField.value
+      if (field === 'code_idea' || field === 'code_breakdown' ||
+          field === 'time_complexity_explanation' || field === 'space_complexity_explanation') {
+        form[field] = value
+      }
+    }
   }
-}
+})
 
-const getContentLabel = (field: string | null): string => {
-  switch (field) {
+const currentInitialContent = computed(() =>
+    currentEditingField.value && props.editingSolution
+        ? (props.editingSolution[currentEditingField.value] as MdContentNoImages) || {text: ''}
+        : {text: ''}
+)
+
+const currentContentLabel = computed(() => {
+  switch (currentEditingField.value) {
     case 'code_idea':
       return 'Code Idea'
     case 'code_breakdown':
@@ -148,6 +165,20 @@ const getContentLabel = (field: string | null): string => {
       return 'Space Complexity Explanation'
     default:
       return 'Solution Content'
+  }
+})
+
+const handleContentSave = () => {
+  showContentEditor.value = false
+}
+
+const handleSubmit = async () => {
+  try {
+    await solutionStore.saveSolution(form, isEditing.value)
+    emit('solution-saved')
+  } catch (error) {
+    console.error('Error saving solution:', error)
+    // Handle error (e.g., show notification)
   }
 }
 </script>
