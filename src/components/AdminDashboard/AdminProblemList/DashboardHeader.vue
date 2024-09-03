@@ -11,12 +11,16 @@
     </div>
     <div class="search-filters">
       <input
+          id="search"
           :value="searchQuery"
+          autocomplete="off"
           placeholder="Search problems..."
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       >
       <select
+          id="difficulty"
           :value="difficultyFilter"
+          autocomplete="off"
           @change="$emit('update:difficultyFilter', ($event.target as HTMLSelectElement).value)"
       >
         <option value="">All Difficulties</option>
@@ -25,7 +29,9 @@
         <option value="Hard">Hard</option>
       </select>
       <select
+          id="type"
           :value="typeFilter"
+          autocomplete="off"
           @change="$emit('update:typeFilter', ($event.target as HTMLSelectElement).value)"
       >
         <option value="">All Types</option>

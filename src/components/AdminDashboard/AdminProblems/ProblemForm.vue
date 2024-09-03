@@ -4,15 +4,16 @@
     <form class="form-container" @submit.prevent="validateAndSaveProblem">
       <label>
         Problem Number:
-        <input v-model.number="problemForm.id" min="1" required step="1" type="number">
+        <input id="problem-number" v-model.number="problemForm.id" autocomplete="off" min="1" required step="1"
+               type="number">
       </label>
       <label>
         Problem Name:
-        <input v-model="problemForm.name" required>
+        <input id="problem-name" v-model="problemForm.name" autocomplete="off" required>
       </label>
       <label>
         Difficulty:
-        <select v-model="problemForm.difficulty" required>
+        <select id="problem-difficulty" v-model="problemForm.difficulty" autocomplete="off" required>
           <option value="Easy">Easy</option>
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>
@@ -20,7 +21,7 @@
       </label>
       <label>
         Type:
-        <select v-model="problemForm.problem_type" required>
+        <select id="problem-type" v-model="problemForm.problem_type" autocomplete="off" required>
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
         </select>
