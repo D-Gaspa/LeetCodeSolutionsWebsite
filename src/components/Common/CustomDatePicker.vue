@@ -21,9 +21,11 @@
     <template #trigger>
       <div :class="['custom-trigger', { 'is-open': isOpen }]">
         <input
+            id="datepicker"
             :class="inputClass"
             :placeholder="placeholder"
             :value="formattedDate"
+            autocomplete="off"
             readonly
         />
         <calendar-icon class="calendar-icon"/>

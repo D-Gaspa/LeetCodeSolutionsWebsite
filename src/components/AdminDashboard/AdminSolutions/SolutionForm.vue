@@ -4,39 +4,40 @@
 
     <div class="form-group">
       <label for="approachName">Approach Name:</label>
-      <input v-model="form.approach_name" required>
+      <input id="approachName" v-model="form.approach_name" autocomplete="off" required>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label for="timeComplexity">Time Complexity:</label>
-        <input v-model="form.time_complexity" required>
+        <input id="timeComplexity" v-model="form.time_complexity" autocomplete="off" required>
       </div>
 
       <div class="form-group">
         <label for="spaceComplexity">Space Complexity:</label>
-        <input v-model="form.space_complexity" required>
+        <input id="spaceComplexity" v-model="form.space_complexity" autocomplete="off" required>
       </div>
     </div>
 
     <div class="content-actions-wrapper">
       <div class="content-actions">
         <div class="content-action-group">
-          <button class="btn-primary btn-icon" type="button" @click="openCodeEditor">
+          <button class="btn-primary btn-icon action-btn" type="button" @click="openCodeEditor">
             <Code2 class="icon"/>
             {{ form.code ? 'Edit' : 'Add' }} Code
           </button>
-          <button :disabled="!form.code" class="btn-danger btn-icon" type="button" @click="deleteCode">
+          <button :disabled="!form.code" class="btn-danger btn-icon delete-btn" type="button" @click="deleteCode">
             <Trash2 class="icon"/>
             Delete
           </button>
         </div>
         <div v-for="field in contentFields" :key="field" class="content-action-group">
-          <button class="btn-primary btn-icon" type="button" @click="openContentEditor(field)">
+          <button class="btn-primary btn-icon action-btn" type="button" @click="openContentEditor(field)">
             <component :is="getIcon(field)" class="icon"/>
             {{ form[field].text ? 'Edit' : 'Add' }} {{ getLabel(field) }}
           </button>
-          <button :disabled="!form[field].text" class="btn-danger btn-icon" type="button" @click="deleteContent(field)">
+          <button :disabled="!form[field].text" class="btn-danger btn-icon delete-btn" type="button"
+                  @click="deleteContent(field)">
             <Trash2 class="icon"/>
             Delete
           </button>
@@ -275,26 +276,34 @@ input, select, .form-actions button {
   margin-bottom: var(--spacing-large);
 }
 
+.content-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-medium);
+  width: 100%;
+}
+
 .content-action-group {
   display: flex;
   gap: var(--spacing-small);
   width: 100%;
 }
 
-.content-action-group button {
+.action-btn {
+  flex: 3;
+  justify-content: center;
+  padding-left: var(--spacing-medium);
+}
+
+.delete-btn {
   flex: 1;
 }
 
-.content-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-medium);
-}
-
-.content-actions button {
-  width: 100%;
+.content-action-group button {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .form-actions {
