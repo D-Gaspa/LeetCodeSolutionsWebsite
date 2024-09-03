@@ -114,16 +114,10 @@ const handleSolutionSaved = async () => {
 </script>
 
 <style scoped>
-.solution-manager :deep(.base-modal-content) {
-  max-width: 600px;
-  width: 90%;
-}
-
 .solution-manager-content {
   background-color: var(--bg-color-primary);
   color: var(--text-color-primary);
   border-radius: var(--border-radius);
-  padding: var(--spacing-large);
 }
 
 .solution-manager-title {
@@ -179,13 +173,6 @@ const handleSolutionSaved = async () => {
 .add-solution-btn {
   width: 100%;
   justify-content: center;
-}
-
-.solution-form-modal :deep(.base-modal-content) {
-  max-width: 800px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 
 /* Responsive adjustments */

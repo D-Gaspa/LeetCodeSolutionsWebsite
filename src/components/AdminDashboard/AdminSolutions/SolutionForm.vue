@@ -1,43 +1,47 @@
 <template>
-  <form @submit.prevent="handleSubmit">
-    <h3>{{ isEditing ? 'Edit Solution' : 'Add New Solution' }}</h3>
+  <form class="solution-form" @submit.prevent="handleSubmit">
+    <h3 class="form-title">{{ isEditing ? 'Edit Solution' : 'Add New Solution' }}</h3>
 
     <div class="form-group">
       <label for="approachName">Approach Name:</label>
       <input id="approachName" v-model="form.approach_name" required>
     </div>
 
-    <div class="form-group">
-      <label for="timeComplexity">Time Complexity:</label>
-      <input id="timeComplexity" v-model="form.time_complexity" required>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="timeComplexity">Time Complexity:</label>
+        <input id="timeComplexity" v-model="form.time_complexity" required>
+      </div>
+
+      <div class="form-group">
+        <label for="spaceComplexity">Space Complexity:</label>
+        <input id="spaceComplexity" v-model="form.space_complexity" required>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="spaceComplexity">Space Complexity:</label>
-      <input id="spaceComplexity" v-model="form.space_complexity" required>
-    </div>
-
-    <div class="content-actions">
-      <button class="btn-primary btn-icon" type="button" @click="openCodeEditor">
-        <Edit class="icon"/>
-        {{ form.code ? 'Edit' : 'Add' }} Code
-      </button>
-      <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_idea')">
-        <Edit class="icon"/>
-        {{ form.code_idea.text ? 'Edit' : 'Add' }} Code Idea
-      </button>
-      <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_breakdown')">
-        <Edit class="icon"/>
-        {{ form.code_breakdown.text ? 'Edit' : 'Add' }} Code Breakdown
-      </button>
-      <button class="btn-primary btn-icon" type="button" @click="openContentEditor('time_complexity_explanation')">
-        <Edit class="icon"/>
-        {{ form.time_complexity_explanation.text ? 'Edit' : 'Add' }} Time Complexity Explanation
-      </button>
-      <button class="btn-primary btn-icon" type="button" @click="openContentEditor('space_complexity_explanation')">
-        <Edit class="icon"/>
-        {{ form.space_complexity_explanation.text ? 'Edit' : 'Add' }} Space Complexity Explanation
-      </button>
+    <div class="content-actions-wrapper">
+      <div class="content-actions">
+        <button class="btn-primary btn-icon" type="button" @click="openCodeEditor">
+          <Code2 class="icon"/>
+          {{ form.code ? 'Edit' : 'Add' }} Code
+        </button>
+        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_idea')">
+          <Lightbulb class="icon"/>
+          {{ form.code_idea.text ? 'Edit' : 'Add' }} Code Idea
+        </button>
+        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_breakdown')">
+          <Split class="icon"/>
+          {{ form.code_breakdown.text ? 'Edit' : 'Add' }} Code Breakdown
+        </button>
+        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('time_complexity_explanation')">
+          <Clock class="icon"/>
+          {{ form.time_complexity_explanation.text ? 'Edit' : 'Add' }} Time Complexity Explanation
+        </button>
+        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('space_complexity_explanation')">
+          <Box class="icon"/>
+          {{ form.space_complexity_explanation.text ? 'Edit' : 'Add' }} Space Complexity Explanation
+        </button>
+      </div>
     </div>
 
     <div class="form-actions">
@@ -54,13 +58,12 @@
 
   <SolutionContentEditorModal
       v-model="solutionContent"
+      :content-label="getContentLabel(currentEditingField)"
       :show="showContentEditor"
-      content-label="Solution Content"
       @save="handleContentSave"
       @update:show="showContentEditor = $event"
   />
 
-  <!-- Code Editor Modal (placeholder) -->
   <BaseModal v-model="showCodeEditor">
     <!-- TODO: Add Code Editor component here -->
   </BaseModal>
@@ -68,11 +71,11 @@
 
 <script lang="ts" setup>
 import {computed, ref} from 'vue'
-import {Edit, Save, X} from 'lucide-vue-next'
+import {Box, Clock, Code2, Lightbulb, Save, Split, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
+import BaseModal from "@/components/Common/BaseModal.vue"
 import {useSolutionStore} from '@/stores/solutionStore'
 import type {MdContentNoImages, Solution} from '@/types/Problem'
-import BaseModal from "@/components/Common/BaseModal.vue";
 
 const props = defineProps<{
   problemId: number
@@ -132,36 +135,74 @@ const handleSubmit = async () => {
     // Handle error (e.g., show notification)
   }
 }
+
+const getContentLabel = (field: string | null): string => {
+  switch (field) {
+    case 'code_idea':
+      return 'Code Idea'
+    case 'code_breakdown':
+      return 'Code Breakdown'
+    case 'time_complexity_explanation':
+      return 'Time Complexity Explanation'
+    case 'space_complexity_explanation':
+      return 'Space Complexity Explanation'
+    default:
+      return 'Solution Content'
+  }
+}
 </script>
 
 <style scoped>
-.form-group {
-  margin-bottom: var(--spacing-medium);
+
+.form-title {
+  color: var(--text-color-primary);
+  margin-bottom: var(--spacing-large);
+  text-align: center;
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spacing-medium);
+}
+
+.form-row .form-group {
+  flex: 1;
 }
 
 label {
-  display: block;
+  display: inline-block;
   margin-bottom: var(--spacing-small);
+  color: var(--text-color-secondary);
+  font-weight: var(--font-weight-bold);
+  width: auto;
 }
 
-input, textarea {
+input, select, .form-actions button {
   width: 100%;
-  padding: var(--spacing-small);
-  border: var(--border-width) solid var(--border-color-secondary);
-  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.content-actions-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-large);
 }
 
 .content-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-small);
-  margin-bottom: var(--spacing-medium);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-medium);
+}
+
+.content-actions button {
+  width: 100%;
+  white-space: nowrap;
 }
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-small);
-  margin-top: var(--spacing-medium);
+  justify-content: center;
+  gap: var(--spacing-medium);
 }
 </style>
