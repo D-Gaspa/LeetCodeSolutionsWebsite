@@ -4,43 +4,43 @@
 
     <div class="form-group">
       <label for="approachName">Approach Name:</label>
-      <input id="approachName" v-model="form.approach_name" required>
+      <input v-model="form.approach_name" required>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label for="timeComplexity">Time Complexity:</label>
-        <input id="timeComplexity" v-model="form.time_complexity" required>
+        <input v-model="form.time_complexity" required>
       </div>
 
       <div class="form-group">
         <label for="spaceComplexity">Space Complexity:</label>
-        <input id="spaceComplexity" v-model="form.space_complexity" required>
+        <input v-model="form.space_complexity" required>
       </div>
     </div>
 
     <div class="content-actions-wrapper">
       <div class="content-actions">
-        <button class="btn-primary btn-icon" type="button" @click="openCodeEditor">
-          <Code2 class="icon"/>
-          {{ form.code ? 'Edit' : 'Add' }} Code
-        </button>
-        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_idea')">
-          <Lightbulb class="icon"/>
-          {{ form.code_idea.text ? 'Edit' : 'Add' }} Code Idea
-        </button>
-        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('code_breakdown')">
-          <Split class="icon"/>
-          {{ form.code_breakdown.text ? 'Edit' : 'Add' }} Code Breakdown
-        </button>
-        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('time_complexity_explanation')">
-          <Clock class="icon"/>
-          {{ form.time_complexity_explanation.text ? 'Edit' : 'Add' }} Time Complexity Explanation
-        </button>
-        <button class="btn-primary btn-icon" type="button" @click="openContentEditor('space_complexity_explanation')">
-          <Box class="icon"/>
-          {{ form.space_complexity_explanation.text ? 'Edit' : 'Add' }} Space Complexity Explanation
-        </button>
+        <div class="content-action-group">
+          <button class="btn-primary btn-icon" type="button" @click="openCodeEditor">
+            <Code2 class="icon"/>
+            {{ form.code ? 'Edit' : 'Add' }} Code
+          </button>
+          <button :disabled="!form.code" class="btn-danger btn-icon" type="button" @click="deleteCode">
+            <Trash2 class="icon"/>
+            Delete
+          </button>
+        </div>
+        <div v-for="field in contentFields" :key="field" class="content-action-group">
+          <button class="btn-primary btn-icon" type="button" @click="openContentEditor(field)">
+            <component :is="getIcon(field)" class="icon"/>
+            {{ form[field].text ? 'Edit' : 'Add' }} {{ getLabel(field) }}
+          </button>
+          <button :disabled="!form[field].text" class="btn-danger btn-icon" type="button" @click="deleteContent(field)">
+            <Trash2 class="icon"/>
+            Delete
+          </button>
+        </div>
       </div>
     </div>
 
@@ -72,11 +72,13 @@
 
 <script lang="ts" setup>
 import {computed, reactive, ref} from 'vue'
-import {Box, Clock, Code2, Lightbulb, Save, Split, X} from 'lucide-vue-next'
+import {Box, Clock, Code2, Lightbulb, Save, Split, Trash2, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
 import BaseModal from "@/components/Common/BaseModal.vue"
 import {useSolutionStore} from '@/stores/solutionStore'
 import type {MdContentNoImages, Solution} from '@/types/Problem'
+import {useNotification} from '@/composables/Common/useNotification'
+import {useConfirm} from '@/composables/Common/useConfirm'
 
 const props = defineProps<{
   problemId: number
@@ -90,6 +92,40 @@ const emit = defineEmits<{
 
 const solutionStore = useSolutionStore()
 const showCodeEditor = ref(false)
+const {showNotification} = useNotification()
+const {showConfirm} = useConfirm()
+
+const contentFields = ['code_idea', 'code_breakdown', 'time_complexity_explanation', 'space_complexity_explanation'] as const
+
+const getIcon = (field: string) => {
+  switch (field) {
+    case 'code_idea':
+      return Lightbulb
+    case 'code_breakdown':
+      return Split
+    case 'time_complexity_explanation':
+      return Clock
+    case 'space_complexity_explanation':
+      return Box
+    default:
+      return Box
+  }
+}
+
+const getLabel = (field: string) => {
+  switch (field) {
+    case 'code_idea':
+      return 'Code Idea'
+    case 'code_breakdown':
+      return 'Code Breakdown'
+    case 'time_complexity_explanation':
+      return 'Time Complexity Explanation'
+    case 'space_complexity_explanation':
+      return 'Space Complexity Explanation'
+    default:
+      return 'Content'
+  }
+}
 
 const isEditing = computed(() => !!props.editingSolution)
 
@@ -107,7 +143,7 @@ type SolutionFormType = {
 
 const form = reactive<SolutionFormType>({
   problem_id: props.problemId,
-  approach_name: '',
+  approach_name: 'Test Approach',
   code: '',
   code_idea: {text: ''},
   code_breakdown: {text: ''},
@@ -172,13 +208,33 @@ const handleContentSave = () => {
   showContentEditor.value = false
 }
 
+const deleteContent = async (field: keyof SolutionFormType) => {
+  const confirmed = await showConfirm('Delete Content', `Are you sure you want to delete the ${getLabel(field)}?`)
+  if (confirmed) {
+    if (field === 'code_idea' || field === 'code_breakdown' ||
+        field === 'time_complexity_explanation' || field === 'space_complexity_explanation') {
+      form[field] = {text: ''}
+      showNotification(`${getLabel(field)} deleted successfully`, 'success')
+    }
+  }
+}
+
+const deleteCode = async () => {
+  const confirmed = await showConfirm('Delete Code', 'Are you sure you want to delete the code?')
+  if (confirmed) {
+    form.code = ''
+    showNotification('Code deleted successfully', 'success')
+  }
+}
+
 const handleSubmit = async () => {
   try {
     await solutionStore.saveSolution(form, isEditing.value)
     emit('solution-saved')
+    showNotification('Solution saved successfully', 'success')
   } catch (error) {
     console.error('Error saving solution:', error)
-    // Handle error (e.g., show notification)
+    showNotification(`Error saving solution: ${(error as Error).message}`, 'error')
   }
 }
 </script>
@@ -217,6 +273,16 @@ input, select, .form-actions button {
   display: flex;
   justify-content: center;
   margin-bottom: var(--spacing-large);
+}
+
+.content-action-group {
+  display: flex;
+  gap: var(--spacing-small);
+  width: 100%;
+}
+
+.content-action-group button {
+  flex: 1;
 }
 
 .content-actions {

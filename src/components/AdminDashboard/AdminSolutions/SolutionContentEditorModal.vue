@@ -4,7 +4,7 @@
     <SolutionContentEditor
         ref="contentEditorRef"
         v-model="localContent"
-        :initial-content="modelValue"
+        :initial-content="initialContent"
     />
     <div class="form-actions-container">
       <div class="form-actions">
@@ -12,7 +12,7 @@
           <Save class="icon"/>
           Save Content
         </button>
-        <button class="btn-danger btn-icon" @click="close">
+        <button class="btn-danger btn-icon" @click="closeContentEditor">
           <X class="icon"/>
           Close
         </button>
@@ -26,11 +26,13 @@ import {ref, watch} from 'vue'
 import {Save, X} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import SolutionContentEditor from './SolutionContentEditor.vue'
-import {MdContentNoImages} from '@/types/Problem'
+import type {MdContentNoImages} from '@/types/Problem'
+import {useNotification} from '@/composables/Common/useNotification'
+import {useConfirm} from '@/composables/Common/useConfirm'
 
 const props = defineProps<{
-  initialContent: MdContentNoImages
   modelValue: MdContentNoImages
+  initialContent: MdContentNoImages
   contentLabel: string
   show: boolean
 }>()
@@ -41,12 +43,18 @@ const emit = defineEmits<{
   (e: 'save'): void
 }>()
 
+const {showNotification} = useNotification()
+const {showConfirm} = useConfirm()
+
 const isVisible = ref(props.show)
-const localContent = ref<MdContentNoImages>(props.initialContent || props.modelValue || {text: '', images: []})
+const localContent = ref<MdContentNoImages>(props.modelValue)
 const contentEditorRef = ref<InstanceType<typeof SolutionContentEditor> | null>(null)
 
 watch(() => props.show, (newValue) => {
   isVisible.value = newValue
+  if (newValue) {
+    localContent.value = props.modelValue
+  }
 })
 
 watch(isVisible, (newValue) => {
@@ -56,14 +64,34 @@ watch(isVisible, (newValue) => {
 const saveContent = () => {
   if (contentEditorRef.value) {
     const newContent = contentEditorRef.value.getContent()
-    emit('update:modelValue', newContent)
-    emit('save')
+    const hasChanges = contentEditorRef.value.hasUnsavedChanges()
+
+    if (hasChanges) {
+      emit('update:modelValue', newContent)
+      emit('save')
+      showNotification('Content saved successfully', 'success')
+    } else {
+      showNotification('No changes to save', 'info')
+    }
+    isVisible.value = false
+  } else {
+    showNotification('Error saving content. Please try again.', 'error')
   }
-  close()
 }
 
-const close = () => {
-  emit('update:show', false)
+const closeContentEditor = async () => {
+  let shouldClose = true
+
+  if (contentEditorRef.value && contentEditorRef.value.hasUnsavedChanges()) {
+    shouldClose = await showConfirm(
+        'Unsaved Changes',
+        'Are you sure you want to close? Any unsaved changes will be lost.'
+    )
+  }
+
+  if (shouldClose) {
+    isVisible.value = false
+  }
 }
 </script>
 
