@@ -30,14 +30,14 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from 'vue'
 import AdminProblemList from "@/components/AdminDashboard/AdminProblemList.vue"
-import ProblemForm from "@/components/AdminDashboard/ProblemForm.vue"
+import ProblemForm from "@/components/AdminDashboard/AdminProblems/ProblemForm.vue"
 import LoadingSpinner from "@/components/Common/LoadingSpinner.vue"
 import {useNotification} from "@/composables/Common/useNotification"
 import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemStore"
 import type {Problem} from '@/types/Problem'
 import BaseModal from "@/components/Common/BaseModal.vue";
-import SolutionManager from "@/components/AdminSolutions/SolutionManager.vue";
+import SolutionManager from "@/components/AdminDashboard/AdminSolutions/SolutionManager.vue";
 
 const {showNotification, updateNotification} = useNotification()
 const {showConfirm} = useConfirm()

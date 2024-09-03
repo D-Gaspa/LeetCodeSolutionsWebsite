@@ -1,7 +1,7 @@
 <template>
   <BaseModal v-model="isVisible" class="solution-manager">
     <div class="solution-manager-content">
-      <h3 class="solution-manager-title">Solutions for Problem: {{ props.problem.title }}</h3>
+      <h3 class="solution-manager-title">Solutions for Problem: {{ problem.title }}</h3>
       <div v-if="solutions.length > 0" class="solution-list">
         <div v-for="solution in solutions" :key="solution.id" class="solution-item">
           <h4 class="solution-approach">{{ solution.approach_name }}</h4>
@@ -20,11 +20,20 @@
       <div v-else class="no-solutions">
         No solutions available for this problem.
       </div>
-      <button class="btn-primary btn-icon add-solution-btn" @click="addNewSolution">
+      <button class="btn-primary btn-icon add-solution-btn" @click="showSolutionForm(undefined)">
         <PlusCircle class="icon"/>
         Add New Solution
       </button>
     </div>
+
+    <BaseModal v-if="showForm" v-model="showForm" class="solution-form-modal">
+      <SolutionForm
+          :editing-solution="editingSolution"
+          :problem-id="problem.id"
+          @cancel="showForm = false"
+          @solution-saved="handleSolutionSaved"
+      />
+    </BaseModal>
   </BaseModal>
 </template>
 
@@ -32,6 +41,7 @@
 import {onMounted, ref, watch} from 'vue'
 import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
+import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm.vue'
 import type {Problem, Solution} from '@/types/Problem'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
@@ -51,6 +61,8 @@ const {showNotification} = useNotification()
 
 const isVisible = ref(props.modelValue)
 const solutions = ref<Solution[]>([])
+const showForm = ref(false)
+const editingSolution = ref<Solution | undefined>(undefined)
 
 watch(() => props.modelValue, (newValue) => {
   isVisible.value = newValue
@@ -72,9 +84,13 @@ const fetchSolutions = async () => {
   }
 }
 
+const showSolutionForm = (solution: Solution | undefined) => {
+  editingSolution.value = solution
+  showForm.value = true
+}
+
 const editSolution = (solution: Solution) => {
-  // Implement edit logic (e.g., open a form to edit the solution)
-  console.log('Edit solution:', solution)
+  showSolutionForm(solution)
 }
 
 const deleteSolution = async (solution: Solution) => {
@@ -82,14 +98,18 @@ const deleteSolution = async (solution: Solution) => {
     await solutionStore.deleteSolution(solution.id, props.problem.id)
     await solutionStore.updateSolutionCount(props.problem.id)
     showNotification('Solution deleted successfully', 'success')
+    await fetchSolutions()
     emit('solutions-updated')
   } catch (error) {
     showNotification(`Error deleting solution: ${(error as Error).message}`, 'error')
   }
 }
 
-const addNewSolution = () => {
-
+const handleSolutionSaved = async () => {
+  showForm.value = false
+  await fetchSolutions()
+  emit('solutions-updated')
+  showNotification('Solution saved successfully', 'success')
 }
 </script>
 
@@ -159,6 +179,13 @@ const addNewSolution = () => {
 .add-solution-btn {
   width: 100%;
   justify-content: center;
+}
+
+.solution-form-modal :deep(.base-modal-content) {
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* Responsive adjustments */

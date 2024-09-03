@@ -6,13 +6,14 @@ import MarkdownIt from 'markdown-it'
 import MarkdownItKatex from '@vscode/markdown-it-katex'
 import {oneDark} from "@codemirror/theme-one-dark"
 import {isEqual} from "lodash"
-import type {NotificationOptions, NotificationType} from "@/types/Notification";
-import {MdContent, MdContentNoImages, MdImage} from "@/types/Problem";
+import type {NotificationOptions, NotificationType} from "@/types/Notification"
+import {MdContent, MdContentNoImages, MdImage} from "@/types/Problem"
 
 export function useMdEditor(
     props: {
         initialContent: MdContent | MdContentNoImages
         modelValue: MdContent | MdContentNoImages
+        enableImages: boolean
     },
     emit: (event: "update:modelValue", value: MdContent | MdContentNoImages) => void,
     theme: Ref<string>,
@@ -35,13 +36,15 @@ export function useMdEditor(
     }).use(MarkdownItKatex, {
         throwOnError: false,
         errorColor: '#cc0000',
-        output: 'mathml', // Force MathML output
-    });
+        output: 'mathml',
+    })
 
     const renderedContent = computed(() => md.render(localContent.value))
 
     const imageRenderer = computed(() => {
         return (tokens: any[], idx: number) => {
+            if (!props.enableImages) return ''
+
             const token = tokens[idx]
             const srcIndex = token.attrIndex('src')
             let src = token.attrs[srcIndex][1]
@@ -56,14 +59,16 @@ export function useMdEditor(
         }
     })
 
-
     const setupImageRenderer = () => {
-        md.renderer.rules.image = imageRenderer.value
+        if (props.enableImages) {
+            md.renderer.rules.image = imageRenderer.value
+        }
     }
 
     const updateImageMap = () => {
-        imageMap.value.clear()
+        if (!props.enableImages) return
 
+        imageMap.value.clear()
         tempImages.value.forEach(image => {
             imageMap.value.set(image.id, image)
             imageMap.value.set(image.url, image)
@@ -73,14 +78,18 @@ export function useMdEditor(
     const initializeContent = () => {
         try {
             localContent.value = props.initialContent.text || props.modelValue.text || ''
-            tempImages.value = (props.initialContent.images || props.modelValue.images || []).map(img => ({
-                id: img.id || img.url,
-                name: img.name,
-                url: img.url,
-                file: img.file ?? null // Preserve the file object for new images, null for existing ones
-            }))
-
-            updateImageMap()
+            if (props.enableImages) {
+                tempImages.value = (props.initialContent.images || props.modelValue.images || []).map(img => ({
+                    id: img.id || img.url,
+                    name: img.name,
+                    url: img.url,
+                    file: img.file ?? null
+                }))
+                updateImageMap()
+            } else {
+                tempImages.value = []
+                imageMap.value.clear()
+            }
             setupImageRenderer()
         } catch (error) {
             showNotification(`Error initializing content: ${(error as Error).message}`, 'error')
@@ -99,11 +108,11 @@ export function useMdEditor(
 
     const clearContent = () => {
         localContent.value = ''
-        emit('update:modelValue', {text: '', images: []})
+        emit('update:modelValue', props.enableImages ? {text: '', images: []} : {text: ''})
     }
 
     watch(() => props.initialContent, (newContent) => {
-        if (newContent && (newContent.text !== localContent.value || !isEqual(newContent.images, tempImages.value))) {
+        if (newContent && (newContent.text !== localContent.value || (props.enableImages && !isEqual(newContent.images, tempImages.value)))) {
             initializeContent()
         }
     }, {deep: true})

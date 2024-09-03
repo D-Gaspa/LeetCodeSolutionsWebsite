@@ -1,5 +1,5 @@
 <template>
-  <div class="content-editor">
+  <div class="problem-content-editor">
     <MdEditor
         ref="markdownEditorRef"
         v-model="localContent"
