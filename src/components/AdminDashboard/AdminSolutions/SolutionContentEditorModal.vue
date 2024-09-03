@@ -2,7 +2,6 @@
   <BaseModal v-model="isVisible" class="solution-content-editor-modal">
     <h4>Edit {{ contentLabel }}</h4>
     <SolutionContentEditor
-        class="solution-content-editor"
         ref="contentEditorRef"
         v-model="localContent"
         :initial-content="modelValue"
@@ -27,9 +26,10 @@ import {ref, watch} from 'vue'
 import {Save, X} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import SolutionContentEditor from './SolutionContentEditor.vue'
-import type {MdContentNoImages} from '@/types/Problem'
+import {MdContentNoImages} from '@/types/Problem'
 
 const props = defineProps<{
+  initialContent: MdContentNoImages
   modelValue: MdContentNoImages
   contentLabel: string
   show: boolean
@@ -42,7 +42,7 @@ const emit = defineEmits<{
 }>()
 
 const isVisible = ref(props.show)
-const localContent = ref<MdContentNoImages>(props.modelValue)
+const localContent = ref<MdContentNoImages>(props.initialContent || props.modelValue || {text: '', images: []})
 const contentEditorRef = ref<InstanceType<typeof SolutionContentEditor> | null>(null)
 
 watch(() => props.show, (newValue) => {
