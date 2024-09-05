@@ -66,8 +66,21 @@
       @update:show="showContentEditor = $event"
   />
 
-  <BaseModal v-model="showCodeEditor">
-    <!-- TODO: Add Code Editor component here -->
+  <BaseModal v-model="showCodeEditor" class="code-editor-modal">
+    <PythonCodeEditor
+        v-model="form.code"
+        :theme="currentTheme"
+    />
+    <div class="form-actions">
+      <button class="btn-secondary btn-icon" @click="saveCode">
+        <Save class="icon"/>
+        Save Code
+      </button>
+      <button class="btn-danger btn-icon" @click="closeCodeEditor">
+        <X class="icon"/>
+        Close
+      </button>
+    </div>
   </BaseModal>
 </template>
 
@@ -76,10 +89,12 @@ import {computed, reactive, ref} from 'vue'
 import {Box, Clock, Code2, Lightbulb, Save, Split, Trash2, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
 import BaseModal from "@/components/Common/BaseModal.vue"
+import PythonCodeEditor from "@/components/Common/PythonCodeEditor.vue";
 import {useSolutionStore} from '@/stores/solutionStore'
 import type {MdContentNoImages, Solution} from '@/types/Problem'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from '@/composables/Common/useConfirm'
+import {useTheme} from '@/composables/Common/useTheme'
 
 const props = defineProps<{
   problemId: number
@@ -95,6 +110,8 @@ const solutionStore = useSolutionStore()
 const showCodeEditor = ref(false)
 const {showNotification} = useNotification()
 const {showConfirm} = useConfirm()
+const {theme} = useTheme()
+const currentTheme = computed(() => theme.value === 'dark' ? 'dark' : 'light')
 
 const contentFields = ['code_idea', 'code_breakdown', 'time_complexity_explanation', 'space_complexity_explanation'] as const
 
@@ -204,6 +221,21 @@ const currentContentLabel = computed(() => {
       return 'Solution Content'
   }
 })
+
+const saveCode = () => {
+  showCodeEditor.value = false
+  showNotification('Code saved successfully', 'success')
+}
+
+const closeCodeEditor = async () => {
+  const shouldClose = await showConfirm(
+      'Close Code Editor',
+      'Are you sure you want to close the code editor? Any unsaved changes will be lost.'
+  )
+  if (shouldClose) {
+    showCodeEditor.value = false
+  }
+}
 
 const handleContentSave = () => {
   showContentEditor.value = false
