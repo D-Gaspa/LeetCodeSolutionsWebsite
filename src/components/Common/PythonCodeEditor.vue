@@ -33,6 +33,8 @@ const emit = defineEmits<{
 
 const localContent = ref(props.modelValue)
 const editorView = ref<EditorView | null>(null)
+const initialContent = ref(props.modelValue)
+const hasUnsavedChanges = ref(false)
 
 const baseExtensions: Extension[] = [
   basicSetup,
@@ -49,6 +51,8 @@ const computedExtensions = computed(() => {
 watch(() => props.modelValue, (newValue) => {
   if (newValue !== localContent.value) {
     localContent.value = newValue
+    initialContent.value = newValue
+    hasUnsavedChanges.value = false
   }
 })
 
@@ -59,14 +63,28 @@ const handleReady = (payload: { view: EditorView }) => {
 
 const handleChange = (value: string) => {
   localContent.value = value
-  emit('update:modelValue', value)
+  hasUnsavedChanges.value = value !== initialContent.value
 }
+
+const checkUnsavedChanges = (): boolean => {
+  return hasUnsavedChanges.value
+}
+
+const getContent = (): string => {
+  return localContent.value
+}
+
+defineExpose({
+  checkUnsavedChanges,
+  getContent
+})
 </script>
 
 <style scoped>
 .python-editor-container {
   display: flex;
   flex-direction: column;
+  border: var(--border-width) solid var(--border-color-secondary);
   height: 100%;
   transition: all var(--transition-base);
 }
@@ -93,6 +111,7 @@ const handleChange = (value: string) => {
 
 :deep(.cm-scroller) {
   overflow: auto;
+  border-radius: var(--border-radius);
 }
 
 :deep(.cm-gutters) {

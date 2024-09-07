@@ -66,20 +66,28 @@
       @update:show="showContentEditor = $event"
   />
 
-  <BaseModal v-model="showCodeEditor" class="code-editor-modal">
+  <BaseModal
+      v-model="showCodeEditor"
+      :confirm-on-close="true"
+      class="code-editor-modal"
+      @close-attempt="handleCodeEditorCloseAttempt"
+  >
     <PythonCodeEditor
-        v-model="form.code"
+        ref="codeEditorRef"
+        :model-value="form.code"
         :theme="currentTheme"
     />
-    <div class="form-actions">
-      <button class="btn-secondary btn-icon" @click="saveCode">
-        <Save class="icon"/>
-        Save Code
-      </button>
-      <button class="btn-danger btn-icon" @click="closeCodeEditor">
-        <X class="icon"/>
-        Close
-      </button>
+    <div class="form-actions-container">
+      <div class="code-form-actions">
+        <button class="btn-secondary btn-icon" @click="saveCode">
+          <Save class="icon"/>
+          Save Content
+        </button>
+        <button class="btn-danger btn-icon" @click="handleCodeEditorCloseAttempt">
+          <X class="icon"/>
+          Close
+        </button>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -112,7 +120,10 @@ const {showNotification} = useNotification()
 const {showConfirm} = useConfirm()
 const {theme} = useTheme()
 const currentTheme = computed(() => theme.value === 'dark' ? 'dark' : 'light')
-
+const codeEditorRef = ref<InstanceType<typeof PythonCodeEditor> | null>(null)
+const showContentEditor = ref(false)
+const currentEditingField = ref<keyof SolutionFormType | null>(null)
+const isEditing = computed(() => !!props.editingSolution)
 const contentFields = ['code_idea', 'code_breakdown', 'time_complexity_explanation', 'space_complexity_explanation'] as const
 
 const getIcon = (field: string) => {
@@ -145,8 +156,6 @@ const getLabel = (field: string) => {
   }
 }
 
-const isEditing = computed(() => !!props.editingSolution)
-
 type SolutionFormType = {
   problem_id: number;
   approach_name: string;
@@ -170,9 +179,6 @@ const form = reactive<SolutionFormType>({
   time_complexity_explanation: {text: ''},
   space_complexity_explanation: {text: ''}
 })
-
-const showContentEditor = ref(false)
-const currentEditingField = ref<keyof SolutionFormType | null>(null)
 
 // If editing, populate form with existing data
 if (isEditing.value && props.editingSolution) {
@@ -223,15 +229,30 @@ const currentContentLabel = computed(() => {
 })
 
 const saveCode = () => {
-  showCodeEditor.value = false
-  showNotification('Code saved successfully', 'success')
+  if (codeEditorRef.value) {
+    const newContent = codeEditorRef.value.getContent()
+    const hasChanges = codeEditorRef.value.checkUnsavedChanges()
+
+    if (hasChanges) {
+      form.code = newContent
+      showNotification('Code saved successfully', 'success')
+    } else {
+      showNotification('No changes to save', 'info')
+    }
+    showCodeEditor.value = false
+  } else {
+    showNotification('Error saving code. Please try again.', 'error')
+  }
 }
 
-const closeCodeEditor = async () => {
-  const shouldClose = await showConfirm(
-      'Close Code Editor',
-      'Are you sure you want to close the code editor? Any unsaved changes will be lost.'
-  )
+const handleCodeEditorCloseAttempt = async () => {
+  let shouldClose = true
+  if (codeEditorRef.value?.checkUnsavedChanges()) {
+    shouldClose = await showConfirm(
+        'Close Code Editor',
+        'Are you sure you want to close the code editor? Any unsaved changes will be lost.'
+    )
+  }
   if (shouldClose) {
     showCodeEditor.value = false
   }
@@ -273,7 +294,6 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-
 .form-title {
   color: var(--text-color-primary);
   margin-bottom: var(--spacing-large);
@@ -342,5 +362,32 @@ input, select, .form-actions button {
   display: flex;
   justify-content: center;
   gap: var(--spacing-medium);
+}
+
+.code-editor-modal :deep(.base-modal-content) {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-medium);
+  width: 80%;
+  height: 80%;
+  max-width: 90vw;
+  max-height: 90vh;
+  transition: all var(--transition-base);
+}
+
+.form-actions-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.code-form-actions {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 </style>
