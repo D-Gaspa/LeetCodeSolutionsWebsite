@@ -15,10 +15,12 @@ import {watch} from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
+  confirmOnClose?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
+  (e: 'close-attempt'): void
 }>()
 
 watch(() => props.modelValue, (newValue) => {
@@ -31,7 +33,11 @@ watch(() => props.modelValue, (newValue) => {
 
 const onBackdropClick = (event: MouseEvent) => {
   if (event.target === event.currentTarget) {
-    emit('update:modelValue', false)
+    if (props.confirmOnClose) {
+      emit('close-attempt')
+    } else {
+      emit('update:modelValue', false)
+    }
   }
 }
 </script>

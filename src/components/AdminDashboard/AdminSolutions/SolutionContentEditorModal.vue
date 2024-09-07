@@ -1,5 +1,10 @@
 <template>
-  <BaseModal v-model="isVisible" class="solution-content-editor-modal">
+  <BaseModal
+      v-model="isVisible"
+      :confirm-on-close="true"
+      class="solution-content-editor-modal"
+      @close-attempt="handleCloseAttempt"
+  >
     <h4>Edit {{ contentLabel }}</h4>
     <SolutionContentEditor
         ref="contentEditorRef"
@@ -12,7 +17,7 @@
           <Save class="icon"/>
           Save Content
         </button>
-        <button class="btn-danger btn-icon" @click="closeContentEditor">
+        <button class="btn-danger btn-icon" @click="handleCloseAttempt">
           <X class="icon"/>
           Close
         </button>
@@ -79,7 +84,7 @@ const saveContent = () => {
   }
 }
 
-const closeContentEditor = async () => {
+const handleCloseAttempt = async () => {
   let shouldClose = true
 
   if (contentEditorRef.value && contentEditorRef.value.hasUnsavedChanges()) {
