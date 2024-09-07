@@ -103,6 +103,7 @@ import type {MdContentNoImages, Solution} from '@/types/Problem'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from '@/composables/Common/useConfirm'
 import {useTheme} from '@/composables/Common/useTheme'
+import {isEqual} from "lodash";
 
 const props = defineProps<{
   problemId: number
@@ -168,22 +169,29 @@ type SolutionFormType = {
   space_complexity_explanation: MdContentNoImages;
 }
 
-const form = reactive<SolutionFormType>({
+const initialFormState = ref<SolutionFormType>({
   problem_id: props.problemId,
-  approach_name: 'Test Approach',
+  approach_name: '',
   code: '',
   code_idea: {text: ''},
   code_breakdown: {text: ''},
-  time_complexity: 'O(n)',
-  space_complexity: 'O(n)',
+  time_complexity: '',
+  space_complexity: '',
   time_complexity_explanation: {text: ''},
   space_complexity_explanation: {text: ''}
 })
 
-// If editing, populate form with existing data
+// If editing, populate initialFormState with existing data
 if (isEditing.value && props.editingSolution) {
-  Object.assign(form, props.editingSolution)
+  Object.assign(initialFormState.value, props.editingSolution)
 }
+
+// Create a deep copy for the form
+const form = reactive<SolutionFormType>(JSON.parse(JSON.stringify(initialFormState.value)))
+
+const hasUnsavedChanges = computed(() => {
+  return !isEqual(form, initialFormState.value)
+})
 
 const openCodeEditor = () => {
   showCodeEditor.value = true
@@ -282,6 +290,10 @@ const deleteCode = async () => {
 }
 
 const handleSubmit = async () => {
+  if (!form.code) {
+    showNotification('Please add code before saving the solution', 'warning')
+    return
+  }
   try {
     await solutionStore.saveSolution(form, isEditing.value)
     emit('solution-saved')
@@ -291,6 +303,10 @@ const handleSubmit = async () => {
     showNotification(`Error saving solution: ${(error as Error).message}`, 'error')
   }
 }
+
+defineExpose({
+  hasUnsavedChanges
+})
 </script>
 
 <style scoped>

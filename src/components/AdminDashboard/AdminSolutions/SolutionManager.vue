@@ -26,11 +26,18 @@
       </button>
     </div>
 
-    <BaseModal v-if="showForm" v-model="showForm" class="solution-form-modal">
+    <BaseModal
+        v-if="showForm"
+        v-model="showForm"
+        :confirm-on-close="true"
+        class="solution-form-modal"
+        @close-attempt="handleFormCloseAttempt"
+    >
       <SolutionForm
+          ref="solutionFormRef"
           :editing-solution="editingSolution"
           :problem-id="problem.id"
-          @cancel="showForm = false"
+          @cancel="handleFormCloseAttempt"
           @solution-saved="handleSolutionSaved"
       />
     </BaseModal>
@@ -45,6 +52,7 @@ import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionFor
 import type {Problem, Solution} from '@/types/Problem'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
+import {useConfirm} from "@/composables/Common/useConfirm";
 
 const props = defineProps<{
   modelValue: boolean
@@ -58,11 +66,13 @@ const emit = defineEmits<{
 
 const solutionStore = useSolutionStore()
 const {showNotification} = useNotification()
+const {showConfirm} = useConfirm()
 
 const isVisible = ref(props.modelValue)
 const solutions = ref<Solution[]>([])
 const showForm = ref(false)
 const editingSolution = ref<Solution | undefined>(undefined)
+const solutionFormRef = ref<InstanceType<typeof SolutionForm> | null>(null)
 
 watch(() => props.modelValue, (newValue) => {
   isVisible.value = newValue
@@ -110,6 +120,20 @@ const handleSolutionSaved = async () => {
   await fetchSolutions()
   emit('solutions-updated')
   showNotification('Solution saved successfully', 'success')
+}
+
+const handleFormCloseAttempt = async () => {
+  if (solutionFormRef.value?.hasUnsavedChanges) {
+    const shouldClose = await showConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to close the form?'
+    )
+    if (shouldClose) {
+      showForm.value = false
+    }
+  } else {
+    showForm.value = false
+  }
 }
 </script>
 
