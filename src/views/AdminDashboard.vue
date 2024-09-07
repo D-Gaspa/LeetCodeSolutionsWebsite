@@ -11,11 +11,17 @@
         @search="handleSearch"
         @show-solutions="showSolutions"
     />
-    <BaseModal v-model="showProblemForm" class="problem-form-modal">
+    <BaseModal
+        v-model="showProblemForm"
+        :confirm-on-close="true"
+        class="problem-form-modal"
+        @close-attempt="handleProblemFormCloseAttempt"
+    >
       <ProblemForm
+          ref="problemFormRef"
           :editingProblem="editingProblemComputed"
-          @close="closeProblemForm"
-          @problem-saved="fetchAllProblems"
+          @close="handleProblemFormCloseAttempt"
+          @problem-saved="handleProblemSaved"
       />
     </BaseModal>
     <SolutionManager
@@ -50,6 +56,7 @@ const editingProblem = ref<Problem | null>(null)
 const problemToDelete = ref<Problem | null>(null)
 const selectedProblem = ref<Problem | null>(null)
 const isLoading = ref(true)
+const problemFormRef = ref<InstanceType<typeof ProblemForm> | null>(null)
 
 const editingProblemComputed = computed(() =>
     editingProblem.value === null ? undefined : editingProblem.value
@@ -81,6 +88,25 @@ const handleSearch = async () => {
 const openProblemForm = () => {
   editingProblem.value = null
   showProblemForm.value = true
+}
+
+const handleProblemFormCloseAttempt = async () => {
+  if (problemFormRef.value?.hasUnsavedChanges) {
+    const shouldClose = await showConfirm(
+        'Unsaved Changes',
+        'You have unsaved changes in the problem form. Are you sure you want to close it?'
+    )
+    if (shouldClose) {
+      closeProblemForm()
+    }
+  } else {
+    closeProblemForm()
+  }
+}
+
+const handleProblemSaved = () => {
+  closeProblemForm()
+  fetchAllProblems()
 }
 
 const closeProblemForm = () => {
