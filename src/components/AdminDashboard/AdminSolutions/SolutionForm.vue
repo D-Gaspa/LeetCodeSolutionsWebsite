@@ -171,12 +171,12 @@ type SolutionFormType = {
 
 const initialFormState = ref<SolutionFormType>({
   problem_id: props.problemId,
-  approach_name: '',
+  approach_name: 'Test Approach',
   code: '',
   code_idea: {text: ''},
   code_breakdown: {text: ''},
-  time_complexity: '',
-  space_complexity: '',
+  time_complexity: 'O(n)',
+  space_complexity: 'O(n)',
   time_complexity_explanation: {text: ''},
   space_complexity_explanation: {text: ''}
 })

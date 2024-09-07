@@ -106,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref} from 'vue'
 import ContentEditor from '@/components/AdminDashboard/AdminProblems/ProblemContentEditor.vue'
 import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 import BaseModal from "@/components/Common/BaseModal.vue"
@@ -116,6 +116,7 @@ import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemStore"
 import {MdContent, MdImage, Problem, ProblemDifficulty, ProblemType} from '@/types/Problem'
 import {Edit, Save, Trash2, X} from 'lucide-vue-next'
+import {isEqual} from "lodash";
 
 interface Props {
   editingProblem: Problem | null
@@ -150,7 +151,7 @@ interface ProblemForm {
   content: MdContent
 }
 
-const problemForm = reactive<ProblemForm>({
+const initialFormState = ref<ProblemForm>({
   id: 1,
   name: 'Test Problem',
   difficulty: ProblemDifficulty.Easy,
@@ -162,22 +163,30 @@ const problemForm = reactive<ProblemForm>({
   }
 })
 
+const problemForm = reactive<ProblemForm>(JSON.parse(JSON.stringify(initialFormState.value)))
+
 const initializeForm = () => {
   if (props.editingProblem) {
-    problemForm.id = props.editingProblem.id
-    const [_, ...nameParts] = props.editingProblem.title.split('.')
-    problemForm.name = nameParts.join('.').trim()
-    problemForm.difficulty = props.editingProblem.difficulty
-    problemForm.problem_type = props.editingProblem.problem_type
-    problemForm.problem_date = props.editingProblem.problem_date
-    problemForm.content = {
-      text: props.editingProblem.content.text || '',
-      images: props.editingProblem.content.images || []
+    const formData = {
+      id: props.editingProblem.id,
+      name: props.editingProblem.title.split('.').slice(1).join('.').trim(),
+      difficulty: props.editingProblem.difficulty,
+      problem_type: props.editingProblem.problem_type,
+      problem_date: props.editingProblem.problem_date,
+      content: {
+        text: props.editingProblem.content.text || '',
+        images: props.editingProblem.content.images || []
+      }
     }
-    originalImages.value = props.editingProblem.content.images || []
+    Object.assign(initialFormState.value, formData)
+    Object.assign(problemForm, JSON.parse(JSON.stringify(formData)))
     weekNumber.value = parseInt(props.editingProblem.problem_date.split('-')[2])
   }
 }
+
+const hasUnsavedChanges = computed(() => {
+  return !isEqual(problemForm, initialFormState.value)
+})
 
 const openContentEditor = () => {
   showContentEditor.value = true
@@ -339,6 +348,9 @@ const saveProblem = async () => {
 
 onMounted(initializeForm)
 
+defineExpose({
+  hasUnsavedChanges
+})
 </script>
 
 <style scoped>
