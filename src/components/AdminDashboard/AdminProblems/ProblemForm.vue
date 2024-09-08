@@ -110,11 +110,11 @@ import {computed, onMounted, reactive, ref} from 'vue'
 import ContentEditor from '@/components/AdminDashboard/AdminProblems/ProblemContentEditor.vue'
 import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 import BaseModal from "@/components/Common/BaseModal.vue"
-import {useImageManagement} from '@/composables/AdminDashboard/useImageManagement'
+import {useImageManagement} from '@/composables/AdminDashboard/AdminProblems/useImageManagement'
 import {useNotification} from "@/composables/Common/useNotification"
 import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemStore"
-import {MdContent, MdImage, Problem, ProblemDifficulty, ProblemType} from '@/types/Problem'
+import {MdContent, MdImage, Problem, ProblemDifficulty, ProblemFormType, ProblemType} from '@/types/Problem'
 import {Edit, Save, Trash2, X} from 'lucide-vue-next'
 import {isEqual} from "lodash";
 
@@ -141,17 +141,7 @@ const contentEditorRef = ref<InstanceType<typeof ContentEditor> | null>(null)
 const originalImages = ref<MdContent['images']>([])
 const weekNumber = ref(1)
 
-interface ProblemForm {
-  id: number
-  name?: string
-  title?: string
-  difficulty: ProblemDifficulty
-  problem_type: ProblemType
-  problem_date: string
-  content: MdContent
-}
-
-const initialFormState = ref<ProblemForm>({
+const initialFormState = ref<ProblemFormType>({
   id: 1,
   name: 'Test Problem',
   difficulty: ProblemDifficulty.Easy,
@@ -163,7 +153,7 @@ const initialFormState = ref<ProblemForm>({
   }
 })
 
-const problemForm = reactive<ProblemForm>(JSON.parse(JSON.stringify(initialFormState.value)))
+const problemForm = reactive<ProblemFormType>(JSON.parse(JSON.stringify(initialFormState.value)))
 
 const initializeForm = () => {
   if (props.editingProblem) {

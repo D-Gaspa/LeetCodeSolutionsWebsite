@@ -19,31 +19,14 @@
       </div>
     </div>
 
-    <div class="content-actions-wrapper">
-      <div class="content-actions">
-        <div class="content-action-group">
-          <button class="btn-primary btn-icon action-btn" type="button" @click="openCodeEditor">
-            <Code2 class="icon"/>
-            {{ form.code ? 'Edit' : 'Add' }} Code
-          </button>
-          <button :disabled="!form.code" class="btn-danger btn-icon delete-btn" type="button" @click="deleteCode">
-            <Trash2 class="icon"/>
-            Delete
-          </button>
-        </div>
-        <div v-for="field in contentFields" :key="field" class="content-action-group">
-          <button class="btn-primary btn-icon action-btn" type="button" @click="openContentEditor(field)">
-            <component :is="getIcon(field)" class="icon"/>
-            {{ form[field].text ? 'Edit' : 'Add' }} {{ getLabel(field) }}
-          </button>
-          <button :disabled="!form[field].text" class="btn-danger btn-icon delete-btn" type="button"
-                  @click="deleteContent(field)">
-            <Trash2 class="icon"/>
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+    <SolutionContentActions
+        :form="form"
+        :has-code="!!form.code"
+        @open-code-editor="openCodeEditor"
+        @delete-code="deleteCode"
+        @open-content-editor="openContentEditor"
+        @delete-content="deleteContent"
+    />
 
     <div class="form-actions">
       <button class="btn-secondary btn-icon" type="submit">
@@ -93,17 +76,18 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, reactive, ref} from 'vue'
-import {Box, Clock, Code2, Lightbulb, Save, Split, Trash2, X} from 'lucide-vue-next'
+import {computed, ref} from 'vue'
+import {Save, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
 import BaseModal from "@/components/Common/BaseModal.vue"
-import PythonCodeEditor from "@/components/Common/PythonCodeEditor.vue";
-import {useSolutionStore} from '@/stores/solutionStore'
-import type {MdContentNoImages, Solution} from '@/types/Problem'
+import PythonCodeEditor from "@/components/Common/PythonCodeEditor.vue"
+import SolutionContentActions from "@/components/AdminDashboard/AdminSolutions/SolutionContentActions.vue";
+import {useSolutionForm} from "@/composables/AdminDashboard/AdminSolutions/useSolutionForm";
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from '@/composables/Common/useConfirm'
 import {useTheme} from '@/composables/Common/useTheme'
-import {isEqual} from "lodash";
+import {getLabel} from '@/utils/solutionUtils'
+import type {MdContentNoImages, Solution, SolutionFormType} from '@/types/Problem'
 
 const props = defineProps<{
   problemId: number
@@ -115,92 +99,17 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-const solutionStore = useSolutionStore()
-const showCodeEditor = ref(false)
+const {form, hasUnsavedChanges, handleSubmit: submitForm} = useSolutionForm(props.problemId, props.editingSolution)
 const {showNotification} = useNotification()
 const {showConfirm} = useConfirm()
 const {theme} = useTheme()
+
+const showCodeEditor = ref(false)
 const currentTheme = computed(() => theme.value === 'dark' ? 'dark' : 'light')
 const codeEditorRef = ref<InstanceType<typeof PythonCodeEditor> | null>(null)
 const showContentEditor = ref(false)
 const currentEditingField = ref<keyof SolutionFormType | null>(null)
 const isEditing = computed(() => !!props.editingSolution)
-const contentFields = ['code_idea', 'code_breakdown', 'time_complexity_explanation', 'space_complexity_explanation'] as const
-
-const getIcon = (field: string) => {
-  switch (field) {
-    case 'code_idea':
-      return Lightbulb
-    case 'code_breakdown':
-      return Split
-    case 'time_complexity_explanation':
-      return Clock
-    case 'space_complexity_explanation':
-      return Box
-    default:
-      return Box
-  }
-}
-
-const getLabel = (field: string) => {
-  switch (field) {
-    case 'code_idea':
-      return 'Code Idea'
-    case 'code_breakdown':
-      return 'Code Breakdown'
-    case 'time_complexity_explanation':
-      return 'Time Complexity Explanation'
-    case 'space_complexity_explanation':
-      return 'Space Complexity Explanation'
-    default:
-      return 'Content'
-  }
-}
-
-type SolutionFormType = {
-  problem_id: number;
-  approach_name: string;
-  code: string;
-  code_idea: MdContentNoImages;
-  code_breakdown: MdContentNoImages;
-  time_complexity: string;
-  space_complexity: string;
-  time_complexity_explanation: MdContentNoImages;
-  space_complexity_explanation: MdContentNoImages;
-}
-
-const initialFormState = ref<SolutionFormType>({
-  problem_id: props.problemId,
-  approach_name: 'Test Approach',
-  code: '',
-  code_idea: {text: ''},
-  code_breakdown: {text: ''},
-  time_complexity: 'O(n)',
-  space_complexity: 'O(n)',
-  time_complexity_explanation: {text: ''},
-  space_complexity_explanation: {text: ''}
-})
-
-// If editing, populate initialFormState with existing data
-if (isEditing.value && props.editingSolution) {
-  Object.assign(initialFormState.value, props.editingSolution)
-}
-
-// Create a deep copy for the form
-const form = reactive<SolutionFormType>(JSON.parse(JSON.stringify(initialFormState.value)))
-
-const hasUnsavedChanges = computed(() => {
-  return !isEqual(form, initialFormState.value)
-})
-
-const openCodeEditor = () => {
-  showCodeEditor.value = true
-}
-
-const openContentEditor = (field: keyof SolutionFormType) => {
-  currentEditingField.value = field
-  showContentEditor.value = true
-}
 
 const currentContent = computed({
   get: () => currentEditingField.value ? form[currentEditingField.value] as MdContentNoImages : {text: ''},
@@ -221,20 +130,18 @@ const currentInitialContent = computed(() =>
         : {text: ''}
 )
 
-const currentContentLabel = computed(() => {
-  switch (currentEditingField.value) {
-    case 'code_idea':
-      return 'Code Idea'
-    case 'code_breakdown':
-      return 'Code Breakdown'
-    case 'time_complexity_explanation':
-      return 'Time Complexity Explanation'
-    case 'space_complexity_explanation':
-      return 'Space Complexity Explanation'
-    default:
-      return 'Solution Content'
-  }
-})
+const currentContentLabel = computed(() =>
+    currentEditingField.value ? getLabel(currentEditingField.value) : 'Solution Content'
+)
+
+const openCodeEditor = () => {
+  showCodeEditor.value = true
+}
+
+const openContentEditor = (field: keyof SolutionFormType) => {
+  currentEditingField.value = field
+  showContentEditor.value = true
+}
 
 const saveCode = () => {
   if (codeEditorRef.value) {
@@ -290,17 +197,9 @@ const deleteCode = async () => {
 }
 
 const handleSubmit = async () => {
-  if (!form.code) {
-    showNotification('Please add code before saving the solution', 'warning')
-    return
-  }
-  try {
-    await solutionStore.saveSolution(form, isEditing.value)
+  const success = await submitForm()
+  if (success) {
     emit('solution-saved')
-    showNotification('Solution saved successfully', 'success')
-  } catch (error) {
-    console.error('Error saving solution:', error)
-    showNotification(`Error saving solution: ${(error as Error).message}`, 'error')
   }
 }
 
@@ -336,36 +235,6 @@ label {
 input, select, .form-actions button {
   width: 100%;
   box-sizing: border-box;
-}
-
-.content-actions-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-bottom: var(--spacing-large);
-}
-
-.content-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--spacing-medium);
-  width: 100%;
-}
-
-.content-action-group {
-  display: flex;
-  gap: var(--spacing-small);
-  width: 100%;
-}
-
-.action-btn {
-  flex: 3;
-  justify-content: center;
-  padding-left: var(--spacing-medium);
-}
-
-.delete-btn {
-  flex: 1;
 }
 
 .content-action-group button {

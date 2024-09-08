@@ -33,6 +33,16 @@ export interface Problem {
     solution_count: number
 }
 
+export type ProblemFormType = {
+    id: number
+    name?: string
+    title?: string
+    difficulty: ProblemDifficulty
+    problem_type: ProblemType
+    problem_date: string
+    content: MdContent
+}
+
 export interface Solution {
     id: number
     problem_id: number
@@ -44,6 +54,18 @@ export interface Solution {
     space_complexity: string
     time_complexity_explanation: MdContentNoImages
     space_complexity_explanation: MdContentNoImages
+}
+
+export type SolutionFormType = {
+    problem_id: number;
+    approach_name: string;
+    code: string;
+    code_idea: MdContentNoImages;
+    code_breakdown: MdContentNoImages;
+    time_complexity: string;
+    space_complexity: string;
+    time_complexity_explanation: MdContentNoImages;
+    space_complexity_explanation: MdContentNoImages;
 }
 
 export interface Example {

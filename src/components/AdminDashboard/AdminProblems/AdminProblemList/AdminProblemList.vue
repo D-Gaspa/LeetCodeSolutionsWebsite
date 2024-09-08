@@ -35,11 +35,11 @@
 <script lang="ts" setup>
 import {computed, watch} from 'vue'
 import debounce from 'lodash/debounce'
-import DashboardHeader from "@/components/AdminDashboard/AdminProblemList/DashboardHeader.vue"
-import Pagination from "@/components/AdminDashboard/AdminProblemList/Pagination.vue"
-import ProblemTable from "@/components/AdminDashboard/AdminProblemList/ProblemTable.vue"
-import {useProblemsFilter} from '@/composables/ProblemList/useProblemsFilter'
-import {usePagination} from '@/composables/ProblemList/usePagination'
+import DashboardHeader from "@/components/AdminDashboard/AdminProblems/AdminProblemList/DashboardHeader.vue"
+import Pagination from "@/components/AdminDashboard/AdminProblems/AdminProblemList/Pagination.vue"
+import ProblemTable from "@/components/AdminDashboard/AdminProblems/AdminProblemList/ProblemTable.vue"
+import {useProblemsFilter} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/useProblemsFilter'
+import {usePagination} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/usePagination'
 import {useConfirm} from "@/composables/Common/useConfirm"
 import {useNotification} from "@/composables/Common/useNotification";
 import {useProblemStore} from "@/stores/problemStore"
