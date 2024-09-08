@@ -36,7 +36,7 @@
 <script lang="ts" setup>
 import {computed, onMounted, ref} from 'vue'
 import AdminProblemList from "@/components/AdminDashboard/AdminProblems/AdminProblemList/AdminProblemList.vue"
-import ProblemForm from "@/components/AdminDashboard/AdminProblems/ProblemForm.vue"
+import ProblemForm from "@/components/AdminDashboard/AdminProblems/ProblemForm/ProblemForm.vue"
 import LoadingSpinner from "@/components/Common/LoadingSpinner.vue"
 import {useNotification} from "@/composables/Common/useNotification"
 import {useConfirm} from "@/composables/Common/useConfirm"

@@ -18,7 +18,7 @@
         :problems="paginatedProblems"
         :sortField="sortField"
         :sortOrder="sortOrder"
-        @delete="confirmDelete"
+        @delete="deleteProblem"
         @edit="$emit('edit', $event)"
         @sort="toggleSort"
         @show-solutions="$emit('show-solutions', $event)"
@@ -40,7 +40,6 @@ import Pagination from "@/components/AdminDashboard/AdminProblems/AdminProblemLi
 import ProblemTable from "@/components/AdminDashboard/AdminProblems/AdminProblemList/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/usePagination'
-import {useConfirm} from "@/composables/Common/useConfirm"
 import {useNotification} from "@/composables/Common/useNotification";
 import {useProblemStore} from "@/stores/problemStore"
 import type {Problem} from '@/types/Problem'
@@ -57,7 +56,6 @@ const emit = defineEmits<{
   (e: 'add'): void
 }>()
 
-const {showConfirm} = useConfirm()
 const problemStore = useProblemStore()
 const {showNotification} = useNotification()
 
@@ -91,11 +89,8 @@ const resetFilters = () => {
   emit('search')
 }
 
-const confirmDelete = async (problem: Problem) => {
-  const isConfirmed = await showConfirm('Delete Problem', 'Are you sure you want to delete this problem?')
-  if (isConfirmed) {
-    emit('delete', problem)
-  }
+const deleteProblem = (problem: Problem) => {
+  emit('delete', problem)
 }
 
 watch([() => problemStore.filters, sortField, sortOrder], () => {

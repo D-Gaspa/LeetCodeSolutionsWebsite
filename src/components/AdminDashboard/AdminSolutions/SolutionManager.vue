@@ -49,10 +49,10 @@ import {onMounted, ref, watch} from 'vue'
 import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm.vue'
-import type {Problem, Solution} from '@/types/Problem'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from "@/composables/Common/useConfirm";
+import type {Problem, Solution} from '@/types/Problem'
 
 const props = defineProps<{
   modelValue: boolean
