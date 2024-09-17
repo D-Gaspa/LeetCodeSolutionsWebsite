@@ -81,8 +81,8 @@ import {Save, X} from 'lucide-vue-next'
 import SolutionContentEditorModal from './SolutionContentEditorModal.vue'
 import BaseModal from "@/components/Common/BaseModal.vue"
 import PythonCodeEditor from "@/components/Common/PythonCodeEditor.vue"
-import SolutionContentActions from "@/components/AdminDashboard/AdminSolutions/SolutionContentActions.vue";
-import {useSolutionForm} from "@/composables/AdminDashboard/AdminSolutions/useSolutionForm";
+import SolutionContentActions from "@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionContentActions.vue";
+import {useSolutionForm} from "@/composables/AdminDashboard/AdminSolutions/SolutionForm/useSolutionForm";
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from '@/composables/Common/useConfirm'
 import {useTheme} from '@/composables/Common/useTheme'

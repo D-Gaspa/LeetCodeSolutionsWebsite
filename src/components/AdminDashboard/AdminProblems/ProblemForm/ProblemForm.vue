@@ -99,7 +99,7 @@ import ProblemContentEditor from "@/components/AdminDashboard/AdminProblems/Prob
 import CustomDatePicker from "@/components/Common/CustomDatePicker.vue"
 import BaseModal from "@/components/Common/BaseModal.vue"
 import ProblemContentActions from "@/components/AdminDashboard/AdminProblems/ProblemForm/ProblemContentActions.vue"
-import {useProblemForm} from "@/composables/AdminDashboard/AdminProblems/useProblemForm"
+import {useProblemForm} from "@/composables/AdminDashboard/AdminProblems/ProblemForm/useProblemForm"
 import {useNotification} from "@/composables/Common/useNotification"
 import {useConfirm} from "@/composables/Common/useConfirm"
 import {MdContent, Problem} from '@/types/Problem'

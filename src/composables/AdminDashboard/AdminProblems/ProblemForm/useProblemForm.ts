@@ -2,7 +2,7 @@ import {computed, reactive, ref} from 'vue'
 import {isEqual} from 'lodash'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useProblemStore} from '@/stores/problemStore'
-import {useImageManagement} from '@/composables/AdminDashboard/AdminProblems/useImageManagement'
+import {useImageManagement} from '@/composables/AdminDashboard/AdminProblems/ProblemForm/useImageManagement'
 import {MdContent, Problem, ProblemDifficulty, ProblemFormType, ProblemType} from '@/types/Problem'
 import {formatProblemDate} from '@/utils/problemUtils'
 
