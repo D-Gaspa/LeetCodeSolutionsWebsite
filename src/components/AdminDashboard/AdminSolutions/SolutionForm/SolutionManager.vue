@@ -48,7 +48,7 @@
 import {onMounted, ref, watch} from 'vue'
 import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
-import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm.vue'
+import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionForm.vue'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from "@/composables/Common/useConfirm";
@@ -119,7 +119,6 @@ const handleSolutionSaved = async () => {
   showForm.value = false
   await fetchSolutions()
   emit('solutions-updated')
-  showNotification('Solution saved successfully', 'success')
 }
 
 const handleFormCloseAttempt = async () => {

@@ -43,7 +43,7 @@ import {useConfirm} from "@/composables/Common/useConfirm"
 import {useProblemStore} from "@/stores/problemStore"
 import type {Problem} from '@/types/Problem'
 import BaseModal from "@/components/Common/BaseModal.vue";
-import SolutionManager from "@/components/AdminDashboard/AdminSolutions/SolutionManager.vue";
+import SolutionManager from "@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionManager.vue";
 
 const {showNotification, updateNotification} = useNotification()
 const {showConfirm} = useConfirm()
