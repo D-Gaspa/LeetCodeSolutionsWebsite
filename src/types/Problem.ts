@@ -71,7 +71,11 @@ export type SolutionFormType = {
 export interface Example {
     solution_id: number
     example_steps: ExampleSteps[]
-    visualizations: MdImage[]
+    visualizations: ExampleVisualization[]
+}
+
+export interface ExampleVisualization extends MdImage {
+    associatedSteps: number[]
 }
 
 export interface ExampleSteps {
