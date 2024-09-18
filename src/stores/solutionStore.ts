@@ -1,6 +1,7 @@
 import {defineStore} from 'pinia'
 import {supabase} from '@/services/supabase'
 import {Solution} from "@/types/Problem"
+import {useProblemStore} from "@/stores/problemStore"
 
 export const useSolutionStore = defineStore('solutions', {
     state: () => ({
@@ -40,6 +41,10 @@ export const useSolutionStore = defineStore('solutions', {
                 result = await supabase
                     .from('solutions')
                     .insert([solutionData])
+
+                // Increment solution count
+                const problemStore = useProblemStore()
+                await problemStore.incrementSolutionCount(solutionData.problem_id!)
             }
 
             const {data, error} = result
@@ -62,27 +67,25 @@ export const useSolutionStore = defineStore('solutions', {
                 throw new Error(`Error deleting solution from database: ${deleteError.message}`)
             }
 
+            // Decrement solution count
+            const problemStore = useProblemStore()
+            await problemStore.decrementSolutionCount(problemId)
+
             await this.fetchSolutionsForProblem(problemId) // Refresh the solution list
         },
 
-        async updateSolutionCount(problemId: number): Promise<void> {
-            const {count, error} = await supabase
+        async deleteAllSolutionsForProblem(problemId: number): Promise<void> {
+            const {error} = await supabase
                 .from('solutions')
-                .select('id', {count: 'exact'})
+                .delete()
                 .eq('problem_id', problemId)
 
             if (error) {
-                throw new Error(`Error counting solutions: ${error.message}`)
+                throw new Error(`Error deleting solutions for problem: ${error.message}`)
             }
 
-            const {error: updateError} = await supabase
-                .from('problems')
-                .update({solution_count: count})
-                .eq('id', problemId)
-
-            if (updateError) {
-                throw new Error(`Error updating solution count: ${updateError.message}`)
-            }
+            // Clear local solutions for this problem
+            this.solutions = this.solutions.filter(s => s.problem_id !== problemId)
         }
     }
 })

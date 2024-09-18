@@ -1,7 +1,8 @@
 import {defineStore} from 'pinia'
 import {supabase} from '@/services/supabase'
 import {deleteImageFromStorage} from '@/utils/imageOperations'
-import {Problem} from "@/types/Problem";
+import {Problem} from "@/types/Problem"
+import {useSolutionStore} from "@/stores/solutionStore"
 
 export const useProblemStore = defineStore('problems', {
     state: () => ({
@@ -84,6 +85,66 @@ export const useProblemStore = defineStore('problems', {
             return data && data.length > 0 ? data[0] : null
         },
 
+        async incrementSolutionCount(problemId: number): Promise<void> {
+            const {data, error} = await supabase
+                .from('problems')
+                .select('solution_count')
+                .eq('id', problemId)
+                .single()
+
+            if (error) {
+                throw new Error('Error fetching problem: ' + error.message)
+            }
+
+            const currentCount = data.solution_count || 0
+            const newCount = currentCount + 1
+
+            const {error: updateError} = await supabase
+                .from('problems')
+                .update({solution_count: newCount})
+                .eq('id', problemId)
+
+            if (updateError) {
+                throw new Error('Error incrementing solution count: ' + updateError.message)
+            }
+
+            // Update local state
+            const problem = this.problems.find(p => p.id === problemId)
+            if (problem) {
+                problem.solution_count = newCount
+            }
+        },
+
+        async decrementSolutionCount(problemId: number): Promise<void> {
+            const {data, error} = await supabase
+                .from('problems')
+                .select('solution_count')
+                .eq('id', problemId)
+                .single()
+
+            if (error) {
+                throw new Error('Error fetching problem: ' + error.message)
+            }
+
+            const currentCount = data.solution_count || 0
+            const newCount = Math.max(currentCount - 1, 0)  // Ensure count doesn't go below 0
+
+            const {error: updateError} = await supabase
+                .from('problems')
+                .update({solution_count: newCount})
+                .eq('id', problemId)
+
+            if (updateError) {
+                throw new Error('Error decrementing solution count: ' + updateError.message)
+            }
+
+            // Update local state
+            const problem = this.problems.find(p => p.id === problemId)
+            if (problem) {
+                problem.solution_count = newCount
+            }
+        },
+
         async saveProblem(problemData: Partial<Problem>, isEditing: boolean): Promise<{ data: Problem[] | null }> {
             let result
 
@@ -122,6 +183,9 @@ export const useProblemStore = defineStore('problems', {
 
             const content = (problemData as Problem).content
             const imagesToDelete = content.images || []
+
+            const solutionStore = useSolutionStore()
+            await solutionStore.deleteAllSolutionsForProblem(id)
 
             // Delete the problem from the database
             const {error: deleteError} = await supabase

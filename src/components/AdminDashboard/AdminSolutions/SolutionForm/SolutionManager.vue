@@ -2,28 +2,31 @@
   <BaseModal v-model="isVisible" class="solution-manager">
     <div class="solution-manager-content">
       <h3 class="solution-manager-title">Solutions for Problem: {{ problem.title }}</h3>
-      <div v-if="solutions.length > 0" class="solution-list">
-        <div v-for="solution in solutions" :key="solution.id" class="solution-item">
-          <h4 class="solution-approach">{{ solution.approach_name }}</h4>
-          <div class="solution-actions">
-            <button class="btn-neutral btn-icon-transparent" @click="editSolution(solution)">
-              <Edit2 class="icon"/>
-              Edit
-            </button>
-            <button class="btn-danger btn-icon-transparent" @click="deleteSolution(solution)">
-              <Trash2 class="icon"/>
-              Delete
-            </button>
+      <LoadingSpinner v-if="isLoading" message="Loading solutions..."/>
+      <template v-else>
+        <div v-if="solutions.length > 0" class="solution-list">
+          <div v-for="solution in solutions" :key="solution.id" class="solution-item">
+            <h4 class="solution-approach">{{ solution.approach_name }}</h4>
+            <div class="solution-actions">
+              <button class="btn-neutral btn-icon-transparent" @click="editSolution(solution)">
+                <Edit2 class="icon"/>
+                Edit
+              </button>
+              <button class="btn-danger btn-icon-transparent" @click="deleteSolution(solution)">
+                <Trash2 class="icon"/>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      <div v-else class="no-solutions">
-        No solutions available for this problem.
-      </div>
-      <button class="btn-primary btn-icon add-solution-btn" @click="showSolutionForm(undefined)">
-        <PlusCircle class="icon"/>
-        Add New Solution
-      </button>
+        <div v-else class="no-solutions">
+          No solutions available for this problem.
+        </div>
+        <button class="btn-primary btn-icon add-solution-btn" @click="showSolutionForm(undefined)">
+          <PlusCircle class="icon"/>
+          Add New Solution
+        </button>
+      </template>
     </div>
 
     <BaseModal
@@ -49,6 +52,7 @@ import {onMounted, ref, watch} from 'vue'
 import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionForm.vue'
+import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useConfirm} from "@/composables/Common/useConfirm";
@@ -73,6 +77,18 @@ const solutions = ref<Solution[]>([])
 const showForm = ref(false)
 const editingSolution = ref<Solution | undefined>(undefined)
 const solutionFormRef = ref<InstanceType<typeof SolutionForm> | null>(null)
+const isLoading = ref(true)
+
+const fetchSolutions = async () => {
+  try {
+    isLoading.value = true
+    solutions.value = await solutionStore.fetchSolutionsForProblem(props.problem.id)
+  } catch (error) {
+    showNotification(`Error fetching solutions: ${(error as Error).message}`, 'error')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 watch(() => props.modelValue, (newValue) => {
   isVisible.value = newValue
@@ -82,17 +98,15 @@ watch(isVisible, (newValue) => {
   emit('update:modelValue', newValue)
 })
 
-onMounted(async () => {
-  await fetchSolutions()
+watch(() => props.problem.id, (newProblemId, oldProblemId) => {
+  if (newProblemId !== oldProblemId) {
+    fetchSolutions()
+  }
 })
 
-const fetchSolutions = async () => {
-  try {
-    solutions.value = await solutionStore.fetchSolutionsForProblem(props.problem.id)
-  } catch (error) {
-    showNotification(`Error fetching solutions: ${(error as Error).message}`, 'error')
-  }
-}
+onMounted(() => {
+  fetchSolutions()
+})
 
 const showSolutionForm = (solution: Solution | undefined) => {
   editingSolution.value = solution
@@ -106,7 +120,6 @@ const editSolution = (solution: Solution) => {
 const deleteSolution = async (solution: Solution) => {
   try {
     await solutionStore.deleteSolution(solution.id, props.problem.id)
-    await solutionStore.updateSolutionCount(props.problem.id)
     showNotification('Solution deleted successfully', 'success')
     await fetchSolutions()
     emit('solutions-updated')
