@@ -2,6 +2,7 @@ import {defineStore} from 'pinia'
 import {supabase} from '@/services/supabase'
 import {Solution} from "@/types/Problem"
 import {useProblemStore} from "@/stores/problemStore"
+import {useExampleStore} from "@/stores/exampleStore"
 
 export const useSolutionStore = defineStore('solutions', {
     state: () => ({
@@ -42,7 +43,6 @@ export const useSolutionStore = defineStore('solutions', {
                     .from('solutions')
                     .insert([solutionData])
 
-                // Increment solution count
                 const problemStore = useProblemStore()
                 await problemStore.incrementSolutionCount(solutionData.problem_id!)
             }
@@ -67,7 +67,12 @@ export const useSolutionStore = defineStore('solutions', {
                 throw new Error(`Error deleting solution from database: ${deleteError.message}`)
             }
 
-            // Decrement solution count
+            const exampleStore = useExampleStore()
+            const example = await exampleStore.fetchExampleBySolutionId(id)
+            if (example) {
+                await exampleStore.deleteExample(example.solution_id)
+            }
+
             const problemStore = useProblemStore()
             await problemStore.decrementSolutionCount(problemId)
 
@@ -86,6 +91,23 @@ export const useSolutionStore = defineStore('solutions', {
 
             // Clear local solutions for this problem
             this.solutions = this.solutions.filter(s => s.problem_id !== problemId)
-        }
+        },
+
+        async updateSolutionExampleStatus(solutionId: number, hasExample: boolean): Promise<void> {
+            const {error} = await supabase
+                .from('solutions')
+                .update({has_example: hasExample})
+                .eq('id', solutionId)
+
+            if (error) {
+                throw new Error('Error updating solution example status: ' + error.message)
+            }
+
+            // Update local state
+            const solution = this.solutions.find(s => s.id === solutionId)
+            if (solution) {
+                solution.has_example = hasExample
+            }
+        },
     }
 })

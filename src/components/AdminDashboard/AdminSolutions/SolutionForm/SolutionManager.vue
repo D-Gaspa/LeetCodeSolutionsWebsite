@@ -12,6 +12,10 @@
                 <Edit2 class="icon"/>
                 Edit
               </button>
+              <button class="btn-primary btn-icon-transparent" @click="openExampleEditor(solution)">
+                <FileText class="icon"/>
+                {{ solution.has_example ? 'Edit' : 'Add' }} Example
+              </button>
               <button class="btn-danger btn-icon-transparent" @click="deleteSolution(solution)">
                 <Trash2 class="icon"/>
                 Delete
@@ -44,18 +48,26 @@
           @solution-saved="handleSolutionSaved"
       />
     </BaseModal>
+
+    <ExampleEditor
+        v-if="showExampleEditor && selectedSolution"
+        v-model="showExampleEditor"
+        :solution="selectedSolution"
+        @close="handleExampleEditorClose"
+    />
   </BaseModal>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, ref, watch} from 'vue'
-import {Edit2, PlusCircle, Trash2} from 'lucide-vue-next'
+import {Edit2, FileText, PlusCircle, Trash2} from 'lucide-vue-next'
 import BaseModal from '@/components/Common/BaseModal.vue'
 import SolutionForm from '@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionForm.vue'
 import LoadingSpinner from '@/components/Common/LoadingSpinner.vue'
+import ExampleEditor from '@/components/AdminDashboard/AdminSolutions/ExampleEditor/ExampleEditor.vue'
 import {useSolutionStore} from '@/stores/solutionStore'
 import {useNotification} from '@/composables/Common/useNotification'
-import {useConfirm} from "@/composables/Common/useConfirm";
+import {useConfirm} from "@/composables/Common/useConfirm"
 import type {Problem, Solution} from '@/types/Problem'
 
 const props = defineProps<{
@@ -79,6 +91,9 @@ const editingSolution = ref<Solution | undefined>(undefined)
 const solutionFormRef = ref<InstanceType<typeof SolutionForm> | null>(null)
 const isLoading = ref(true)
 
+const showExampleEditor = ref(false)
+const selectedSolution = ref<Solution | null>(null)
+
 const fetchSolutions = async () => {
   try {
     isLoading.value = true
@@ -90,24 +105,6 @@ const fetchSolutions = async () => {
   }
 }
 
-watch(() => props.modelValue, (newValue) => {
-  isVisible.value = newValue
-})
-
-watch(isVisible, (newValue) => {
-  emit('update:modelValue', newValue)
-})
-
-watch(() => props.problem.id, (newProblemId, oldProblemId) => {
-  if (newProblemId !== oldProblemId) {
-    fetchSolutions()
-  }
-})
-
-onMounted(() => {
-  fetchSolutions()
-})
-
 const showSolutionForm = (solution: Solution | undefined) => {
   editingSolution.value = solution
   showForm.value = true
@@ -115,6 +112,11 @@ const showSolutionForm = (solution: Solution | undefined) => {
 
 const editSolution = (solution: Solution) => {
   showSolutionForm(solution)
+}
+
+const openExampleEditor = (solution: Solution) => {
+  selectedSolution.value = solution
+  showExampleEditor.value = true
 }
 
 const deleteSolution = async (solution: Solution) => {
@@ -147,6 +149,32 @@ const handleFormCloseAttempt = async () => {
     showForm.value = false
   }
 }
+
+const handleExampleEditorClose = async (exampleUpdated: boolean) => {
+  if (exampleUpdated) {
+    await fetchSolutions()
+  }
+  showExampleEditor.value = false
+  selectedSolution.value = null
+}
+
+watch(() => props.modelValue, (newValue) => {
+  isVisible.value = newValue
+})
+
+watch(isVisible, (newValue) => {
+  emit('update:modelValue', newValue)
+})
+
+watch(() => props.problem.id, (newProblemId, oldProblemId) => {
+  if (newProblemId !== oldProblemId) {
+    fetchSolutions()
+  }
+})
+
+onMounted(() => {
+  fetchSolutions()
+})
 </script>
 
 <style scoped>
@@ -175,7 +203,7 @@ const handleFormCloseAttempt = async () => {
   border-radius: var(--border-radius);
   padding: var(--spacing-medium);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   transition: all var(--transition-base);
 }
@@ -187,13 +215,17 @@ const handleFormCloseAttempt = async () => {
 
 .solution-approach {
   font-size: var(--font-size-base);
-  margin: 0;
+  margin: 0 0 var(--spacing-small) 0;
   color: var(--text-color-primary);
+  text-align: center;
+  width: 100%;
 }
 
 .solution-actions {
   display: flex;
   gap: var(--spacing-small);
+  justify-content: center;
+  width: 100%;
 }
 
 .no-solutions {
@@ -211,15 +243,10 @@ const handleFormCloseAttempt = async () => {
   justify-content: center;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  .solution-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .solution-actions {
     margin-top: var(--spacing-small);
+    flex-wrap: wrap;
   }
 }
 </style>

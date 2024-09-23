@@ -12,13 +12,12 @@
       >
         {{ header.label }}
       </SortableTableHeader>
-      <th>Solutions</th>
       <th>Actions</th>
     </tr>
     </thead>
     <tbody>
     <tr v-for="problem in props.problems" :key="problem.id">
-      <td>{{ problem.title }}</td>
+      <td class="title">{{ problem.title }}</td>
       <td>{{ problem.difficulty }}</td>
       <td>{{ problem.problem_type }}</td>
       <td>{{ formatDate(problem) }}</td>
@@ -63,6 +62,7 @@ const headers = [
   {field: 'difficulty' as keyof Problem, label: 'Difficulty'},
   {field: 'problem_type' as keyof Problem, label: 'Type'},
   {field: 'problem_date' as keyof Problem, label: 'Date'},
+  {field: 'solution_count' as keyof Problem, label: 'Solutions'},
 ]
 
 defineEmits<{
@@ -82,11 +82,16 @@ table {
 
 th, td {
   padding: 8px;
+  text-align: center;
+}
+
+.title {
   text-align: left;
 }
 
 .actions {
   display: flex;
   gap: 5px;
+  justify-content: center;
 }
 </style>

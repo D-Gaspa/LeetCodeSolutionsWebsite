@@ -6,10 +6,10 @@ interface OperationResult {
     url?: string
 }
 
-export const deleteImageFromStorage = async (imageName: string): Promise<OperationResult> => {
+export const deleteImageFromStorage = async (imageName: string, bucket: string): Promise<OperationResult> => {
     try {
         const {error} = await supabase.storage
-            .from('problem-images')
+            .from(bucket)
             .remove([imageName])
 
         if (error) {
@@ -23,11 +23,11 @@ export const deleteImageFromStorage = async (imageName: string): Promise<Operati
     }
 }
 
-export const uploadNewImage = async (file: File, fileName: string): Promise<OperationResult> => {
+export const uploadNewImage = async (file: File, fileName: string, bucket: string): Promise<OperationResult> => {
     try {
         const arrayBuffer = await file.arrayBuffer()
         const {error} = await supabase.storage
-            .from('problem-images')
+            .from(bucket)
             .upload(fileName, arrayBuffer, {
                 contentType: file.type,
                 cacheControl: '3600',

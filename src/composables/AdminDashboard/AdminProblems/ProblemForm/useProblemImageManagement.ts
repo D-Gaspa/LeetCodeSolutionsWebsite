@@ -15,7 +15,7 @@ interface ImageManagementResult {
     updatedContent?: string
 }
 
-export function useImageManagement() {
+export function useProblemImageManagement() {
     const {updateNotification} = useNotification()
 
     const areImagesChanged = (newImages: MdImage[], originalImages: MdImage[]): boolean => {
@@ -62,7 +62,7 @@ export function useImageManagement() {
 
             // Delete removed images
             for (const image of imagesToDelete) {
-                const deleteResult = await deleteImageFromStorage(image.name)
+                const deleteResult = await deleteImageFromStorage(image.name, 'problem-images')
                 if (!deleteResult.success) {
                     return {success: false, error: deleteResult.error}
                 }
@@ -112,7 +112,7 @@ export function useImageManagement() {
             if (image.file instanceof File) {
                 // New image: upload with temporary name
                 tempName = `new_${imageCounter++}_${image.name}`
-                const uploadResult = await uploadNewImage(image.file, tempName)
+                const uploadResult = await uploadNewImage(image.file, tempName, 'problem-images')
                 if (!uploadResult.success) {
                     updateNotification(notificationId, {
                         message: uploadResult.error,

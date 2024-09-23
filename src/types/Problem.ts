@@ -54,23 +54,14 @@ export interface Solution {
     space_complexity: string
     time_complexity_explanation: MdContentNoImages
     space_complexity_explanation: MdContentNoImages
+    has_example: boolean
 }
 
-export type SolutionFormType = {
-    problem_id: number;
-    approach_name: string;
-    code: string;
-    code_idea: MdContentNoImages;
-    code_breakdown: MdContentNoImages;
-    time_complexity: string;
-    space_complexity: string;
-    time_complexity_explanation: MdContentNoImages;
-    space_complexity_explanation: MdContentNoImages;
-}
+export type SolutionFormType = Omit<Solution, 'id' | 'has_example'>
 
 export interface Example {
     solution_id: number
-    example_steps: ExampleSteps[]
+    steps: ExampleSteps[]
     visualizations: ExampleVisualization[]
 }
 
@@ -80,6 +71,5 @@ export interface ExampleVisualization extends MdImage {
 
 export interface ExampleSteps {
     step_number: number
-    step_description: string
-    step_visual_id?: string
+    description: string
 }
