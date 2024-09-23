@@ -200,7 +200,7 @@ export const useProblemStore = defineStore('problems', {
             // Delete images associated with the problem
             if (imagesToDelete.length > 0) {
                 const deleteImageResults = await Promise.all(
-                    imagesToDelete.map(image => deleteImageFromStorage(image.name))
+                    imagesToDelete.map(image => deleteImageFromStorage(image.name, 'problem-images'))
                 )
 
                 const failedDeletes = deleteImageResults.filter(result => !result.success)

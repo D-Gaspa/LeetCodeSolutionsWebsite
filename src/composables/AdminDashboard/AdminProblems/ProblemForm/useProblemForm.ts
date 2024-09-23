@@ -2,14 +2,16 @@ import {computed, reactive, ref} from 'vue'
 import {isEqual} from 'lodash'
 import {useNotification} from '@/composables/Common/useNotification'
 import {useProblemStore} from '@/stores/problemStore'
-import {useImageManagement} from '@/composables/AdminDashboard/AdminProblems/ProblemForm/useImageManagement'
+import {
+    useProblemImageManagement
+} from '@/composables/AdminDashboard/AdminProblems/ProblemForm/useProblemImageManagement'
 import {MdContent, Problem, ProblemDifficulty, ProblemFormType, ProblemType} from '@/types/Problem'
 import {formatProblemDate} from '@/utils/problemUtils'
 
 export function useProblemForm(editingProblem: Problem | null) {
     const {showNotification, updateNotification} = useNotification()
     const problemStore = useProblemStore()
-    const {areImagesChanged, handleImageManagement} = useImageManagement()
+    const {areImagesChanged, handleImageManagement} = useProblemImageManagement()
 
     const initialFormState = ref<ProblemFormType>({
         id: 1,

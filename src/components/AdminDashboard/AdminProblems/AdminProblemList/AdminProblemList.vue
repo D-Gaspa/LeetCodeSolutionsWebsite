@@ -40,7 +40,7 @@ import Pagination from "@/components/AdminDashboard/AdminProblems/AdminProblemLi
 import ProblemTable from "@/components/AdminDashboard/AdminProblems/AdminProblemList/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/usePagination'
-import {useNotification} from "@/composables/Common/useNotification";
+import {useNotification} from "@/composables/Common/useNotification"
 import {useProblemStore} from "@/stores/problemStore"
 import type {Problem} from '@/types/Problem'
 
@@ -67,7 +67,6 @@ const {
 } = useProblemsFilter(computed(() => props.problems))
 
 const memoizedSortedProblems = computed(() => {
-  // This will only recompute when the inputs change
   return sortedProblems.value
 })
 
