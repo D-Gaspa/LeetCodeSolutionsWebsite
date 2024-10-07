@@ -16,6 +16,24 @@
         </ul>
       </div>
 
+      <div class="input-section">
+        <h4>Input</h4>
+        <div class="input-actions">
+          <button class="btn-primary btn-icon" @click="openInputEditor">
+            <PlusCircle class="icon"/>
+            {{ input ? 'Edit' : 'Add' }} Input
+          </button>
+          <button :disabled="!input" class="btn-danger btn-icon" @click="deleteInput">
+            <Trash2 class="icon"/>
+            Delete Input
+          </button>
+        </div>
+        <pre v-if="input" class="input-preview"><code>{{ input.substring(0, 100) }}{{
+            input.length > 100 ? '...' : ''
+          }}</code></pre>
+        <p v-else class="no-input">No input added yet.</p>
+      </div>
+
       <div class="steps-section">
         <h4>Steps</h4>
         <div class="step-actions">
@@ -102,6 +120,14 @@
     </div>
   </BaseModal>
 
+  <InputEditorModal
+      v-if="showInputEditor"
+      v-model="showInputEditor"
+      :input="input"
+      @cancel="showInputEditor = false"
+      @save="handleInputSave"
+  />
+
   <StepEditorModal
       v-if="showStepEditor"
       v-model="showStepEditor"
@@ -116,6 +142,7 @@ import {computed, ref} from 'vue'
 import {PlusCircle, Save, Trash2, Upload, X} from 'lucide-vue-next'
 import Multiselect from 'vue-multiselect'
 import BaseModal from '@/components/Common/BaseModal.vue'
+import InputEditorModal from './InputEditorModal.vue'
 import StepEditorModal from './StepEditorModal.vue'
 import {useExampleEditor} from '@/composables/AdminDashboard/AdminSolutions/ExampleEditor/useExampleEditor'
 import {useNotification} from '@/composables/Common/useNotification'
@@ -139,15 +166,17 @@ const exampleStore = useExampleStore()
 const {showNotification} = useNotification()
 const {showConfirm} = useConfirm()
 const {
+  input,
   steps,
   visualizations,
+  updateInput,
   updateSteps,
   addVisualization,
   deleteVisualization,
   associateVisualization,
   saveExample,
   hasUnsavedChanges
-} = useExampleEditor(props.solution.id)
+} = useExampleEditor(props.solution)
 
 const isVisible = computed({
   get: () => props.modelValue,
@@ -158,16 +187,37 @@ const stepOptions = computed(() =>
     steps.value.map(step => ({label: `Step ${step.step_number}`, value: step.step_number}))
 )
 
+const showInputEditor = ref(false)
 const showStepEditor = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
+
+const openInputEditor = () => {
+  showInputEditor.value = true
+}
 
 const openStepEditor = () => {
   showStepEditor.value = true
 }
 
+const handleInputSave = (newInput: string) => {
+  updateInput(newInput)
+  showInputEditor.value = false
+}
+
 const handleStepsSave = (newSteps: string) => {
   updateSteps(newSteps)
   showStepEditor.value = false
+}
+
+const deleteInput = async () => {
+  const confirmed = await showConfirm(
+      'Delete Input',
+      'Are you sure you want to delete the input? This action cannot be undone.'
+  )
+  if (confirmed) {
+    updateInput('')
+    showNotification('Input deleted', 'success')
+  }
 }
 
 const deleteSteps = async () => {
@@ -303,6 +353,31 @@ h4 {
   font-size: var(--font-size-large);
   margin: 0;
   color: var(--text-color-primary);
+}
+
+.input-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-small);
+}
+
+.input-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-small);
+}
+
+.input-preview {
+  color: var(--text-color-secondary);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-input {
+  color: var(--text-color-muted);
+  font-style: italic;
 }
 
 .steps-section,
