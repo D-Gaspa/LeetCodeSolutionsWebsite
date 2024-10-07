@@ -58,10 +58,10 @@ export const renameExistingImage = async (oldName: string, newName: string): Pro
     }
 }
 
-export const getPublicUrl = async (fileName: string): Promise<OperationResult> => {
+export const getPublicUrl = async (fileName: string, bucket: string): Promise<OperationResult> => {
     try {
         const {data} = supabase.storage
-            .from('problem-images')
+            .from(bucket)
             .getPublicUrl(fileName)
 
         if (!data || !data.publicUrl) {

@@ -61,6 +61,7 @@ export type SolutionFormType = Omit<Solution, 'id' | 'has_example'>
 
 export interface Example {
     solution_id: number
+    input: string
     steps: ExampleSteps[]
     visualizations: ExampleVisualization[]
 }
