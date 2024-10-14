@@ -24,17 +24,23 @@
       <td>{{ problem.solution_count }}</td>
       <td>
         <div class="actions">
-          <button class="btn-neutral btn-icon-transparent" @click="$emit('edit', problem)">
-            <Edit2 class="icon"/>
-            Edit
-          </button>
-          <button class="btn-danger btn-icon-transparent" @click="$emit('delete', problem)">
-            <Trash2 class="icon"/>
-            Delete
-          </button>
-          <button class="btn-neutral btn-icon-transparent" @click="$emit('show-solutions', problem)">
-            <FileText class="icon"/>
-            Show Solutions
+          <template v-if="isAdmin">
+            <button class="btn-neutral btn-icon-transparent" @click="$emit('edit', problem)">
+              <Edit2 class="icon"/>
+              Edit
+            </button>
+            <button class="btn-danger btn-icon-transparent" @click="$emit('delete', problem)">
+              <Trash2 class="icon"/>
+              Delete
+            </button>
+            <button class="btn-neutral btn-icon-transparent" @click="$emit('show-solutions', problem)">
+              <FileText class="icon"/>
+              Show Solutions
+            </button>
+          </template>
+          <button v-else class="btn-primary btn-icon-transparent" @click="$emit('view-problem', problem)">
+            <Eye class="icon"/>
+            View Problem
           </button>
         </div>
       </td>
@@ -44,7 +50,7 @@
 </template>
 
 <script lang="ts" setup>
-import {Edit2, FileText, Trash2} from 'lucide-vue-next'
+import {Edit2, Eye, FileText, Trash2} from 'lucide-vue-next'
 import SortableTableHeader from "@/components/Common/SortableTableHeader.vue"
 import {formatDate} from '@/utils/dateFormatters'
 import type {Problem} from '@/types/Problem'
@@ -53,6 +59,7 @@ interface Props {
   problems: Problem[]
   sortField: keyof Problem
   sortOrder: 'asc' | 'desc'
+  isAdmin: boolean
 }
 
 const props = defineProps<Props>()
@@ -69,6 +76,7 @@ defineEmits<{
   (e: 'edit', problem: Problem): void
   (e: 'delete', problem: Problem): void
   (e: 'show-solutions', problem: Problem): void
+  (e: 'view-problem', problem: Problem): void
   (e: 'sort', field: keyof Problem): void
 }>()
 

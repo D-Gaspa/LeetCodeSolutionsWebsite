@@ -1,8 +1,10 @@
+Copy
 <template>
-  <div class="admin-problem-list">
+  <div class="base-problem-list">
     <DashboardHeader
         :dateFilter="problemStore.filters.date"
         :difficultyFilter="problemStore.filters.difficulty"
+        :isAdmin="isAdmin"
         :isResetDisabled="problemStore.areDefaultFilters()"
         :searchQuery="problemStore.filters.query"
         :typeFilter="problemStore.filters.type"
@@ -15,12 +17,14 @@
     />
 
     <ProblemTable
+        :isAdmin="isAdmin"
         :problems="paginatedProblems"
         :sortField="sortField"
         :sortOrder="sortOrder"
         @delete="deleteProblem"
         @edit="$emit('edit', $event)"
         @sort="toggleSort"
+        @view-problem="$emit('view-problem', $event)"
         @show-solutions="$emit('show-solutions', $event)"
     />
 
@@ -35,9 +39,9 @@
 <script lang="ts" setup>
 import {computed, watch} from 'vue'
 import debounce from 'lodash/debounce'
-import DashboardHeader from "@/components/AdminDashboard/AdminProblems/AdminProblemList/DashboardHeader.vue"
-import Pagination from "@/components/AdminDashboard/AdminProblems/AdminProblemList/Pagination.vue"
-import ProblemTable from "@/components/AdminDashboard/AdminProblems/AdminProblemList/ProblemTable.vue"
+import DashboardHeader from "@/components/Common/ProblemList/DashboardHeader.vue"
+import Pagination from "@/components/Common/ProblemList/Pagination.vue"
+import ProblemTable from "@/components/Common/ProblemList/ProblemTable.vue"
 import {useProblemsFilter} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/useProblemsFilter'
 import {usePagination} from '@/composables/AdminDashboard/AdminProblems/AdminProblemList/usePagination'
 import {useNotification} from "@/composables/Common/useNotification"
@@ -46,6 +50,7 @@ import type {Problem} from '@/types/Problem'
 
 const props = defineProps<{
   problems: Problem[]
+  isAdmin: boolean
 }>()
 
 const emit = defineEmits<{
@@ -53,6 +58,7 @@ const emit = defineEmits<{
   (e: 'edit', problem: Problem): void
   (e: 'delete', problem: Problem): void
   (e: 'show-solutions', problem: Problem): void
+  (e: 'view-problem', problem: Problem): void
   (e: 'add'): void
 }>()
 
@@ -97,6 +103,3 @@ watch([() => problemStore.filters, sortField, sortOrder], () => {
   currentPage.value = 1
 })
 </script>
-
-<style scoped>
-</style>

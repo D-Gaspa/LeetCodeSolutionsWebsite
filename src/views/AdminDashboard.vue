@@ -2,8 +2,9 @@
   <div class="admin-dashboard">
     <h2>Admin Dashboard</h2>
     <LoadingSpinner v-if="isLoading" message="Loading problems..."/>
-    <AdminProblemList
+    <BaseProblemList
         v-else
+        :isAdmin="true"
         :problems="problems"
         @add="openProblemForm"
         @delete="confirmDeleteProblem"
@@ -35,7 +36,7 @@
 
 <script lang="ts" setup>
 import {computed, onMounted, ref} from 'vue'
-import AdminProblemList from "@/components/AdminDashboard/AdminProblems/AdminProblemList/AdminProblemList.vue"
+import BaseProblemList from "@/components/Common/ProblemList/BaseProblemList.vue"
 import ProblemForm from "@/components/AdminDashboard/AdminProblems/ProblemForm/ProblemForm.vue"
 import SolutionManager from "@/components/AdminDashboard/AdminSolutions/SolutionForm/SolutionManager.vue"
 import LoadingSpinner from "@/components/Common/LoadingSpinner.vue"
