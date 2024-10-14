@@ -25,9 +25,7 @@ const props = defineProps<{
 
 const noItems = computed(() => props.totalPages === 0);
 
-defineEmits<{
-  (e: 'update:currentPage', page: number): void;
-}>();
+defineEmits<(e: 'update:currentPage', page: number) => void>();
 </script>
 
 <style scoped>

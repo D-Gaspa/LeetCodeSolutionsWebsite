@@ -46,7 +46,7 @@
           @update:modelValue="$emit('update:dateFilter', $event)"
       />
     </div>
-    <div>
+    <div v-if="isAdmin">
       <button class="btn-primary btn-icon" @click="$emit('add')">
         <PlusCircle class="icon"/>
         Add Problem
@@ -65,6 +65,7 @@ defineProps<{
   typeFilter: string
   dateFilter: string
   isResetDisabled: boolean
+  isAdmin: boolean
 }>()
 
 defineEmits<{
